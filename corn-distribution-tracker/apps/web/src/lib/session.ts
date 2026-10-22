@@ -1,15 +1,15 @@
 /**
- * Session state. The access token lives in module memory only — it is never
- * written to localStorage/sessionStorage, so a stolen device storage dump
- * cannot yield a bearer token. On a reload the session is restored through the
- * HttpOnly refresh cookie via POST /auth/refresh (single rotation), which
- * returns a fresh access token and the current user.
+ * Session state backed by Django's HttpOnly session cookie.
+ *
+ * The browser never exposes credentials to JavaScript. On boot we ask
+ * GET /auth/me whether the cookie is still valid; unsafe requests carry the
+ * CSRF token managed by lib/api-client. No token is ever written to storage.
  */
 
 import { useSyncExternalStore } from "react";
 
 import type { LoginOut, UserOut } from "../types/domain";
-import { configureAuth, registerRefreshTokenSink, request } from "./api-client";
+import { configureAuth, request } from "./api-client";
 
 export type SessionStatus = "LOADING" | "SIGNED_IN" | "SIGNED_OUT";
 
@@ -36,23 +36,15 @@ function publish(next: SessionState): void {
   for (const listener of listeners) listener();
 }
 
-let accessToken: string | null = null;
-
-/** Register this module as the api-client's token source before any request. */
+/** Register this module as the api-client's session-loss observer. */
 configureAuth({
-  getToken: () => accessToken,
   onAuthLost: () => {
-    // Refresh rotation failed (expired/revoked): the session is gone.
+    // Any 401 from a data endpoint means the server-side session is gone.
     clearSession("SIGNED_OUT");
   },
 });
 
-registerRefreshTokenSink((token) => {
-  accessToken = token;
-});
-
 function clearSession(status: SessionStatus): void {
-  accessToken = null;
   publish({ status, user: null });
 }
 
@@ -60,21 +52,15 @@ export async function login(email: string, password: string): Promise<UserOut> {
   const result = await request<LoginOut>("POST", "/auth/login", {
     body: { email, password },
   });
-  accessToken = result.access_token;
   publish({ status: "SIGNED_IN", user: result.user });
   return result.user;
 }
 
-/**
- * Restores the session after a page load. Only the HttpOnly cookie is needed;
- * failure to refresh simply means "not signed in". Lighthouse-frequent pattern;
- * returns the final status so the router can decide what to render.
- */
+/** Restores the signed-in user from the HttpOnly session cookie. */
 export async function restoreSession(): Promise<SessionStatus> {
   try {
-    const result = await request<LoginOut>("POST", "/auth/refresh");
-    accessToken = result.access_token;
-    publish({ status: "SIGNED_IN", user: result.user });
+    const user = await request<UserOut>("GET", "/auth/me");
+    publish({ status: "SIGNED_IN", user });
     return "SIGNED_IN";
   } catch {
     clearSession("SIGNED_OUT");
@@ -83,15 +69,15 @@ export async function restoreSession(): Promise<SessionStatus> {
 }
 
 /**
- * Revokes the refresh session server-side (best effort) and drop the memory
- * token. Local unsynced drafts are handled by the caller, which must ask the
- * user what to keep before calling this (docs/architecture/OFFLINE_SYNC.md).
+ * Revokes the server session (best effort) and drops the local identity.
+ * Local unsynced drafts are handled by the caller, which must ask the user
+ * what to keep before calling this (docs/architecture/OFFLINE_SYNC.md).
  */
 export async function logout(): Promise<void> {
   try {
     await request<{ message: string }>("POST", "/auth/logout");
   } catch {
-    // Signature: the server is unreachable — clear locally anyway.
+    // Server unreachable: clear locally anyway; the cookie expires server-side.
   } finally {
     clearSession("SIGNED_OUT");
   }

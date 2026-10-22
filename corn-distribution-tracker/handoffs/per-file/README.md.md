@@ -1,7 +1,7 @@
 # File Handoff: `README.md`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** DevOps / Lead Integrator  
+**Status:** IMPLEMENTED
+**Primary owner:** DevOps / Lead Integrator
 **File purpose:** Repository run guide
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Run guide covering architecture, Docker and local workflows, verified command results, browser E2E instructions (including the destructive isolated database warning), invitation-token delivery caveat, configuration and honest limitations.
 
-**Verification (2026-10-22):** Backend 46 tests passed (ruff/mypy clean); web 14 tests passed (lint/build clean); Playwright E2E 8 passed; `npm audit` clean; Docker image build not executed (no daemon); hadolint clean on both Dockerfiles.
+**Verification (2026-10-22):** Backend 58 tests passed (ruff/mypy clean); web 18 tests passed (lint/build clean); Playwright E2E 8 passed; `npm audit` clean; Docker image build not executed (no daemon); hadolint clean on both Dockerfiles.
 
 **Unresolved issues:** None known.

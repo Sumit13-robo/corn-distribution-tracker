@@ -28,7 +28,7 @@ export function SettingsPage() {
   useEffect(() => {
     if (settings.data && form === null) {
       setForm({ ...settings.data });
-      setKgPerBagEnabled(settings.data.kg_per_bag !== null && settings.data.default_display_unit === "BAG");
+      setKgPerBagEnabled(settings.data.kg_per_bag !== null);
     }
   }, [settings.data, form]);
 
@@ -37,10 +37,13 @@ export function SettingsPage() {
       const payload: Record<string, unknown> = {};
       if (!form) return Promise.reject(new Error("Form not ready"));
       if (form.timezone !== settings.data?.timezone) payload.timezone = form.timezone;
-      if (form.default_display_unit !== settings.data?.default_display_unit) payload.default_display_unit = form.default_display_unit;
+      if (form.default_display_unit !== settings.data?.default_display_unit) {
+        payload.default_display_unit = form.default_display_unit;
+      }
       if (kgPerBagEnabled) {
-        payload.default_display_unit = form.default_display_unit === "BAG" ? "BAG" : "BAG";
-        payload.kg_per_bag = form.kg_per_bag;
+        if (form.kg_per_bag !== settings.data?.kg_per_bag) payload.kg_per_bag = form.kg_per_bag;
+      } else if (settings.data?.kg_per_bag !== null) {
+        payload.kg_per_bag = null;
       }
       if (form.default_geofence_radius_m !== settings.data?.default_geofence_radius_m) {
         payload.default_geofence_radius_m = form.default_geofence_radius_m;
@@ -116,7 +119,11 @@ export function SettingsPage() {
                 id="settings-unit"
                 aria-describedby={ids.describedBy}
                 value={form.default_display_unit}
-                onChange={(event) => setForm({ ...form, default_display_unit: event.target.value })}
+                onChange={(event) => {
+                  const unit = event.target.value;
+                  setForm({ ...form, default_display_unit: unit });
+                  if (unit === "BAG") setKgPerBagEnabled(true);
+                }}
               >
                 {DISPLAY_UNITS.map((unit) => (
                   <option key={unit} value={unit}>
@@ -131,20 +138,24 @@ export function SettingsPage() {
         <FormField
           id="settings-kgperbag"
           label="Kilograms per bag"
-          helper={`Needed only for BAG display. Canonical values stay exact; conversions factor out (currently ${form.kg_per_bag ?? "unset"}).`}
+          helper="Needed only when BAG display is used. Canonical quantities stay in kilograms; this factor is only for display."
         >
           {(ids) => (
-            <div className="row">
-              <input
-                type="checkbox"
-                aria-label="Enable kilograms-per-bag configuration"
-                checked={kgPerBagEnabled}
-                onChange={(event) => {
-                  setKgPerBagEnabled(event.target.checked);
-                  if (event.target.checked && !form.default_display_unit) setForm({ ...form, default_display_unit: "BAG" });
-                }}
-                style={{ width: "auto" }}
-              />
+            <div className="kg-bag-control">
+              <label className="checkbox-control">
+                <input
+                  type="checkbox"
+                  checked={kgPerBagEnabled}
+                  onChange={(event) => {
+                    const enabled = event.target.checked;
+                    setKgPerBagEnabled(enabled);
+                    if (!enabled && form.default_display_unit === "BAG") {
+                      setForm({ ...form, default_display_unit: "KG" });
+                    }
+                  }}
+                />
+                <span>Use a bag conversion factor</span>
+              </label>
               <input
                 id="settings-kgperbag"
                 type="text"
@@ -228,7 +239,7 @@ export function SettingsPage() {
           </button>
         </div>
         <p className="small muted">
-          Storage and retention indicators are deployment-level values; see docs/ops/ENVIRONMENT_VARIABLES.md (not editable here by design).
+          Storage and retention are deployment-level settings; they are not editable here by design.
         </p>
       </form>
     </div>

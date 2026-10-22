@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { cx } from "../../lib/format";
 import type { ReactNode } from "react";
 
@@ -30,6 +30,7 @@ interface DataTableProps<T> {
 export function DataTable<T>({ columns, rows, caption, rowKey, emptyState, rowExpandDetail }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const sortControlId = useId();
 
   const sortedRows = useMemo(() => {
     if (sortKey === null) return rows;
@@ -45,64 +46,140 @@ export function DataTable<T>({ columns, rows, caption, rowKey, emptyState, rowEx
     return sortDir === "asc" ? sorted : sorted.reverse();
   }, [rows, columns, sortKey, sortDir]);
 
+  const sortableColumns = columns.filter((column) => column.sortValue);
+
+  function activateSort(columnKey: string): void {
+    if (sortKey === columnKey) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(columnKey);
+      const column = columns.find((candidate) => candidate.key === columnKey);
+      setSortDir(column?.initialSort ?? "asc");
+    }
+  }
+
+  function cell(column: DataTableColumn<T>, row: T): ReactNode {
+    return column.render ? column.render(row) : String(getPath(row, column.key) ?? "—");
+  }
+
   if (rows.length === 0 && emptyState) {
     return <div>{emptyState}</div>;
   }
 
   return (
-    <div className="data-table-wrap">
-      <table className="data-table">
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr>
-            {columns.map((column) => {
-              const sortable = Boolean(column.sortValue);
-              const isSorted = sortKey === column.key;
-              return (
-                <th
-                  key={column.key}
-                  scope="col"
-                  className={cx(column.numeric && "num")}
-                  aria-sort={isSorted ? (sortDir === "asc" ? "ascending" : "descending") : sortable ? "none" : undefined}
-                  {...(sortable
-                    ? {
-                        onClick: () => {
-                          if (sortKey === column.key) {
-                            setSortDir(sortDir === "asc" ? "desc" : "asc");
-                          } else {
-                            setSortKey(column.key);
-                            setSortDir(column.initialSort ?? "asc");
-                          }
-                        },
-                      }
-                    : {})}
-                >
-                  {sortable ? (
-                    <button type="button" className="btn ghost" style={{ padding: 0, color: "inherit" }}>
-                      {column.header} {isSorted ? (sortDir === "asc" ? "↑" : "↓") : ""}
-                      <span className="sr-only">{isSorted ? " (sorted)" : " (activates sorting)"}</span>
-                    </button>
-                  ) : (
-                    column.header
-                  )}
+    <div>
+      <div className="data-card-tools">
+        {sortableColumns.length > 0 ? (
+          <>
+            <label className="data-card-sort" htmlFor={sortControlId}>
+              Sort by
+              <select
+                id={sortControlId}
+                value={sortKey ?? ""}
+                onChange={(event) => {
+                  if (!event.target.value) {
+                    setSortKey(null);
+                    return;
+                  }
+                  activateSort(event.target.value);
+                }}
+              >
+                <option value="">Default order</option>
+                {sortableColumns.map((column) => (
+                  <option key={column.key} value={column.key}>
+                    {column.header}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn secondary small"
+              onClick={() => sortKey && activateSort(sortKey)}
+              disabled={!sortKey}
+            >
+              {sortDir === "asc" ? "Ascending" : "Descending"}
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      <div
+        className="data-table-wrap data-table-responsive"
+        role="region"
+        aria-label={`${caption}. Scroll horizontally if needed.`}
+        tabIndex={0}
+      >
+        <table className="data-table">
+          <caption className="sr-only">{caption}</caption>
+          <thead>
+            <tr>
+              {columns.map((column) => {
+                const sortable = Boolean(column.sortValue);
+                const isSorted = sortKey === column.key;
+                return (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className={cx(column.numeric && "num")}
+                    aria-sort={
+                      isSorted ? (sortDir === "asc" ? "ascending" : "descending") : sortable ? "none" : undefined
+                    }
+                    {...(sortable ? { onClick: () => activateSort(column.key) } : {})}
+                  >
+                    {sortable ? (
+                      <button type="button" className="table-sort">
+                        {column.header} {isSorted ? (sortDir === "asc" ? "↑" : "↓") : ""}
+                        <span className="sr-only">{isSorted ? " (sorted)" : " (activates sorting)"}</span>
+                      </button>
+                    ) : (
+                      column.header
+                    )}
+                  </th>
+                );
+              })}
+              {rowExpandDetail ? (
+                <th scope="col">
+                  <span className="sr-only">Actions</span>
                 </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {sortedRows.map((row) => (
-            <tr key={rowKey(row)}>
-              {columns.map((column) => (
-                <td key={column.key} className={cx(column.numeric && "num")}>
-                  {column.render ? column.render(row) : String(getPath(row, column.key) ?? "—")}
-                </td>
-              ))}
-              {rowExpandDetail ? <td>{rowExpandDetail(row)}</td> : null}
+              ) : null}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortedRows.map((row) => (
+              <tr key={rowKey(row)}>
+                {columns.map((column) => (
+                  <td key={column.key} className={cx(column.numeric && "num")}>
+                    {cell(column, row)}
+                  </td>
+                ))}
+                {rowExpandDetail ? <td className="row-actions">{rowExpandDetail(row)}</td> : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ul className="data-cards" aria-label={caption}>
+        {sortedRows.map((row) => (
+          <li key={rowKey(row)} className="data-card">
+            <dl className="data-card-fields">
+              {columns.map((column) => (
+                <div className="data-card-field" key={column.key}>
+                  <dt>{column.header}</dt>
+                  <dd className={cx(column.numeric && "num")}>{cell(column, row)}</dd>
+                </div>
+              ))}
+              {rowExpandDetail ? (
+                <div className="data-card-field">
+                  <dt>Actions</dt>
+                  <dd className="row-actions">{rowExpandDetail(row)}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

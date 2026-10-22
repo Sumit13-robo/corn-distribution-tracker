@@ -15,9 +15,9 @@ RUN groupadd --gid 10001 app \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY alembic.ini ./
-COPY alembic ./alembic
-COPY app ./app
+COPY manage.py ./
+COPY config ./config
+COPY corn ./corn
 
 # Local-mode evidence storage (STORAGE_MODE=local) must be writable by the app user.
 RUN mkdir -p /app/storage-data && chown -R app:app /app/storage-data
@@ -25,8 +25,8 @@ RUN mkdir -p /app/storage-data && chown -R app:app /app/storage-data
 USER 10001:10001
 EXPOSE 8000
 
-# Liveness only (readiness /health/ready also probes DB + storage).
+# Liveness only; readiness (/health/ready) also probes DB + storage.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--access-logfile", "-"]

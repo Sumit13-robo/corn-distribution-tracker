@@ -6,12 +6,16 @@
 :root {
   /* Brand */
   --color-brand-950: #14301f;
+  --color-brand-900: #1a3b27;
+  --color-brand-800: #214a31;
   --color-brand-700: #2c6e46;
   --color-brand-600: #35855a;
+  --color-brand-200: #c9dfcf;
   --color-brand-100: #e4f0e7;
 
   /* Accent (highlights only, never long text blocks) */
   --color-accent-500: #d9a412;
+  --color-accent-700: #8a6405;
   --color-accent-100: #faf1d3;
 
   /* Surfaces and text */
@@ -21,6 +25,8 @@
   --color-text: #24291f;
   --color-muted: #5f6a5e;
   --color-border: #d8d6cc;
+  --color-border-strong: #b9beb2;
+  --color-overlay: rgba(15, 33, 22, 0.52);
 
   /* Status (paired everywhere with a text label, never color alone) */
   --color-success-bg: #dff1e2;
@@ -35,6 +41,7 @@
   --color-danger-bg: #fbdfdd;
   --color-danger-text: #7a2323;
   --color-danger-border: #e6a3a3;
+  --color-danger-action: #a32f2f;
   --color-info-bg: #e2eef7;
   --color-info-text: #1f4b68;
   --color-info-border: #a3c4dc;
@@ -47,11 +54,12 @@
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono-numeric: "SF Mono", Cascadia Code, Consolas, monospace;
 
-  --text-page-title: 1.35rem;
-  --text-section-title: 1.05rem;
+  --text-display: clamp(2rem, 3.4vw, 2.65rem);
+  --text-page-title: clamp(1.4rem, 2.2vw, 1.6rem);
+  --text-section-title: 1.075rem;
   --text-body: 0.95rem;
   --text-meta: 0.8rem;
-  --text-kpi: 1.6rem;
+  --text-kpi: clamp(1.45rem, 2.6vw, 1.7rem);
   --weight-strong: 650;
 
   /* Spacing (4/8 px scale) and shape */
@@ -62,10 +70,10 @@
   --space-5: 24px;
   --space-6: 32px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --shadow-card: 0 1px 3px rgba(20, 48, 31, 0.08), 0 4px 14px rgba(20, 48, 31, 0.06);
-  --shadow-pop: 0 6px 24px rgba(20, 48, 31, 0.18);
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 1px 2px rgba(20, 48, 31, 0.05), 0 6px 20px rgba(20, 48, 31, 0.05);
+  --shadow-pop: 0 18px 48px rgba(20, 48, 31, 0.2);
 
   /* Focus */
   --focus-ring: 0 0 0 3px rgba(44, 110, 70, 0.35);

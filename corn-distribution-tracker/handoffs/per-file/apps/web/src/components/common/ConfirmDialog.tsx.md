@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/components/common/ConfirmDialog.tsx`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** Frontend  
+**Status:** IMPLEMENTED
+**Primary owner:** Frontend
 **File purpose:** Confirmation dialog
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Native-dialog confirmation modal with busy state, Escape/cancel handling and focus return.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

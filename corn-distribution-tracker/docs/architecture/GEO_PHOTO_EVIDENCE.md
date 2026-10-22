@@ -12,7 +12,7 @@ A distributor submits a site report with a photo and the device's location so an
 
 ## Site comparison
 - Each site has expected WGS84 coordinates and configurable `geofence_radius_m` and `max_acceptable_accuracy_m`.
-- Calculate distance server-side using a geographically correct distance function (PostGIS geography or a reviewed geodesic implementation), not an untested planar degree calculation.
+- Calculate distance server-side using the reviewed geodesic implementation in `corn.geo` (Vincenty inverse on WGS84 with a haversine fallback), not an untested planar degree calculation. PostGIS is not used in this build.
 - Produce flags such as `GPS_MISSING`, `GPS_STALE`, `GPS_LOW_ACCURACY`, `OUTSIDE_GEOFENCE`, `EXIF_GPS_MISMATCH`, `CAPTURE_TIME_MISMATCH`, `DUPLICATE_IMAGE_HASH`, `UNEXPECTED_FILE_TYPE`, and `LOCATION_EXCEPTION` as applicable.
 - Define exact threshold semantics in config and show the values to reviewers; avoid a hidden universal threshold.
 - If GPS is unavailable or outside radius, the system may allow a submission only under the configured exception policy. It must visibly mark it for admin review; no silent bypass.

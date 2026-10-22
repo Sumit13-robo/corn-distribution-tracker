@@ -15,11 +15,11 @@ const storageDir = path.resolve(process.env.E2E_LOCAL_STORAGE_DIR ?? "/tmp/corn-
 const e2eSecretKey = randomBytes(32).toString("hex");
 
 /**
- * Browser E2E: real Vite dev server + real FastAPI/PostgreSQL, isolated E2E
+ * Browser E2E: real Vite dev server + real Django/DRF/PostgreSQL, isolated E2E
  * database and private local evidence directory. Global setup recreates the
- * database, migrates it, and bootstraps the first admin; the setup project
- * then creates campaign/site/invitation/assignment/stock through the public
- * API so tests exercise the product's actual contracts.
+ * database, migrates it with Django and bootstraps the first admin; the setup
+ * project then creates campaign/site/invitation/assignment/stock through the
+ * public API so tests exercise the product's actual contracts.
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -54,7 +54,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `"${python}" -m uvicorn app.main:app --host 127.0.0.1 --port 8000`,
+      command: `"${python}" manage.py runserver 127.0.0.1:8000 --noreload`,
       cwd: apiDir,
       url: "http://127.0.0.1:8000/health/live",
       reuseExistingServer: false,
@@ -63,17 +63,19 @@ export default defineConfig({
       stderr: "pipe",
       env: {
         ...process.env,
+        DJANGO_SETTINGS_MODULE: "config.settings",
         APP_ENV: "test",
         DATABASE_URL: e2e.databaseURL,
         SECRET_KEY: e2eSecretKey,
         CORS_ALLOWED_ORIGINS: e2e.baseURL,
+        CSRF_TRUSTED_ORIGINS: e2e.baseURL,
         COOKIE_SECURE: "false",
         COOKIE_SAMESITE: "Lax",
         STORAGE_MODE: "local",
         LOCAL_STORAGE_DIR: storageDir,
-        PUBLIC_BASE_URL: "http://127.0.0.1:8000",
+        PUBLIC_BASE_URL: e2e.baseURL,
         LOG_LEVEL: "WARNING",
-        RATE_LIMIT_BACKEND_URL: "",
+        DB_CONN_MAX_AGE: "0",
       },
     },
     {

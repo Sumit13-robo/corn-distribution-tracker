@@ -10,8 +10,8 @@
 ### users
 `id`, `email_normalized` (unique), `display_name`, `password_hash` or external auth reference, `role` (`ADMIN|DISTRIBUTOR`), `is_active`, `must_reset_password`, `last_login_at`, `created_at`, `updated_at`. Store no plain-text passwords or reusable invite tokens.
 
-### auth_sessions / refresh_tokens
-Track hashed refresh token/session family, user, expiry, revoked timestamp, rotation/reuse detection metadata. Store token hashes, not raw reusable token strings.
+### auth_sessions
+Django's database-backed sessions store the session key hash and serialized auth state in `django_session`; the browser holds only an HttpOnly `sessionid` cookie. CSRF uses a separate double-submit cookie and `X-CSRFToken` header. Do not store raw reusable session or invitation/reset tokens in application tables.
 
 ### campaigns
 `id`, `name`, `reference_code`, `starts_at`, `ends_at`, `status` (`DRAFT|ACTIVE|PAUSED|CLOSED`), `timezone`, display preferences, creator, timestamps.
@@ -35,7 +35,7 @@ Append-only ledger: `id`, `movement_type` (`RECEIPT|TRANSFER|DELIVERY|RETURN|LOS
 `id`, `distribution_record_id`, `storage_key`, `thumbnail_key` nullable, `content_type`, `size_bytes`, `sha256_hex`, capture source (`CAMERA|FILE_PICKER|OFFLINE_CAMERA`), `client_captured_at`, `server_received_at`, EXIF GPS/time values if extracted, metadata check result, duplicate-of pointer or flag, validation flags JSON, uploader_user_id, lifecycle status, created_at. Keep bucket/object ACL private.
 
 ### audit_events
-`id`, `actor_user_id` nullable for system, `action`, `target_type`, `target_id`, `occurred_at`, request_id/correlation_id, reason, safe before/after summary JSON, source/IP/device details where appropriate and lawful. Never store passwords, access tokens, presigned URLs, image bytes or unnecessary sensitive data.
+`id`, `actor_user_id` nullable for system, `action`, `target_type`, `target_id`, `occurred_at`, request_id/correlation_id, reason, safe before/after summary JSON, source/IP/device details where appropriate and lawful. Never store passwords, session cookies, CSRF secrets, signed URLs, image bytes or unnecessary sensitive data.
 
 ### organization_settings
 Single-row settings for the initial single-organization release: `id`, `timezone`, `default_display_unit`, `kg_per_bag` nullable, `default_geofence_radius_m`, `max_acceptable_gps_accuracy_m`, `max_location_age_seconds`, updated_by and updated_at. Strictly allowlist fields; do not store arbitrary infrastructure secrets or pretend environment-only settings are UI-editable.

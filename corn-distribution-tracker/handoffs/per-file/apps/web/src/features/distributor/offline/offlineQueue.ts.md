@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/features/distributor/offline/offlineQueue.ts`
 
-**Status:** TESTED  
-**Primary owner:** Frontend  
+**Status:** TESTED
+**Primary owner:** Frontend
 **File purpose:** Offline draft queue
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 User-scoped localStorage drafts (`corn-tracker:drafts:v1:{userId}`) with persisted idempotency keys, LOCAL_DRAFT→QUEUED→UPLOADING→SUBMITTED transitions, IndexedDB photo store with memory fallback, requeue/retry/remove, submitted cleanup and cross-tab change notifications.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

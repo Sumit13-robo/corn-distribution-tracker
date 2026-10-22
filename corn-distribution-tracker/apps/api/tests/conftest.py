@@ -1,221 +1,270 @@
-"""Shared test fixtures: isolated schema, truncation, client with auth helpers.
+"""Shared Django/DRF fixtures for the API test suite.
 
-Tests run against a real PostgreSQL database (TEST_DATABASE_URL) so ledger row
-locking, partial indexes and append-only triggers are exercised for real.
-Synthetic data only - never real personal data or geotagged images.
+Tests run against real PostgreSQL so row locking, partial constraints and the
+append-only triggers are exercised. All identities, coordinates and images are
+synthetic. Sessions use Django's real session/CSRF stack; only the test client's
+convenience flag disables CSRF for tests that are not specifically about CSRF.
 """
 
 from __future__ import annotations
 
-import os
-import tempfile
-from collections.abc import Iterator
+import json
+import shutil
+from pathlib import Path
 
-# Configure environment BEFORE importing app modules.
-_TEST_DB = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql+psycopg://corn:corn@localhost:5432/corn_tracker_test"
-)
-_TMP = tempfile.mkdtemp(prefix="corn-evidence-")
-os.environ.update(
-    {
-        "APP_ENV": "test",
-        "DATABASE_URL": _TEST_DB,
-        "STORAGE_MODE": "local",
-        "LOCAL_STORAGE_DIR": _TMP,
-        "SECRET_KEY": "test-secret-not-for-production-only",
-        "CORS_ALLOWED_ORIGINS": "http://localhost:5173",
-        "COOKIE_SECURE": "false",
-        "MAX_EVIDENCE_UPLOAD_BYTES": "1048576",
-    }
-)
+import pytest
+from django.conf import settings
+from django.test import Client
 
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import text  # noqa: E402
+from corn.rate_limit import reset_for_tests as reset_rate_limit
+from corn.services import auth as auth_service
+from corn.services import inventory as inventory_service
+from corn.storage import reset_storage_for_tests
 
-from app.core.rate_limit import reset_for_tests as reset_rate_limit  # noqa: E402
-from app.db.session import get_engine  # noqa: E402
-from app.main import create_app  # noqa: E402
-from app.services import auth_service  # noqa: E402
-
-
-def _truncate_all(db) -> None:
-    db.execute(
-        text(
-            "DO $$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables "
-            "WHERE schemaname = 'public' AND tablename <> 'alembic_version') LOOP "
-            "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; END $$;"
-        )
-    )
-    db.commit()
+ADMIN_PASSWORD = "Sup3rAdminPass!"
+DISTRIBUTOR_PASSWORD = "Str0ngDistribPass!"
 
 
 @pytest.fixture(autouse=True)
-def _clean_database():
-    """Truncate the whole test schema between tests for full isolation."""
-    engine = get_engine()
-    conn = engine.connect()
-    try:
-        conn.execute(
-            text(
-                "DO $$ DECLARE r RECORD; BEGIN FOR r IN (SELECT tablename FROM pg_tables "
-                "WHERE schemaname = 'public' AND tablename <> 'alembic_version') LOOP "
-                "EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE'; END LOOP; END $$;"
-            )
-        )
-        conn.commit()
-    finally:
-        conn.close()
+def _reset_process_state():
     reset_rate_limit()
+    reset_for_tests_storage_files()
     yield
     reset_rate_limit()
 
 
-@pytest.fixture()
-def client() -> Iterator[TestClient]:
-    app = create_app()
-    with TestClient(app, raise_server_exceptions=True) as test_client:
-        yield test_client
+def reset_for_tests_storage_files() -> None:
+    root = Path(settings.LOCAL_STORAGE_DIR)
+    if root.exists():
+        for item in root.iterdir():
+            if item.is_dir():
+                shutil.rmtree(item, ignore_errors=True)
+            else:
+                item.unlink(missing_ok=True)
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    reset_storage_for_tests()
 
 
-class AuthQuestions:
-    def __init__(self, client: TestClient):
-        self.client = client
+def json_request(client: Client, method: str, path: str, payload=None, **extra):
+    kwargs = {"content_type": "application/json", **extra}
+    if payload is not None and method.lower() not in {"get", "head"}:
+        kwargs["data"] = json.dumps(payload)
+    return getattr(client, method)(path, **kwargs)
 
-    def create_admin(self, email: str = "admin@example.org", password: str = "Sup3rAdminPass!") -> str:
-        db = _make_session()
-        try:
-            auth_service.create_first_admin(db, email=email, password=password, display_name="Ops")
-            auth_service.ensure_core_org_rows(db)
-            db.commit()
-        finally:
-            db.close()
+
+class AuthClient:
+    def __init__(self) -> None:
+        self.client = Client()
+
+    def login(self, email: str, password: str) -> dict:
+        response = json_request(
+            self.client, "post", "/api/v1/auth/login", {"email": email, "password": password}
+        )
+        assert response.status_code == 200, response.content.decode()
+        return response.json()["user"]
+
+    def create_admin(self, email: str = "admin@example.org", password: str = ADMIN_PASSWORD) -> dict:
+        user = auth_service.create_first_admin(
+            email=email, password=password, display_name="Ops"
+        )
+        inventory_service.ensure_core_org_rows(created_by=user.id)
         return self.login(email, password)
 
-    def create_distributor(self, email: str = "dist1@example.org", name: str = "Field Distributor") -> str:
-        from app.core.security import hash_password
-        from app.models import User
+    def create_distributor(
+        self, email: str = "dist1@example.org", name: str = "Field Distributor"
+    ) -> dict:
+        from corn.models import User
 
-        db = _make_session()
-        try:
-            user = User(
-                email_normalized=email,
-                display_name=name,
-                role="DISTRIBUTOR",
-                is_active=True,
-                password_hash=hash_password("Str0ngDistribPass!"),
-            )
-            db.add(user)
-            db.commit()
-        finally:
-            db.close()
-        return self.login(email, "Str0ngDistribPass!")
-
-    def login(self, email: str, password: str) -> str:
-        response = self.client.post("/api/v1/auth/login", json={"email": email, "password": password})
-        assert response.status_code == 200, response.text
-        return response.json()["access_token"]
-
-    def bearer(self, token: str) -> dict[str, str]:
-        return {"Authorization": f"Bearer {token}"}
-
-
-def _make_session():
-    from app.db.session import get_session_factory
-
-    return get_session_factory()()
+        User.objects.create_user(
+            email=email,
+            password=DISTRIBUTOR_PASSWORD,
+            display_name=name,
+            role="DISTRIBUTOR",
+            is_active=True,
+        )
+        return self.login(email, DISTRIBUTOR_PASSWORD)
 
 
 @pytest.fixture()
-def auth(client: TestClient) -> AuthQuestions:
-    return AuthQuestions(client)
+def auth() -> AuthClient:
+    return AuthClient()
 
 
 @pytest.fixture()
-def org_factory(auth: AuthQuestions):
-    """Create the standard synthetic org: admin + distributor + campaign + site + assignment + stock."""
-    created: dict = {}
+def csrf_client() -> Client:
+    return Client(enforce_csrf_checks=True)
+
+
+@pytest.fixture()
+def org_factory(auth: AuthClient):
+    """Create the standard synthetic org through real HTTP API calls."""
 
     def factory(**overrides) -> dict:
-        admin_token = auth.create_admin()
-        dist_token = auth.create_distributor(
+        admin_auth = AuthClient()
+        dist_auth = AuthClient()
+        admin_user = admin_auth.create_admin()
+        dist_user = dist_auth.create_distributor(
             email=overrides.get("dist_email", "dist1@example.org"), name="Field Distributor"
         )
-        headers_admin = auth.bearer(admin_token)
-        headers_dist = auth.bearer(dist_token)
+        admin = admin_auth.client
+        dist = dist_auth.client
 
-        campaign = overrides.get("campaign")
-        if campaign:
-            resp = auth.client.post(
+        campaign_id = None
+        if overrides.get("campaign"):
+            campaign = json_request(
+                admin,
+                "post",
                 "/api/v1/campaigns",
-                json={
+                {
                     "name": "Rains Distribution",
                     "reference_code": "RAINS-1",
                     "timezone": "Africa/Juba",
                     "status": "ACTIVE",
                 },
-                headers=headers_admin,
             )
-            campaign_id = resp.json()["id"]
-        else:
-            campaign_id = None
+            assert campaign.status_code == 201, campaign.content.decode()
+            campaign_id = campaign.json()["id"]
 
-        site_resp = auth.client.post(
+        site_resp = json_request(
+            admin,
+            "post",
             "/api/v1/sites",
-            json={
+            {
                 "name": "North Depot",
                 "site_code": "ND-01",
                 "latitude": "12.551800",
                 "longitude": "15.100000",
                 "geofence_radius_m": 200,
             },
-            headers=headers_admin,
         )
-        assert site_resp.status_code == 201, site_resp.text
+        assert site_resp.status_code == 201, site_resp.content.decode()
         site = site_resp.json()
 
-        users_resp = auth.client.get("/api/v1/admin/distributors", headers=headers_admin)
-        distributor_user_id = users_resp.json()["items"][0]["id"]
-
-        assign_resp = auth.client.post(
+        assign_resp = json_request(
+            admin,
+            "post",
             "/api/v1/assignments",
-            json={
+            {
                 "site_id": site["id"],
                 "campaign_id": campaign_id,
-                "distributor_user_id": distributor_user_id,
+                "distributor_user_id": dist_user["id"],
                 "target_quantity": "150",
                 "unit": "KG",
             },
-            headers=headers_admin,
         )
-        assert assign_resp.status_code == 201, assign_resp.text
+        assert assign_resp.status_code == 201, assign_resp.content.decode()
         assignment = assign_resp.json()
 
-        receipt_resp = auth.client.post(
+        receipt_resp = json_request(
+            admin,
+            "post",
             "/api/v1/inventory/receipts",
-            json={"quantity": "500", "unit": "KG", "source_reference": "warehouse-load-2026-10"},
-            headers={**headers_admin, "Idempotency-Key": "test-receipt-1"},
+            {
+                "quantity": "500",
+                "unit": "KG",
+                "source_reference": "warehouse-load-2026-10",
+            },
+            HTTP_IDEMPOTENCY_KEY="test-receipt-1",
         )
-        assert receipt_resp.status_code == 201, receipt_resp.text
+        assert receipt_resp.status_code == 201, receipt_resp.content.decode()
 
-        alloc_resp = auth.client.post(
+        alloc_resp = json_request(
+            admin,
+            "post",
             "/api/v1/inventory/allocations",
-            json={"distributor_user_id": distributor_user_id, "quantity": "100", "unit": "KG"},
-            headers={**headers_admin, "Idempotency-Key": "test-alloc-1"},
+            {
+                "distributor_user_id": dist_user["id"],
+                "quantity": "100",
+                "unit": "KG",
+            },
+            HTTP_IDEMPOTENCY_KEY="test-alloc-1",
         )
-        assert alloc_resp.status_code == 201, alloc_resp.text
+        assert alloc_resp.status_code == 201, alloc_resp.content.decode()
 
-        created.update(
-            admin_token=admin_token,
-            dist_token=dist_token,
-            headers_admin=headers_admin,
-            headers_dist=headers_dist,
-            site=site,
-            assignment=assignment,
-            distributor_user_id=distributor_user_id,
-            campaign_id=campaign_id,
-            auth=auth,
-        )
-        return created
+        return {
+            "admin_client": admin,
+            "dist_client": dist,
+            "admin_user": admin_user,
+            "dist_user": dist_user,
+            "site": site,
+            "assignment": assignment,
+            "distributor_user_id": dist_user["id"],
+            "campaign_id": campaign_id,
+            "auth": auth,
+            "dist_auth": dist_auth,
+        }
 
     return factory
+
+
+def upload_png(client: Client, *, color: tuple[int, int, int] = (44, 95, 45)) -> dict:
+    """Create an upload intent and PUT a unique synthetic PNG to it."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    buffer = BytesIO()
+    image = Image.new("RGB", (8, 8), color)
+    image.save(buffer, format="PNG")
+    return upload_bytes(client, buffer.getvalue(), "image/png")
+
+
+def upload_bytes(client: Client, data: bytes, content_type: str) -> dict:
+    """Upload arbitrary bytes through a real intent; validation is API-side."""
+    intent = json_request(
+        client,
+        "post",
+        "/api/v1/evidence/upload-intents",
+        {"content_type": content_type, "purpose": "DISTRIBUTION_EVIDENCE"},
+    )
+    assert intent.status_code == 201, intent.content.decode()
+    body = intent.json()
+    upload = client.put(
+        body["upload_url"],
+        data=data,
+        content_type=content_type,
+    )
+    assert upload.status_code == 204, upload.content.decode()
+    return {
+        "intent_id": body["intent_id"],
+        "capture_source": "CAMERA",
+    }
+
+
+def submit_delivery(
+    client: Client,
+    *,
+    assignment_id: str,
+    quantity: str,
+    evidence: dict,
+    idempotency_key: str,
+    latitude: str = "12.551900",
+    longitude: str = "15.100100",
+    accuracy: str = "8",
+    timestamp: str | None = None,
+    include_location: bool = True,
+):
+    if timestamp is None:
+        from datetime import UTC, datetime
+
+        timestamp = datetime.now(UTC).isoformat()
+    payload = {
+        "assignment_id": assignment_id,
+        "quantity": quantity,
+        "unit": "KG",
+        "evidence": [evidence],
+    }
+    if include_location:
+        payload["location"] = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "accuracy_m": accuracy,
+            "timestamp": timestamp,
+        }
+    return json_request(
+        client,
+        "post",
+        "/api/v1/deliveries",
+        payload,
+        HTTP_IDEMPOTENCY_KEY=idempotency_key,
+    )

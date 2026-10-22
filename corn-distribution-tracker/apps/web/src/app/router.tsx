@@ -23,6 +23,7 @@ import { AssignedSitesPage } from "../features/distributor/sites/AssignedSitesPa
 import { SiteDetailPage } from "../features/distributor/sites/SiteDetailPage";
 import { DeliverySubmissionPage } from "../features/distributor/deliveries/DeliverySubmissionPage";
 import { MySubmissionsPage } from "../features/distributor/deliveries/MySubmissionsPage";
+import { DraftsSyncPage } from "../features/distributor/offline/DraftsSyncPage";
 import { EmptyState } from "../components/common/EmptyState";
 import { useSession } from "../lib/session";
 import type { Role } from "../types/domain";
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
           { path: "my-sites/:siteId", element: <SiteDetailPage /> },
           { path: "deliver/new", element: <DeliverySubmissionPage /> },
           { path: "deliveries", element: <MySubmissionsPage /> },
+          { path: "drafts", element: <DraftsSyncPage /> },
         ],
       },
       { path: "*", element: <Navigate to="/" replace /> },

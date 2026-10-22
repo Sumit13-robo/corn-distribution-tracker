@@ -1,152 +1,168 @@
 # File Map and Ownership
 
-Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Initial status is `PLANNED` for all files. Each target file has a corresponding handoff note under `handoffs/per-file/`, with its target path repeated in the note.
+Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Each target file has a corresponding handoff note under `handoffs/per-file/`, with its target path repeated in the note.
+
+## Backend API
 
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
-| `apps/api/app/main.py` | Backend | API entrypoint | [`per-file/apps/api/app/main.py.md`](per-file/apps/api/app/main.py.md) | TESTED |
-| `apps/api/app/core/config.py` | Backend | Typed settings | [`per-file/apps/api/app/core/config.py.md`](per-file/apps/api/app/core/config.py.md) | TESTED |
-| `apps/api/app/core/security.py` | Backend | Security primitives | [`per-file/apps/api/app/core/security.py.md`](per-file/apps/api/app/core/security.py.md) | TESTED |
-| `apps/api/app/db/session.py` | Backend | DB session management | [`per-file/apps/api/app/db/session.py.md`](per-file/apps/api/app/db/session.py.md) | TESTED |
-| `apps/api/app/db/base.py` | Backend | Model registry | [`per-file/apps/api/app/db/base.py.md`](per-file/apps/api/app/db/base.py.md) | TESTED |
-| `apps/api/app/models/user.py` | Backend | User and auth session models | [`per-file/apps/api/app/models/user.py.md`](per-file/apps/api/app/models/user.py.md) | TESTED |
-| `apps/api/app/models/campaign.py` | Backend | Campaign model | [`per-file/apps/api/app/models/campaign.py.md`](per-file/apps/api/app/models/campaign.py.md) | TESTED |
-| `apps/api/app/models/distribution_site.py` | Backend | Site model | [`per-file/apps/api/app/models/distribution_site.py.md`](per-file/apps/api/app/models/distribution_site.py.md) | TESTED |
-| `apps/api/app/models/distributor_assignment.py` | Backend | Assignment model | [`per-file/apps/api/app/models/distributor_assignment.py.md`](per-file/apps/api/app/models/distributor_assignment.py.md) | TESTED |
-| `apps/api/app/models/stock_account.py` | Backend | Inventory account model | [`per-file/apps/api/app/models/stock_account.py.md`](per-file/apps/api/app/models/stock_account.py.md) | TESTED |
-| `apps/api/app/models/stock_movement.py` | Backend | Append-only stock ledger model | [`per-file/apps/api/app/models/stock_movement.py.md`](per-file/apps/api/app/models/stock_movement.py.md) | TESTED |
-| `apps/api/app/models/distribution_record.py` | Backend | Distribution submission model | [`per-file/apps/api/app/models/distribution_record.py.md`](per-file/apps/api/app/models/distribution_record.py.md) | TESTED |
-| `apps/api/app/models/photo_evidence.py` | Backend | Evidence metadata model | [`per-file/apps/api/app/models/photo_evidence.py.md`](per-file/apps/api/app/models/photo_evidence.py.md) | TESTED |
-| `apps/api/app/models/audit_event.py` | Backend | Audit trail model | [`per-file/apps/api/app/models/audit_event.py.md`](per-file/apps/api/app/models/audit_event.py.md) | TESTED |
-| `apps/api/app/schemas/auth.py` | Backend | Auth request/response schemas | [`per-file/apps/api/app/schemas/auth.py.md`](per-file/apps/api/app/schemas/auth.py.md) | TESTED |
-| `apps/api/app/schemas/users.py` | Backend | User schemas | [`per-file/apps/api/app/schemas/users.py.md`](per-file/apps/api/app/schemas/users.py.md) | TESTED |
-| `apps/api/app/schemas/campaigns.py` | Backend | Campaign schemas | [`per-file/apps/api/app/schemas/campaigns.py.md`](per-file/apps/api/app/schemas/campaigns.py.md) | TESTED |
-| `apps/api/app/schemas/sites.py` | Backend | Site schemas | [`per-file/apps/api/app/schemas/sites.py.md`](per-file/apps/api/app/schemas/sites.py.md) | TESTED |
-| `apps/api/app/schemas/inventory.py` | Backend | Inventory schemas | [`per-file/apps/api/app/schemas/inventory.py.md`](per-file/apps/api/app/schemas/inventory.py.md) | TESTED |
-| `apps/api/app/schemas/distributions.py` | Backend | Distribution schemas | [`per-file/apps/api/app/schemas/distributions.py.md`](per-file/apps/api/app/schemas/distributions.py.md) | TESTED |
-| `apps/api/app/schemas/evidence.py` | Backend | Evidence schemas | [`per-file/apps/api/app/schemas/evidence.py.md`](per-file/apps/api/app/schemas/evidence.py.md) | TESTED |
-| `apps/api/app/api/dependencies.py` | Backend | Auth/RBAC dependencies | [`per-file/apps/api/app/api/dependencies.py.md`](per-file/apps/api/app/api/dependencies.py.md) | TESTED |
-| `apps/api/app/api/router.py` | Backend | API router registry | [`per-file/apps/api/app/api/router.py.md`](per-file/apps/api/app/api/router.py.md) | TESTED |
-| `apps/api/app/api/routes/auth.py` | Backend | Auth endpoints | [`per-file/apps/api/app/api/routes/auth.py.md`](per-file/apps/api/app/api/routes/auth.py.md) | TESTED |
-| `apps/api/app/api/routes/users.py` | Backend | Admin user routes | [`per-file/apps/api/app/api/routes/users.py.md`](per-file/apps/api/app/api/routes/users.py.md) | TESTED |
-| `apps/api/app/api/routes/campaigns.py` | Backend | Campaign routes | [`per-file/apps/api/app/api/routes/campaigns.py.md`](per-file/apps/api/app/api/routes/campaigns.py.md) | TESTED |
-| `apps/api/app/api/routes/sites.py` | Backend | Site routes | [`per-file/apps/api/app/api/routes/sites.py.md`](per-file/apps/api/app/api/routes/sites.py.md) | TESTED |
-| `apps/api/app/api/routes/inventory.py` | Backend | Inventory endpoints | [`per-file/apps/api/app/api/routes/inventory.py.md`](per-file/apps/api/app/api/routes/inventory.py.md) | TESTED |
-| `apps/api/app/api/routes/distributions.py` | Backend | Delivery endpoints | [`per-file/apps/api/app/api/routes/distributions.py.md`](per-file/apps/api/app/api/routes/distributions.py.md) | TESTED |
-| `apps/api/app/api/routes/evidence.py` | Backend | Evidence endpoints | [`per-file/apps/api/app/api/routes/evidence.py.md`](per-file/apps/api/app/api/routes/evidence.py.md) | TESTED |
-| `apps/api/app/api/routes/analytics.py` | Backend | Analytics endpoints | [`per-file/apps/api/app/api/routes/analytics.py.md`](per-file/apps/api/app/api/routes/analytics.py.md) | TESTED |
-| `apps/api/app/services/auth_service.py` | Backend | Auth domain service | [`per-file/apps/api/app/services/auth_service.py.md`](per-file/apps/api/app/services/auth_service.py.md) | TESTED |
-| `apps/api/app/services/inventory_service.py` | Backend | Ledger domain service | [`per-file/apps/api/app/services/inventory_service.py.md`](per-file/apps/api/app/services/inventory_service.py.md) | TESTED |
-| `apps/api/app/services/distribution_service.py` | Backend | Submission/review service | [`per-file/apps/api/app/services/distribution_service.py.md`](per-file/apps/api/app/services/distribution_service.py.md) | TESTED |
-| `apps/api/app/services/evidence_service.py` | Backend | Evidence processing service | [`per-file/apps/api/app/services/evidence_service.py.md`](per-file/apps/api/app/services/evidence_service.py.md) | TESTED |
-| `apps/api/app/services/analytics_service.py` | Backend | Analytics calculations | [`per-file/apps/api/app/services/analytics_service.py.md`](per-file/apps/api/app/services/analytics_service.py.md) | TESTED |
-| `apps/api/app/services/audit_service.py` | Backend | Audit writer | [`per-file/apps/api/app/services/audit_service.py.md`](per-file/apps/api/app/services/audit_service.py.md) | TESTED |
-| `apps/api/app/services/storage_service.py` | Backend | Private object storage | [`per-file/apps/api/app/services/storage_service.py.md`](per-file/apps/api/app/services/storage_service.py.md) | TESTED |
-| `apps/api/app/services/geo_service.py` | Backend | Geolocation calculations | [`per-file/apps/api/app/services/geo_service.py.md`](per-file/apps/api/app/services/geo_service.py.md) | TESTED |
-| `apps/api/alembic/env.py` | Backend | Alembic environment | [`per-file/apps/api/alembic/env.py.md`](per-file/apps/api/alembic/env.py.md) | TESTED |
-| `apps/api/alembic/versions/0001_initial_schema.py` | Backend | Initial schema migration | [`per-file/apps/api/alembic/versions/0001_initial_schema.py.md`](per-file/apps/api/alembic/versions/0001_initial_schema.py.md) | TESTED |
-| `apps/api/tests/test_auth_permissions.py` | Backend | Auth/RBAC tests | [`per-file/apps/api/tests/test_auth_permissions.py.md`](per-file/apps/api/tests/test_auth_permissions.py.md) | TESTED |
-| `apps/api/tests/test_inventory_ledger.py` | Backend | Ledger integrity tests | [`per-file/apps/api/tests/test_inventory_ledger.py.md`](per-file/apps/api/tests/test_inventory_ledger.py.md) | TESTED |
-| `apps/api/tests/test_distribution_submission.py` | Backend | Distribution state tests | [`per-file/apps/api/tests/test_distribution_submission.py.md`](per-file/apps/api/tests/test_distribution_submission.py.md) | TESTED |
-| `apps/api/tests/test_geotag_validation.py` | Backend | Geo/photo validation tests | [`per-file/apps/api/tests/test_geotag_validation.py.md`](per-file/apps/api/tests/test_geotag_validation.py.md) | TESTED |
-| `apps/api/tests/test_analytics_scope.py` | Backend | Analytics tests | [`per-file/apps/api/tests/test_analytics_scope.py.md`](per-file/apps/api/tests/test_analytics_scope.py.md) | TESTED |
-| `apps/web/src/main.tsx` | Frontend | Web entrypoint | [`per-file/apps/web/src/main.tsx.md`](per-file/apps/web/src/main.tsx.md) | IMPLEMENTED |
+| `apps/api/.dockerignore` | Backend | API container build-context exclusions | [`per-file/apps/api/.dockerignore.md`](per-file/apps/api/.dockerignore.md) | IMPLEMENTED |
+| `apps/api/Dockerfile` | Backend | Gunicorn API container definition | [`per-file/apps/api/Dockerfile.md`](per-file/apps/api/Dockerfile.md) | IMPLEMENTED |
+| `apps/api/config/__init__.py` | Backend | Configuration package marker | [`per-file/apps/api/config/__init__.py.md`](per-file/apps/api/config/__init__.py.md) | IMPLEMENTED |
+| `apps/api/config/asgi.py` | Backend | ASGI entrypoint for Django | [`per-file/apps/api/config/asgi.py.md`](per-file/apps/api/config/asgi.py.md) | IMPLEMENTED |
+| `apps/api/config/settings.py` | Backend | Environment-driven Django settings, structured logging and fail-fast production validation | [`per-file/apps/api/config/settings.py.md`](per-file/apps/api/config/settings.py.md) | TESTED |
+| `apps/api/config/settings_test.py` | Backend | Isolated PostgreSQL test settings used by pytest | [`per-file/apps/api/config/settings_test.py.md`](per-file/apps/api/config/settings_test.py.md) | TESTED |
+| `apps/api/config/urls.py` | Backend | Root URL map for health, API v1 and JSON error handlers | [`per-file/apps/api/config/urls.py.md`](per-file/apps/api/config/urls.py.md) | TESTED |
+| `apps/api/config/wsgi.py` | Backend | WSGI entrypoint used by Gunicorn | [`per-file/apps/api/config/wsgi.py.md`](per-file/apps/api/config/wsgi.py.md) | IMPLEMENTED |
+| `apps/api/corn/__init__.py` | Backend | Django application package marker | [`per-file/apps/api/corn/__init__.py.md`](per-file/apps/api/corn/__init__.py.md) | IMPLEMENTED |
+| `apps/api/corn/apps.py` | Backend | Django app configuration | [`per-file/apps/api/corn/apps.py.md`](per-file/apps/api/corn/apps.py.md) | IMPLEMENTED |
+| `apps/api/corn/auth.py` | Backend | DRF session authentication and role permission classes | [`per-file/apps/api/corn/auth.py.md`](per-file/apps/api/corn/auth.py.md) | TESTED |
+| `apps/api/corn/enums.py` | Backend | Canonical TextChoices values shared by models, services and serializers | [`per-file/apps/api/corn/enums.py.md`](per-file/apps/api/corn/enums.py.md) | TESTED |
+| `apps/api/corn/errors.py` | Backend | Application exceptions, uniform JSON error envelope and DRF/Django error handling | [`per-file/apps/api/corn/errors.py.md`](per-file/apps/api/corn/errors.py.md) | TESTED |
+| `apps/api/corn/geo.py` | Backend | Geodesic distance, EXIF extraction and advisory geo-flag calculations | [`per-file/apps/api/corn/geo.py.md`](per-file/apps/api/corn/geo.py.md) | TESTED |
+| `apps/api/corn/management/__init__.py` | Backend | Management command package marker | [`per-file/apps/api/corn/management/__init__.py.md`](per-file/apps/api/corn/management/__init__.py.md) | IMPLEMENTED |
+| `apps/api/corn/management/commands/__init__.py` | Backend | Management command package marker | [`per-file/apps/api/corn/management/commands/__init__.py.md`](per-file/apps/api/corn/management/commands/__init__.py.md) | IMPLEMENTED |
+| `apps/api/corn/management/commands/create_admin.py` | Backend | One-time first-administrator bootstrap command | [`per-file/apps/api/corn/management/commands/create_admin.py.md`](per-file/apps/api/corn/management/commands/create_admin.py.md) | TESTED |
+| `apps/api/corn/management/commands/issue_password_reset.py` | Backend | Operator-only one-time password-reset link issuance | [`per-file/apps/api/corn/management/commands/issue_password_reset.py.md`](per-file/apps/api/corn/management/commands/issue_password_reset.py.md) | IMPLEMENTED |
+| `apps/api/corn/middleware.py` | Backend | Request ID and safe security response middleware | [`per-file/apps/api/corn/middleware.py.md`](per-file/apps/api/corn/middleware.py.md) | TESTED |
+| `apps/api/corn/migrations/0001_initial.py` | Backend | Initial Django schema, constraints and indexes | [`per-file/apps/api/corn/migrations/0001_initial.py.md`](per-file/apps/api/corn/migrations/0001_initial.py.md) | TESTED |
+| `apps/api/corn/migrations/0002_append_only_triggers.py` | Backend | PostgreSQL triggers that make stock movements and audit events append-only | [`per-file/apps/api/corn/migrations/0002_append_only_triggers.py.md`](per-file/apps/api/corn/migrations/0002_append_only_triggers.py.md) | TESTED |
+| `apps/api/corn/migrations/__init__.py` | Backend | Django migrations package marker | [`per-file/apps/api/corn/migrations/__init__.py.md`](per-file/apps/api/corn/migrations/__init__.py.md) | IMPLEMENTED |
+| `apps/api/corn/models.py` | Backend | Django ORM schema, constraints, indexes and append-only table mappings | [`per-file/apps/api/corn/models.py.md`](per-file/apps/api/corn/models.py.md) | TESTED |
+| `apps/api/corn/presenters.py` | Backend | Canonical JSON response shaping, including site/distributor display fields | [`per-file/apps/api/corn/presenters.py.md`](per-file/apps/api/corn/presenters.py.md) | TESTED |
+| `apps/api/corn/rate_limit.py` | Backend | Process-local rate limiting for authentication attempts | [`per-file/apps/api/corn/rate_limit.py.md`](per-file/apps/api/corn/rate_limit.py.md) | TESTED |
+| `apps/api/corn/security.py` | Backend | Argon2id password handling, token hashing and HMAC signing helpers | [`per-file/apps/api/corn/security.py.md`](per-file/apps/api/corn/security.py.md) | TESTED |
+| `apps/api/corn/serializers.py` | Backend | Strict DRF input serializers for every mutation boundary | [`per-file/apps/api/corn/serializers.py.md`](per-file/apps/api/corn/serializers.py.md) | TESTED |
+| `apps/api/corn/services/__init__.py` | Backend | Service package marker | [`per-file/apps/api/corn/services/__init__.py.md`](per-file/apps/api/corn/services/__init__.py.md) | IMPLEMENTED |
+| `apps/api/corn/services/analytics.py` | Backend | Dashboard, distributor/site analytics, map data and CSV calculations | [`per-file/apps/api/corn/services/analytics.py.md`](per-file/apps/api/corn/services/analytics.py.md) | TESTED |
+| `apps/api/corn/services/audit.py` | Backend | Append-only audit writer and request-context extraction | [`per-file/apps/api/corn/services/audit.py.md`](per-file/apps/api/corn/services/audit.py.md) | TESTED |
+| `apps/api/corn/services/auth.py` | Backend | Login, invitation, password reset/change, session revocation and account lifecycle | [`per-file/apps/api/corn/services/auth.py.md`](per-file/apps/api/corn/services/auth.py.md) | TESTED |
+| `apps/api/corn/services/campaigns.py` | Backend | Campaigns, sites and distributor assignment domain rules | [`per-file/apps/api/corn/services/campaigns.py.md`](per-file/apps/api/corn/services/campaigns.py.md) | TESTED |
+| `apps/api/corn/services/distribution.py` | Backend | Delivery submission, approval/rejection/cancellation and idempotent record transitions | [`per-file/apps/api/corn/services/distribution.py.md`](per-file/apps/api/corn/services/distribution.py.md) | TESTED |
+| `apps/api/corn/services/evidence.py` | Backend | Upload intents, image validation, evidence persistence and private view authorization | [`per-file/apps/api/corn/services/evidence.py.md`](per-file/apps/api/corn/services/evidence.py.md) | TESTED |
+| `apps/api/corn/services/inventory.py` | Backend | Double-entry ledger, postings, reservations, reversals and derived balances | [`per-file/apps/api/corn/services/inventory.py.md`](per-file/apps/api/corn/services/inventory.py.md) | TESTED |
+| `apps/api/corn/services/settings.py` | Backend | Organization settings read/update rules and unit validation | [`per-file/apps/api/corn/services/settings.py.md`](per-file/apps/api/corn/services/settings.py.md) | TESTED |
+| `apps/api/corn/storage.py` | Backend | Private local/S3 evidence storage and short-lived signed URLs | [`per-file/apps/api/corn/storage.py.md`](per-file/apps/api/corn/storage.py.md) | TESTED |
+| `apps/api/corn/units.py` | Backend | Decimal kg conversion and display-unit helpers | [`per-file/apps/api/corn/units.py.md`](per-file/apps/api/corn/units.py.md) | TESTED |
+| `apps/api/corn/views/__init__.py` | Backend | View package marker | [`per-file/apps/api/corn/views/__init__.py.md`](per-file/apps/api/corn/views/__init__.py.md) | IMPLEMENTED |
+| `apps/api/corn/views/analytics.py` | Backend | Analytics endpoints and audited CSV export | [`per-file/apps/api/corn/views/analytics.py.md`](per-file/apps/api/corn/views/analytics.py.md) | TESTED |
+| `apps/api/corn/views/assignments.py` | Backend | Distributor assignment endpoints | [`per-file/apps/api/corn/views/assignments.py.md`](per-file/apps/api/corn/views/assignments.py.md) | TESTED |
+| `apps/api/corn/views/auth.py` | Backend | Session login/logout, CSRF bootstrap, invitations and password lifecycle endpoints | [`per-file/apps/api/corn/views/auth.py.md`](per-file/apps/api/corn/views/auth.py.md) | TESTED |
+| `apps/api/corn/views/campaigns.py` | Backend | Campaign endpoints | [`per-file/apps/api/corn/views/campaigns.py.md`](per-file/apps/api/corn/views/campaigns.py.md) | TESTED |
+| `apps/api/corn/views/deliveries.py` | Backend | Distributor submission and admin review endpoints | [`per-file/apps/api/corn/views/deliveries.py.md`](per-file/apps/api/corn/views/deliveries.py.md) | TESTED |
+| `apps/api/corn/views/evidence.py` | Backend | Evidence intent, upload, signed view and blob endpoints | [`per-file/apps/api/corn/views/evidence.py.md`](per-file/apps/api/corn/views/evidence.py.md) | TESTED |
+| `apps/api/corn/views/health.py` | Backend | Unauthenticated liveness and readiness probes | [`per-file/apps/api/corn/views/health.py.md`](per-file/apps/api/corn/views/health.py.md) | TESTED |
+| `apps/api/corn/views/helpers.py` | Backend | Shared view helpers for request data, CSRF cookies, pagination and JSON shapes | [`per-file/apps/api/corn/views/helpers.py.md`](per-file/apps/api/corn/views/helpers.py.md) | TESTED |
+| `apps/api/corn/views/inventory.py` | Backend | Inventory receipt, allocation, adjustment, reversal and ledger endpoints | [`per-file/apps/api/corn/views/inventory.py.md`](per-file/apps/api/corn/views/inventory.py.md) | TESTED |
+| `apps/api/corn/views/settings.py` | Backend | Organization settings endpoints | [`per-file/apps/api/corn/views/settings.py.md`](per-file/apps/api/corn/views/settings.py.md) | TESTED |
+| `apps/api/corn/views/sites.py` | Backend | Site management and progress endpoints | [`per-file/apps/api/corn/views/sites.py.md`](per-file/apps/api/corn/views/sites.py.md) | TESTED |
+| `apps/api/corn/views/users.py` | Backend | Distributor management endpoints | [`per-file/apps/api/corn/views/users.py.md`](per-file/apps/api/corn/views/users.py.md) | TESTED |
+| `apps/api/manage.py` | Backend | Django management entrypoint | [`per-file/apps/api/manage.py.md`](per-file/apps/api/manage.py.md) | TESTED |
+| `apps/api/pyproject.toml` | Backend | Python/Ruff/mypy/Django-stubs project configuration | [`per-file/apps/api/pyproject.toml.md`](per-file/apps/api/pyproject.toml.md) | TESTED |
+| `apps/api/pytest.ini` | Backend | Pytest Django settings configuration | [`per-file/apps/api/pytest.ini.md`](per-file/apps/api/pytest.ini.md) | TESTED |
+| `apps/api/requirements-dev.txt` | Backend | Pinned development/test dependencies | [`per-file/apps/api/requirements-dev.txt.md`](per-file/apps/api/requirements-dev.txt.md) | TESTED |
+| `apps/api/requirements.txt` | Backend | Pinned runtime dependencies | [`per-file/apps/api/requirements.txt.md`](per-file/apps/api/requirements.txt.md) | TESTED |
+| `apps/api/storage-data/evidence/465e13df56a946d385e711c4131c9aca/2a89a4aead4ff7c8` | Backend | Project file: 2a89a4aead4ff7c8 | [`per-file/apps/api/storage-data/evidence/465e13df56a946d385e711c4131c9aca/2a89a4aead4ff7c8.md`](per-file/apps/api/storage-data/evidence/465e13df56a946d385e711c4131c9aca/2a89a4aead4ff7c8.md) | IMPLEMENTED |
+| `apps/api/storage-data/evidence/727c4242c1e94d73817b72ca4a987ab3/e0a723bf21b6fc69` | Backend | Project file: e0a723bf21b6fc69 | [`per-file/apps/api/storage-data/evidence/727c4242c1e94d73817b72ca4a987ab3/e0a723bf21b6fc69.md`](per-file/apps/api/storage-data/evidence/727c4242c1e94d73817b72ca4a987ab3/e0a723bf21b6fc69.md) | IMPLEMENTED |
+| `apps/api/storage-data/evidence/75faa316ad0346f19c94749c5a70a045/a89fc4423ae40830` | Backend | Project file: a89fc4423ae40830 | [`per-file/apps/api/storage-data/evidence/75faa316ad0346f19c94749c5a70a045/a89fc4423ae40830.md`](per-file/apps/api/storage-data/evidence/75faa316ad0346f19c94749c5a70a045/a89fc4423ae40830.md) | IMPLEMENTED |
+| `apps/api/storage-data/evidence/d09ada6d332047359b70678bc83545af/92534e4a3707d16e` | Backend | Project file: 92534e4a3707d16e | [`per-file/apps/api/storage-data/evidence/d09ada6d332047359b70678bc83545af/92534e4a3707d16e.md`](per-file/apps/api/storage-data/evidence/d09ada6d332047359b70678bc83545af/92534e4a3707d16e.md) | IMPLEMENTED |
+| `apps/api/storage-data/evidence/f301e7b7115841d4ad90fb65b5ab281c/621741801ad9e444` | Backend | Project file: 621741801ad9e444 | [`per-file/apps/api/storage-data/evidence/f301e7b7115841d4ad90fb65b5ab281c/621741801ad9e444.md`](per-file/apps/api/storage-data/evidence/f301e7b7115841d4ad90fb65b5ab281c/621741801ad9e444.md) | IMPLEMENTED |
+
+## Backend tests
+
+| Target file | Owner | Responsibility | Handoff note | Status |
+|---|---|---|---|---|
+| `apps/api/tests/__init__.py` | Backend | Backend test package marker | [`per-file/apps/api/tests/__init__.py.md`](per-file/apps/api/tests/__init__.py.md) | IMPLEMENTED |
+| `apps/api/tests/conftest.py` | Backend | Backend fixtures for temporary databases, session/CSRF clients, tenant world and synthetic uploads | [`per-file/apps/api/tests/conftest.py.md`](per-file/apps/api/tests/conftest.py.md) | TESTED |
+| `apps/api/tests/test_analytics_scope.py` | Backend | Analytics scope, denominators and export authorization tests | [`per-file/apps/api/tests/test_analytics_scope.py.md`](per-file/apps/api/tests/test_analytics_scope.py.md) | TESTED |
+| `apps/api/tests/test_auth_permissions.py` | Backend | Session auth, CSRF, RBAC, invitation/reset and ownership tests | [`per-file/apps/api/tests/test_auth_permissions.py.md`](per-file/apps/api/tests/test_auth_permissions.py.md) | TESTED |
+| `apps/api/tests/test_config_security.py` | Backend | Production/staging configuration fail-fast tests | [`per-file/apps/api/tests/test_config_security.py.md`](per-file/apps/api/tests/test_config_security.py.md) | TESTED |
+| `apps/api/tests/test_distribution_submission.py` | Backend | Submission, review transitions, idempotency and evidence validation tests | [`per-file/apps/api/tests/test_distribution_submission.py.md`](per-file/apps/api/tests/test_distribution_submission.py.md) | TESTED |
+| `apps/api/tests/test_geotag_validation.py` | Backend | Geo thresholds, record flags and exception-approval tests | [`per-file/apps/api/tests/test_geotag_validation.py.md`](per-file/apps/api/tests/test_geotag_validation.py.md) | TESTED |
+| `apps/api/tests/test_inventory_ledger.py` | Backend | Ledger postings, reservations, reversals, append-only triggers and concurrency tests | [`per-file/apps/api/tests/test_inventory_ledger.py.md`](per-file/apps/api/tests/test_inventory_ledger.py.md) | TESTED |
+
+## Frontend application
+
+| Target file | Owner | Responsibility | Handoff note | Status |
+|---|---|---|---|---|
 | `apps/web/src/App.tsx` | Frontend | Application shell | [`per-file/apps/web/src/App.tsx.md`](per-file/apps/web/src/App.tsx.md) | IMPLEMENTED |
-| `apps/web/src/app/router.tsx` | Frontend | Routes and guards | [`per-file/apps/web/src/app/router.tsx.md`](per-file/apps/web/src/app/router.tsx.md) | IMPLEMENTED |
 | `apps/web/src/app/providers.tsx` | Frontend | App providers | [`per-file/apps/web/src/app/providers.tsx.md`](per-file/apps/web/src/app/providers.tsx.md) | IMPLEMENTED |
-| `apps/web/src/lib/api-client.ts` | Frontend | Typed API client | [`per-file/apps/web/src/lib/api-client.ts.md`](per-file/apps/web/src/lib/api-client.ts.md) | TESTED |
-| `apps/web/src/lib/query-client.ts` | Frontend | Server state cache | [`per-file/apps/web/src/lib/query-client.ts.md`](per-file/apps/web/src/lib/query-client.ts.md) | IMPLEMENTED |
-| `apps/web/src/lib/session.ts` | Frontend | Session state | [`per-file/apps/web/src/lib/session.ts.md`](per-file/apps/web/src/lib/session.ts.md) | IMPLEMENTED |
-| `apps/web/src/lib/permissions.ts` | Frontend | UI permissions | [`per-file/apps/web/src/lib/permissions.ts.md`](per-file/apps/web/src/lib/permissions.ts.md) | TESTED |
-| `apps/web/src/types/domain.ts` | Frontend | Shared web domain types | [`per-file/apps/web/src/types/domain.ts.md`](per-file/apps/web/src/types/domain.ts.md) | IMPLEMENTED |
-| `apps/web/src/components/layout/AppShell.tsx` | Frontend | Role-aware layout | [`per-file/apps/web/src/components/layout/AppShell.tsx.md`](per-file/apps/web/src/components/layout/AppShell.tsx.md) | IMPLEMENTED |
-| `apps/web/src/components/layout/Sidebar.tsx` | Frontend | Navigation sidebar | [`per-file/apps/web/src/components/layout/Sidebar.tsx.md`](per-file/apps/web/src/components/layout/Sidebar.tsx.md) | IMPLEMENTED |
-| `apps/web/src/components/layout/TopBar.tsx` | Frontend | Top bar | [`per-file/apps/web/src/components/layout/TopBar.tsx.md`](per-file/apps/web/src/components/layout/TopBar.tsx.md) | IMPLEMENTED |
-| `apps/web/src/components/common/StatCard.tsx` | Frontend | KPI card | [`per-file/apps/web/src/components/common/StatCard.tsx.md`](per-file/apps/web/src/components/common/StatCard.tsx.md) | IMPLEMENTED |
-| `apps/web/src/components/common/StatusBadge.tsx` | Frontend | Status display | [`per-file/apps/web/src/components/common/StatusBadge.tsx.md`](per-file/apps/web/src/components/common/StatusBadge.tsx.md) | IMPLEMENTED |
+| `apps/web/src/app/router.tsx` | Frontend | Routes and guards | [`per-file/apps/web/src/app/router.tsx.md`](per-file/apps/web/src/app/router.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/common/ConfirmDialog.tsx` | Frontend | Confirmation dialog | [`per-file/apps/web/src/components/common/ConfirmDialog.tsx.md`](per-file/apps/web/src/components/common/ConfirmDialog.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/DataTable.tsx` | Frontend | Reusable accessible table | [`per-file/apps/web/src/components/common/DataTable.tsx.md`](per-file/apps/web/src/components/common/DataTable.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/EmptyState.tsx` | Frontend | Empty state | [`per-file/apps/web/src/components/common/EmptyState.tsx.md`](per-file/apps/web/src/components/common/EmptyState.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/ErrorState.tsx` | Frontend | Error state | [`per-file/apps/web/src/components/common/ErrorState.tsx.md`](per-file/apps/web/src/components/common/ErrorState.tsx.md) | IMPLEMENTED |
-| `apps/web/src/components/common/ConfirmDialog.tsx` | Frontend | Confirmation dialog | [`per-file/apps/web/src/components/common/ConfirmDialog.tsx.md`](per-file/apps/web/src/components/common/ConfirmDialog.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/FormField.tsx` | Frontend | Form field wrapper | [`per-file/apps/web/src/components/common/FormField.tsx.md`](per-file/apps/web/src/components/common/FormField.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/auth/LoginPage.tsx` | Frontend | Login page | [`per-file/apps/web/src/features/auth/LoginPage.tsx.md`](per-file/apps/web/src/features/auth/LoginPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx` | Frontend | Admin overview | [`per-file/apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx.md`](per-file/apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/map/DistributionMapPage.tsx` | Frontend | Distribution map | [`per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md`](per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/distributors/DistributorsPage.tsx` | Frontend | Distributor management | [`per-file/apps/web/src/features/admin/distributors/DistributorsPage.tsx.md`](per-file/apps/web/src/features/admin/distributors/DistributorsPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/sites/SitesPage.tsx` | Frontend | Site management | [`per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md`](per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/inventory/InventoryPage.tsx` | Frontend | Inventory and ledger UI | [`per-file/apps/web/src/features/admin/inventory/InventoryPage.tsx.md`](per-file/apps/web/src/features/admin/inventory/InventoryPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx` | Frontend | Evidence review UI | [`per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md`](per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/common/StatCard.tsx` | Frontend | KPI card | [`per-file/apps/web/src/components/common/StatCard.tsx.md`](per-file/apps/web/src/components/common/StatCard.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/common/StatusBadge.tsx` | Frontend | Status display | [`per-file/apps/web/src/components/common/StatusBadge.tsx.md`](per-file/apps/web/src/components/common/StatusBadge.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/layout/AppShell.tsx` | Frontend | Role-aware layout | [`per-file/apps/web/src/components/layout/AppShell.tsx.md`](per-file/apps/web/src/components/layout/AppShell.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/layout/Sidebar.tsx` | Frontend | Navigation sidebar | [`per-file/apps/web/src/components/layout/Sidebar.tsx.md`](per-file/apps/web/src/components/layout/Sidebar.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/layout/TopBar.tsx` | Frontend | Top bar | [`per-file/apps/web/src/components/layout/TopBar.tsx.md`](per-file/apps/web/src/components/layout/TopBar.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/admin/analytics/AnalyticsPage.tsx` | Frontend | Analytics and exports | [`per-file/apps/web/src/features/admin/analytics/AnalyticsPage.tsx.md`](per-file/apps/web/src/features/admin/analytics/AnalyticsPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/audit/AuditTrailPage.tsx` | Frontend | Audit trail UI | [`per-file/apps/web/src/features/admin/audit/AuditTrailPage.tsx.md`](per-file/apps/web/src/features/admin/audit/AuditTrailPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/campaigns/CampaignsPage.tsx` | Frontend | Campaigns and targets UI | [`per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md`](per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx` | Frontend | Admin overview | [`per-file/apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx.md`](per-file/apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/distributors/DistributorsPage.tsx` | Frontend | Distributor management | [`per-file/apps/web/src/features/admin/distributors/DistributorsPage.tsx.md`](per-file/apps/web/src/features/admin/distributors/DistributorsPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx` | Frontend | Evidence review UI | [`per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md`](per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/inventory/InventoryPage.tsx` | Frontend | Inventory and ledger UI | [`per-file/apps/web/src/features/admin/inventory/InventoryPage.tsx.md`](per-file/apps/web/src/features/admin/inventory/InventoryPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/map/DistributionMapPage.tsx` | Frontend | Distribution map | [`per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md`](per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/admin/settings/SettingsPage.tsx` | Frontend | Settings and audit UI | [`per-file/apps/web/src/features/admin/settings/SettingsPage.tsx.md`](per-file/apps/web/src/features/admin/settings/SettingsPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/shared/flags.tsx` | Frontend | Shared geo flags UI | [`per-file/apps/web/src/features/admin/shared/flags.tsx.md`](per-file/apps/web/src/features/admin/shared/flags.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/sites/SitesPage.tsx` | Frontend | Site management | [`per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md`](per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/auth/AuthLayout.tsx` | Frontend | Shared split layout for public authentication screens. | [`per-file/apps/web/src/features/auth/AuthLayout.tsx.md`](per-file/apps/web/src/features/auth/AuthLayout.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/auth/LoginPage.tsx` | Frontend | Login page | [`per-file/apps/web/src/features/auth/LoginPage.tsx.md`](per-file/apps/web/src/features/auth/LoginPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/auth/PasswordResetPage.tsx` | Frontend | Password reset UI | [`per-file/apps/web/src/features/auth/PasswordResetPage.tsx.md`](per-file/apps/web/src/features/auth/PasswordResetPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/distributor/dashboard/DistributorDashboardPage.tsx` | Frontend | Distributor home | [`per-file/apps/web/src/features/distributor/dashboard/DistributorDashboardPage.tsx.md`](per-file/apps/web/src/features/distributor/dashboard/DistributorDashboardPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/distributor/sites/AssignedSitesPage.tsx` | Frontend | Assigned sites list | [`per-file/apps/web/src/features/distributor/sites/AssignedSitesPage.tsx.md`](per-file/apps/web/src/features/distributor/sites/AssignedSitesPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/distributor/sites/SiteDetailPage.tsx` | Frontend | Assigned site detail | [`per-file/apps/web/src/features/distributor/sites/SiteDetailPage.tsx.md`](per-file/apps/web/src/features/distributor/sites/SiteDetailPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx` | Frontend | Delivery workflow tests | [`per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx.md) | TESTED |
 | `apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx` | Frontend | Delivery form workflow | [`per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx.md) | TESTED |
+| `apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx` | Frontend | Distributor submission history | [`per-file/apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx` | Frontend | Photo capture UI | [`per-file/apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx.md`](per-file/apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/distributor/evidence/useDeviceLocation.ts` | Frontend | Geolocation hook | [`per-file/apps/web/src/features/distributor/evidence/useDeviceLocation.ts.md`](per-file/apps/web/src/features/distributor/evidence/useDeviceLocation.ts.md) | IMPLEMENTED |
+| `apps/web/src/features/distributor/offline/DraftsSyncPage.tsx` | Frontend | Distributor drafts and sync queue screen. | [`per-file/apps/web/src/features/distributor/offline/DraftsSyncPage.tsx.md`](per-file/apps/web/src/features/distributor/offline/DraftsSyncPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/distributor/offline/offlineQueue.ts` | Frontend | Offline draft queue | [`per-file/apps/web/src/features/distributor/offline/offlineQueue.ts.md`](per-file/apps/web/src/features/distributor/offline/offlineQueue.ts.md) | TESTED |
-| `apps/web/src/styles/tokens.css` | Frontend | Design tokens | [`per-file/apps/web/src/styles/tokens.css.md`](per-file/apps/web/src/styles/tokens.css.md) | IMPLEMENTED |
-| `apps/web/src/styles/global.css` | Frontend | Global styles | [`per-file/apps/web/src/styles/global.css.md`](per-file/apps/web/src/styles/global.css.md) | IMPLEMENTED |
-| `apps/web/vite.config.ts` | DevOps/Lead | Vite config | [`per-file/apps/web/vite.config.ts.md`](per-file/apps/web/vite.config.ts.md) | TESTED |
-| `apps/web/package.json` | DevOps/Lead | Web scripts/dependencies | [`per-file/apps/web/package.json.md`](per-file/apps/web/package.json.md) | TESTED |
-| `apps/web/Dockerfile` | DevOps/Lead | Web container | [`per-file/apps/web/Dockerfile.md`](per-file/apps/web/Dockerfile.md) | IMPLEMENTED |
-| `apps/api/pyproject.toml` | Backend | Python project config | [`per-file/apps/api/pyproject.toml.md`](per-file/apps/api/pyproject.toml.md) | TESTED |
-| `apps/api/Dockerfile` | Backend | API container | [`per-file/apps/api/Dockerfile.md`](per-file/apps/api/Dockerfile.md) | IMPLEMENTED |
-| `docker-compose.yml` | DevOps/Lead | Local stack | [`per-file/docker-compose.yml.md`](per-file/docker-compose.yml.md) | IMPLEMENTED |
-| `.env.example` | DevOps/Lead | Configuration template | [`per-file/.env.example.md`](per-file/.env.example.md) | IMPLEMENTED |
-| `Makefile` | DevOps/Lead | Developer commands | [`per-file/Makefile.md`](per-file/Makefile.md) | TESTED |
-| `README.md` | DevOps/Lead | Repository run guide | [`per-file/README.md.md`](per-file/README.md.md) | IMPLEMENTED |
-| `apps/api/app/models/organization_settings.py` | Backend | Organization settings model | [`per-file/apps/api/app/models/organization_settings.py.md`](per-file/apps/api/app/models/organization_settings.py.md) | TESTED |
-| `apps/api/app/schemas/settings.py` | Backend | Settings schemas | [`per-file/apps/api/app/schemas/settings.py.md`](per-file/apps/api/app/schemas/settings.py.md) | TESTED |
-| `apps/api/app/schemas/assignments.py` | Backend | Assignment schemas | [`per-file/apps/api/app/schemas/assignments.py.md`](per-file/apps/api/app/schemas/assignments.py.md) | TESTED |
-| `apps/api/app/schemas/audit.py` | Backend | Audit schemas | [`per-file/apps/api/app/schemas/audit.py.md`](per-file/apps/api/app/schemas/audit.py.md) | TESTED |
-| `apps/api/app/services/campaign_service.py` | Backend | Campaign domain service | [`per-file/apps/api/app/services/campaign_service.py.md`](per-file/apps/api/app/services/campaign_service.py.md) | TESTED |
-| `apps/api/app/services/site_service.py` | Backend | Site domain service | [`per-file/apps/api/app/services/site_service.py.md`](per-file/apps/api/app/services/site_service.py.md) | TESTED |
-| `apps/api/app/services/assignment_service.py` | Backend | Assignment domain service | [`per-file/apps/api/app/services/assignment_service.py.md`](per-file/apps/api/app/services/assignment_service.py.md) | TESTED |
-| `apps/api/app/services/settings_service.py` | Backend | Organization settings service | [`per-file/apps/api/app/services/settings_service.py.md`](per-file/apps/api/app/services/settings_service.py.md) | TESTED |
-| `apps/api/app/api/routes/assignments.py` | Backend | Assignment endpoints | [`per-file/apps/api/app/api/routes/assignments.py.md`](per-file/apps/api/app/api/routes/assignments.py.md) | TESTED |
-| `apps/api/app/api/routes/settings.py` | Backend | Settings endpoints | [`per-file/apps/api/app/api/routes/settings.py.md`](per-file/apps/api/app/api/routes/settings.py.md) | TESTED |
-| `apps/api/app/api/routes/audit.py` | Backend | Audit endpoints | [`per-file/apps/api/app/api/routes/audit.py.md`](per-file/apps/api/app/api/routes/audit.py.md) | TESTED |
-| `apps/api/app/cli/create_admin.py` | Backend | First-admin CLI | [`per-file/apps/api/app/cli/create_admin.py.md`](per-file/apps/api/app/cli/create_admin.py.md) | TESTED |
-| `apps/api/alembic.ini` | Backend | Alembic configuration | [`per-file/apps/api/alembic.ini.md`](per-file/apps/api/alembic.ini.md) | TESTED |
-| `apps/web/index.html` | DevOps/Lead | Web HTML shell | [`per-file/apps/web/index.html.md`](per-file/apps/web/index.html.md) | IMPLEMENTED |
-| `apps/web/tsconfig.json` | DevOps/Lead | TypeScript config | [`per-file/apps/web/tsconfig.json.md`](per-file/apps/web/tsconfig.json.md) | TESTED |
-| `apps/web/src/features/admin/campaigns/CampaignsPage.tsx` | Frontend | Campaigns and targets UI | [`per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md`](per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/audit/AuditTrailPage.tsx` | Frontend | Audit trail UI | [`per-file/apps/web/src/features/admin/audit/AuditTrailPage.tsx.md`](per-file/apps/web/src/features/admin/audit/AuditTrailPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx` | Frontend | Distributor submission history | [`per-file/apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/auth/PasswordResetPage.tsx` | Frontend | Password reset UI | [`per-file/apps/web/src/features/auth/PasswordResetPage.tsx.md`](per-file/apps/web/src/features/auth/PasswordResetPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/distributor/sites/AssignedSitesPage.tsx` | Frontend | Assigned sites list | [`per-file/apps/web/src/features/distributor/sites/AssignedSitesPage.tsx.md`](per-file/apps/web/src/features/distributor/sites/AssignedSitesPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/distributor/sites/SiteDetailPage.tsx` | Frontend | Assigned site detail | [`per-file/apps/web/src/features/distributor/sites/SiteDetailPage.tsx.md`](per-file/apps/web/src/features/distributor/sites/SiteDetailPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/lib/api-client.test.ts` | Frontend | API client session/CSRF tests. | [`per-file/apps/web/src/lib/api-client.test.ts.md`](per-file/apps/web/src/lib/api-client.test.ts.md) | TESTED |
+| `apps/web/src/lib/api-client.ts` | Frontend | Typed API client over Django session auth and CSRF. | [`per-file/apps/web/src/lib/api-client.ts.md`](per-file/apps/web/src/lib/api-client.ts.md) | TESTED |
+| `apps/web/src/lib/format.ts` | Frontend | Shared formatting helpers | [`per-file/apps/web/src/lib/format.ts.md`](per-file/apps/web/src/lib/format.ts.md) | IMPLEMENTED |
 | `apps/web/src/lib/permissions.test.ts` | Frontend | Permission helper tests | [`per-file/apps/web/src/lib/permissions.test.ts.md`](per-file/apps/web/src/lib/permissions.test.ts.md) | TESTED |
-| `apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx` | Frontend | Delivery workflow tests | [`per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx.md) | TESTED |
+| `apps/web/src/lib/permissions.ts` | Frontend | UI permissions | [`per-file/apps/web/src/lib/permissions.ts.md`](per-file/apps/web/src/lib/permissions.ts.md) | TESTED |
+| `apps/web/src/lib/query-client.ts` | Frontend | Server state cache | [`per-file/apps/web/src/lib/query-client.ts.md`](per-file/apps/web/src/lib/query-client.ts.md) | IMPLEMENTED |
+| `apps/web/src/lib/session.ts` | Frontend | Session state for Django cookie authentication. | [`per-file/apps/web/src/lib/session.ts.md`](per-file/apps/web/src/lib/session.ts.md) | TESTED |
+| `apps/web/src/main.tsx` | Frontend | Web entrypoint | [`per-file/apps/web/src/main.tsx.md`](per-file/apps/web/src/main.tsx.md) | IMPLEMENTED |
+| `apps/web/src/styles/global.css` | Frontend | Global styles | [`per-file/apps/web/src/styles/global.css.md`](per-file/apps/web/src/styles/global.css.md) | IMPLEMENTED |
+| `apps/web/src/styles/tokens.css` | Frontend | Design tokens | [`per-file/apps/web/src/styles/tokens.css.md`](per-file/apps/web/src/styles/tokens.css.md) | IMPLEMENTED |
+| `apps/web/src/types/domain.ts` | Frontend | Shared web domain types | [`per-file/apps/web/src/types/domain.ts.md`](per-file/apps/web/src/types/domain.ts.md) | IMPLEMENTED |
 
-## Files added during implementation
-
-These files were not in the original plan. Each has a handoff note under `handoffs/per-file/`.
+## Web build, tests and E2E
 
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
-| `apps/api/app/core/errors.py` | Backend | Shared application errors | [`per-file/apps/api/app/core/errors.py.md`](per-file/apps/api/app/core/errors.py.md) | TESTED |
-| `apps/api/app/core/rate_limit.py` | Backend | Auth rate limiting | [`per-file/apps/api/app/core/rate_limit.py.md`](per-file/apps/api/app/core/rate_limit.py.md) | TESTED |
-| `apps/api/app/core/units.py` | Backend | Quantity conversion | [`per-file/apps/api/app/core/units.py.md`](per-file/apps/api/app/core/units.py.md) | TESTED |
-| `apps/api/app/models/enums.py` | Backend | Shared enums | [`per-file/apps/api/app/models/enums.py.md`](per-file/apps/api/app/models/enums.py.md) | TESTED |
-| `apps/api/app/schemas/analytics.py` | Backend | Analytics schemas | [`per-file/apps/api/app/schemas/analytics.py.md`](per-file/apps/api/app/schemas/analytics.py.md) | TESTED |
-| `apps/api/app/schemas/common.py` | Backend | Shared schema helpers | [`per-file/apps/api/app/schemas/common.py.md`](per-file/apps/api/app/schemas/common.py.md) | TESTED |
-| `apps/api/tests/conftest.py` | Backend | Test harness | [`per-file/apps/api/tests/conftest.py.md`](per-file/apps/api/tests/conftest.py.md) | TESTED |
-| `apps/api/requirements.txt` | Backend | Runtime dependency pins | [`per-file/apps/api/requirements.txt.md`](per-file/apps/api/requirements.txt.md) | TESTED |
-| `apps/api/requirements-dev.txt` | Backend | Development dependency pins | [`per-file/apps/api/requirements-dev.txt.md`](per-file/apps/api/requirements-dev.txt.md) | TESTED |
-| `apps/api/.dockerignore` | DevOps/Lead | API build context filter | [`per-file/apps/api/.dockerignore.md`](per-file/apps/api/.dockerignore.md) | IMPLEMENTED |
-| `apps/web/src/lib/format.ts` | Frontend | Shared formatting helpers | [`per-file/apps/web/src/lib/format.ts.md`](per-file/apps/web/src/lib/format.ts.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/shared/flags.tsx` | Frontend | Shared geo flags UI | [`per-file/apps/web/src/features/admin/shared/flags.tsx.md`](per-file/apps/web/src/features/admin/shared/flags.tsx.md) | IMPLEMENTED |
-| `apps/web/src/lib/api-client.test.ts` | Frontend | API client tests | [`per-file/apps/web/src/lib/api-client.test.ts.md`](per-file/apps/web/src/lib/api-client.test.ts.md) | TESTED |
-| `apps/web/vitest.setup.ts` | Frontend | Vitest setup | [`per-file/apps/web/vitest.setup.ts.md`](per-file/apps/web/vitest.setup.ts.md) | TESTED |
-| `apps/web/eslint.config.js` | DevOps/Lead | ESLint flat config | [`per-file/apps/web/eslint.config.js.md`](per-file/apps/web/eslint.config.js.md) | TESTED |
-| `apps/web/nginx.conf` | DevOps/Lead | Web container server | [`per-file/apps/web/nginx.conf.md`](per-file/apps/web/nginx.conf.md) | IMPLEMENTED |
-| `apps/web/.dockerignore` | DevOps/Lead | Web build context filter | [`per-file/apps/web/.dockerignore.md`](per-file/apps/web/.dockerignore.md) | IMPLEMENTED |
-| `apps/web/package-lock.json` | DevOps/Lead | Reproducible npm lockfile | [`per-file/apps/web/package-lock.json.md`](per-file/apps/web/package-lock.json.md) | TESTED |
-| `apps/api/tests/test_config_security.py` | Backend | Config fail-fast tests | [`per-file/apps/api/tests/test_config_security.py.md`](per-file/apps/api/tests/test_config_security.py.md) | TESTED |
-| `apps/web/playwright.config.ts` | QA/Frontend | Browser E2E orchestration | [`per-file/apps/web/playwright.config.ts.md`](per-file/apps/web/playwright.config.ts.md) | TESTED |
-| `apps/web/e2e/global-setup.ts` | QA | E2E database/bootstrap lifecycle | [`per-file/apps/web/e2e/global-setup.ts.md`](per-file/apps/web/e2e/global-setup.ts.md) | TESTED |
-| `apps/web/e2e/setup.spec.ts` | QA/Backend | E2E data seeding via public APIs | [`per-file/apps/web/e2e/setup.spec.ts.md`](per-file/apps/web/e2e/setup.spec.ts.md) | TESTED |
-| `apps/web/e2e/distribution.spec.ts` | QA/Frontend | Critical distributor/reviewer browser flow | [`per-file/apps/web/e2e/distribution.spec.ts.md`](per-file/apps/web/e2e/distribution.spec.ts.md) | TESTED |
-| `apps/web/e2e/support/config.ts` | QA | Shared E2E identifiers/fixtures | [`per-file/apps/web/e2e/support/config.ts.md`](per-file/apps/web/e2e/support/config.ts.md) | TESTED |
+| `apps/web/.dockerignore` | Frontend/DevOps | Web build context filter | [`per-file/apps/web/.dockerignore.md`](per-file/apps/web/.dockerignore.md) | IMPLEMENTED |
+| `apps/web/Dockerfile` | Frontend/DevOps | Web container | [`per-file/apps/web/Dockerfile.md`](per-file/apps/web/Dockerfile.md) | IMPLEMENTED |
+| `apps/web/e2e/distribution.spec.ts` | QA | Critical distributor/reviewer browser workflow. | [`per-file/apps/web/e2e/distribution.spec.ts.md`](per-file/apps/web/e2e/distribution.spec.ts.md) | TESTED |
+| `apps/web/e2e/global-setup.ts` | QA | Per-run credentials and first-admin bootstrap for Playwright. | [`per-file/apps/web/e2e/global-setup.ts.md`](per-file/apps/web/e2e/global-setup.ts.md) | TESTED |
+| `apps/web/e2e/setup.spec.ts` | QA | E2E data seeding through public APIs | [`per-file/apps/web/e2e/setup.spec.ts.md`](per-file/apps/web/e2e/setup.spec.ts.md) | TESTED |
+| `apps/web/e2e/support/config.ts` | QA | Shared E2E identifiers and fixture bytes | [`per-file/apps/web/e2e/support/config.ts.md`](per-file/apps/web/e2e/support/config.ts.md) | TESTED |
 | `apps/web/e2e/support/credentials.ts` | QA | Per-run E2E credential reader | [`per-file/apps/web/e2e/support/credentials.ts.md`](per-file/apps/web/e2e/support/credentials.ts.md) | TESTED |
-| `apps/web/e2e/support/prepare_db.py` | QA | Disposable E2E database creation | [`per-file/apps/web/e2e/support/prepare_db.py.md`](per-file/apps/web/e2e/support/prepare_db.py.md) | TESTED |
+| `apps/web/e2e/support/prepare_db.py` | QA | Recreate only the disposable E2E PostgreSQL database. | [`per-file/apps/web/e2e/support/prepare_db.py.md`](per-file/apps/web/e2e/support/prepare_db.py.md) | TESTED |
+| `apps/web/e2e/support/run-e2e.mjs` | QA | Prepare the disposable Django E2E database before Playwright starts web servers. | [`per-file/apps/web/e2e/support/run-e2e.mjs.md`](per-file/apps/web/e2e/support/run-e2e.mjs.md) | TESTED |
+| `apps/web/eslint.config.js` | Frontend/DevOps | ESLint flat config | [`per-file/apps/web/eslint.config.js.md`](per-file/apps/web/eslint.config.js.md) | TESTED |
+| `apps/web/index.html` | Frontend/DevOps | Web HTML shell | [`per-file/apps/web/index.html.md`](per-file/apps/web/index.html.md) | IMPLEMENTED |
+| `apps/web/nginx.conf` | Frontend/DevOps | SPA server with same-origin API proxy. | [`per-file/apps/web/nginx.conf.md`](per-file/apps/web/nginx.conf.md) | IMPLEMENTED |
+| `apps/web/package-lock.json` | Frontend/DevOps | Reproducible npm dependency lockfile | [`per-file/apps/web/package-lock.json.md`](per-file/apps/web/package-lock.json.md) | TESTED |
+| `apps/web/package.json` | Frontend/DevOps | Web scripts/dependencies | [`per-file/apps/web/package.json.md`](per-file/apps/web/package.json.md) | TESTED |
+| `apps/web/playwright.config.ts` | QA | Browser E2E orchestration. | [`per-file/apps/web/playwright.config.ts.md`](per-file/apps/web/playwright.config.ts.md) | TESTED |
+| `apps/web/tsconfig.json` | Frontend/DevOps | TypeScript config | [`per-file/apps/web/tsconfig.json.md`](per-file/apps/web/tsconfig.json.md) | TESTED |
+| `apps/web/vite.config.ts` | Frontend/DevOps | Vite config | [`per-file/apps/web/vite.config.ts.md`](per-file/apps/web/vite.config.ts.md) | TESTED |
+| `apps/web/vitest.setup.ts` | Frontend/DevOps | Vitest setup | [`per-file/apps/web/vitest.setup.ts.md`](per-file/apps/web/vitest.setup.ts.md) | TESTED |
+
+## Repository and deployment
+
+| Target file | Owner | Responsibility | Handoff note | Status |
+|---|---|---|---|---|
+| `.env.example` | DevOps/Lead | Configuration template | [`per-file/.env.example.md`](per-file/.env.example.md) | IMPLEMENTED |
+| `AGENTS.md` | DevOps/Lead | Project file: AGENTS.md | [`per-file/AGENTS.md.md`](per-file/AGENTS.md.md) | IMPLEMENTED |
+| `Makefile` | DevOps/Lead | Developer commands | [`per-file/Makefile.md`](per-file/Makefile.md) | TESTED |
+| `README.md` | DevOps/Lead | Repository run guide | [`per-file/README.md.md`](per-file/README.md.md) | IMPLEMENTED |
+| `docker-compose.yml` | DevOps/Lead | Local PostgreSQL, Django/Gunicorn API and nginx SPA stack. | [`per-file/docker-compose.yml.md`](per-file/docker-compose.yml.md) | IMPLEMENTED |

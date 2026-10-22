@@ -1,9 +1,9 @@
-# Local development stack: Postgres (+PostGIS if image available) and dev object storage.
-# Production uses a managed DB, S3-compatible bucket and HTTPS reverse proxy - see
-# docs/architecture/DEPLOYMENT_RUNBOOK.md and infra/.
+# Local development stack: PostgreSQL, Django/DRF API and nginx-served SPA.
+# Production uses a managed database, S3-compatible private evidence storage and
+# HTTPS termination - see docs/architecture/DEPLOYMENT_RUNBOOK.md and infra/.
 services:
   db:
-    image: postgis/postgis:17-3.5
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: corn_tracker
       POSTGRES_USER: corn
@@ -24,28 +24,47 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://corn:corn@db:5432/corn_tracker
       APP_ENV: development
+      ALLOWED_HOSTS: localhost,127.0.0.1,api
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      CSRF_TRUSTED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      LOCAL_STORAGE_DIR: /app/storage-data
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
+    volumes:
+      - evidence-data:/app/storage-data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     command: >
-      sh -c "alembic upgrade head &&
-             alembic current &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "python manage.py migrate --noinput &&
+             exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile -"
 
   web:
     build:
       context: ./apps/web
       args:
-        # Vite variables are build-time; rebuild the image when they change.
-        # /api/v1 + the nginx proxy keeps API calls same-origin (first-party cookie).
+        # Vite variables are build-time and public; rebuild when they change.
+        # /api/v1 + the nginx proxy keeps API calls same-origin (first-party session cookie).
         VITE_API_BASE_URL: /api/v1
         VITE_MAP_STYLE_URL: ""
     ports:
       - "5173:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   db-data:
+  evidence-data:

@@ -97,7 +97,10 @@ const serverRecord: DistributionOut = {
   campaign_id: null,
   assignment_id: "asg-1",
   site_id: "site-1",
+  site_code: "TEST-01",
+  site_name: "Test Site",
   distributor_user_id: TEST_USER_ID,
+  distributor_name: "Test Distributor",
   quantity_kg: "250.000",
   status: "SUBMITTED",
   client_created_at: "2026-01-01T01:00:00Z",
@@ -240,7 +243,7 @@ describe("DeliverySubmissionPage", () => {
       await waitForDraft();
       fireEvent.click(screen.getByRole("button", { name: "Capture location" }));
       await waitFor(() => expect(readDrafts()[0]?.location?.accuracy_m).toBe("8.0"));
-      expect(screen.getByText("12.3456789, -1.2345678", { exact: false })).toBeInTheDocument();
+      expect(screen.getByText("12.345679, -1.234568", { exact: false })).toBeInTheDocument();
     } finally {
       delete (window.navigator as unknown as Record<string, unknown>).geolocation;
     }

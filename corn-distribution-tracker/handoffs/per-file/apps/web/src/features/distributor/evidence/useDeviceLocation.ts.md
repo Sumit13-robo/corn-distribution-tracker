@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/features/distributor/evidence/useDeviceLocation.ts`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** Frontend  
+**Status:** IMPLEMENTED
+**Primary owner:** Frontend
 **File purpose:** Geolocation hook
 
 ## Responsibility
@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Geolocation request capturing coordinates, accuracy and fix timestamp with explicit failure states; returns a snapshot for the submission payload or null.
+Geolocation request capturing coordinates, accuracy and fix timestamp with explicit failure states; returns a snapshot for the submission payload or null. Coordinates are rounded to six decimal places before display/draft persistence to match the API/serializer and PostgreSQL schema (previously seven places caused a server-side 422).
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files, including the six-decimal location persistence test); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; browser E2E submitted and approved a 25 kg record with the six-decimal fix.
 
 **Unresolved issues:** None known.

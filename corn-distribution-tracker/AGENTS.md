@@ -25,9 +25,9 @@
 - Meet accessibility and mobile requirements in `design/UX_SPEC.md`.
 
 ## Backend standards
-- Follow FastAPI router -> schema validation -> service/domain logic -> data model layers.
-- Keep route handlers thin. Keep stock rules and evidence validation in services with unit/integration tests.
-- Use Alembic migrations; never rely on automatic `create_all` in production.
+- Follow Django URL route -> DRF serializer validation -> service/domain logic -> ORM model layers.
+- Keep view handlers thin. Keep stock rules and evidence validation in services with unit/integration tests.
+- Use Django migrations; never rely on automatic schema creation in production.
 - Keep API response shapes aligned to `architecture/API_CONTRACT.md`.
 - Expose readiness/liveness health checks without exposing secrets or internal stack traces.
 

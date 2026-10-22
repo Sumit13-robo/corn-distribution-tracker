@@ -1,14 +1,10 @@
 /**
  * Typed HTTP client for the API (docs/architecture/API_CONTRACT.md).
  *
- * Every screen uses this module instead of hand-rolled fetch logic. It:
- *  - prefixes all paths with the public API base URL,
- *  - attaches the in-memory bearer token (never persisted to storage),
- *  - converts non-2xx responses into ApiError with the stable error envelope,
- *  - performs a single-flight POST /auth/refresh (cookie-based, HttpOnly)
- *    on 401 and retries the original request exactly once,
- *  - keeps the refresh cookie flow on same-origin relative requests through the
- *    dev proxy, or explicit credentials for cross-origin deployments.
+ * Authentication is a Django HttpOnly session cookie. Unsafe requests also
+ * send the double-submit CSRF token in X-CSRFToken. The SPA never stores
+ * credentials in localStorage/sessionStorage. A 401 clears the local session;
+ * there is no bearer token or refresh-token rotation.
  */
 
 import type {
@@ -77,12 +73,10 @@ export class ApiError extends Error {
 }
 
 interface AuthHooks {
-  getToken: () => string | null;
   onAuthLost: () => void;
 }
 
 const auth: AuthHooks = {
-  getToken: () => null,
   onAuthLost: () => undefined,
 };
 
@@ -100,51 +94,73 @@ export function newId(): string {
 
 /** Session hooks are registered once by lib/session.ts (avoids import cycle). */
 export function configureAuth(hooks: Partial<AuthHooks>): void {
-  if (hooks.getToken) auth.getToken = hooks.getToken;
   if (hooks.onAuthLost) auth.onAuthLost = hooks.onAuthLost;
 }
 
-let refreshInFlight: Promise<boolean> | null = null;
-
-let onRefreshedToken: (token: string) => void = () => undefined;
-
-/** session.ts installs the sink so rotated tokens reach the in-memory store. */
-export function registerRefreshTokenSink(sink: (token: string) => void): void {
-  onRefreshedToken = sink;
-}
-
-async function runRefresh(): Promise<boolean> {
-  // Token rotation is cookie-based; POST /auth/refresh needs no bearer token.
-  const response = await fetch(`${BASE_URL}/auth/refresh`, {
-    method: "POST",
-    credentials: "include",
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) return false;
-  const body = (await response.json()) as { access_token?: string };
-  if (!body.access_token) return false;
-  onRefreshedToken(body.access_token);
-  return true;
-}
-
-async function refreshOnce(): Promise<boolean> {
-  if (refreshInFlight === null) {
-    // Single-flight: parallel 401s share one rotation, preventing token reuse.
-    refreshInFlight = runRefresh().finally(() => {
-      refreshInFlight = null;
-    });
-  }
-  return refreshInFlight;
-}
-
-/** Auth endpoints are handled without the normal 401 retry ladder (no loops). */
+/** Auth-flow requests handle their own failure; only data reads clear session. */
 function isAuthFlowPath(path: string): boolean {
   return (
     path === "/auth/login" ||
-    path === "/auth/refresh" ||
+    path === "/auth/me" ||
+    path === "/auth/csrf" ||
     path === "/auth/logout" ||
-    path === "/auth/forgot-password"
+    path === "/auth/forgot-password" ||
+    path === "/auth/reset-password" ||
+    path === "/auth/accept-invitation" ||
+    path === "/auth/change-password"
   );
+}
+
+/* ------------------------------------------------------------------ CSRF */
+
+const CSRF_COOKIE_NAME = "csrftoken";
+let csrfToken: string | null = null;
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined" || !document.cookie) return null;
+  for (const part of document.cookie.split(";")) {
+    const [rawName, ...rawValue] = part.trim().split("=");
+    if (rawName === name) {
+      try {
+        return decodeURIComponent(rawValue.join("="));
+      } catch {
+        return rawValue.join("=");
+      }
+    }
+  }
+  return null;
+}
+
+/** Test/embedding hook; the normal path reads the Django csrftoken cookie. */
+export function setCsrfToken(token: string | null): void {
+  csrfToken = token;
+}
+
+/**
+ * Returns the current CSRF token. Same-origin deployments read the Django
+ * cookie; for a cross-origin API the cookie belongs to another origin, so the
+ * client asks GET /auth/csrf for the paired value.
+ */
+async function ensureCsrfToken(): Promise<string | null> {
+  const fromCookie = readCookie(CSRF_COOKIE_NAME);
+  if (fromCookie) {
+    csrfToken = fromCookie;
+    return csrfToken;
+  }
+  if (csrfToken) return csrfToken;
+  try {
+    const response = await fetch(`${BASE_URL}/auth/csrf`, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { csrf_token?: string };
+    csrfToken = body.csrf_token ?? null;
+    return csrfToken;
+  } catch {
+    return null;
+  }
 }
 
 async function parseErrorEnvelope(response: Response): Promise<ApiError> {
@@ -196,13 +212,15 @@ export async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const token = auth.getToken();
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (method !== "GET") {
+    const token = await ensureCsrfToken();
+    if (token) headers["X-CSRFToken"] = token;
+  }
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
 
-  let response = await fetch(buildUrl(path, options.query), {
+  const response = await fetch(buildUrl(path, options.query), {
     method,
     headers,
     credentials: "include",
@@ -210,23 +228,8 @@ export async function request<T>(
     signal: options.signal,
   });
 
-  if (response.status === 401 && !isAuthFlowPath(path) && auth.getToken() !== null && !options.signal?.aborted) {
-    const refreshed = await refreshOnce();
-    if (refreshed) {
-      const retryHeaders: Record<string, string> = { ...headers };
-      const fresh = auth.getToken();
-      if (fresh) retryHeaders.Authorization = `Bearer ${fresh}`;
-      response = await fetch(buildUrl(path, options.query), {
-        method,
-        headers: retryHeaders,
-        credentials: "include",
-        body: options.body === undefined ? null : JSON.stringify(options.body),
-        signal: options.signal,
-      });
-    } else {
-      // Rotation failed: the refresh session is gone; drop the session state.
-      auth.onAuthLost();
-    }
+  if (response.status === 401 && !isAuthFlowPath(path) && !options.signal?.aborted) {
+    auth.onAuthLost();
   }
 
   if (response.status === 204) return undefined as T;
@@ -240,7 +243,7 @@ export async function request<T>(
 
 /**
  * Uploads media against short-lived upload instructions. The target is either
- * a same-origin API endpoint (authorized with our bearer token) or a presigned
+ * a same-origin API endpoint (session cookie + CSRF header) or a presigned
  * object-storage URL (authorization is baked into the URL: only the
  * intent-provided headers may be sent, or the signature would break).
  */
@@ -248,14 +251,20 @@ export async function uploadBlob(
   intent: { upload_url: string; headers?: Record<string, string> },
   blob: Blob,
 ): Promise<void> {
-  const isApiEndpoint = intent.upload_url.startsWith("/api/");
-  const url = isApiEndpoint ? new URL(intent.upload_url, window.location.origin).toString() : intent.upload_url;
+  const absolute = new URL(intent.upload_url, window.location.origin);
+  const isApiEndpoint =
+    absolute.origin === window.location.origin && absolute.pathname.startsWith("/api/");
   const headers: Record<string, string> = { ...(intent.headers ?? {}) };
   if (isApiEndpoint) {
-    const current = auth.getToken();
-    if (current) headers.Authorization = `Bearer ${current}`;
+    const token = await ensureCsrfToken();
+    if (token) headers["X-CSRFToken"] = token;
   }
-  const response = await fetch(url, { method: "PUT", headers, body: blob });
+  const response = await fetch(absolute.toString(), {
+    method: "PUT",
+    headers,
+    credentials: isApiEndpoint ? "include" : "omit",
+    body: blob,
+  });
   if (!response.ok) {
     throw await parseErrorEnvelope(response);
   }
@@ -269,14 +278,13 @@ export async function fetchDistributionsCsv(
   signal?: AbortSignal,
 ): Promise<Blob> {
   const headers: Record<string, string> = { Accept: "text/csv" };
-  const token = auth.getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(buildUrl("/exports/distributions.csv", query as RequestOptions["query"]), {
     method: "GET",
     headers,
     credentials: "include",
     signal,
   });
+  if (response.status === 401) auth.onAuthLost();
   if (!response.ok) throw await parseErrorEnvelope(response);
   return response.blob();
 }

@@ -13,12 +13,13 @@ const python = process.env.E2E_PYTHON ?? path.join(repoRoot, ".venv/bin/python")
 const storageDir = path.resolve(process.env.E2E_LOCAL_STORAGE_DIR ?? "/tmp/corn-tracker-e2e-storage");
 const stateDir = path.join(webDir, "e2e/.state");
 const credentialsPath = path.join(stateDir, "credentials.json");
+const e2eSecretKey = randomBytes(48).toString("hex");
 
 /**
- * Runs after Playwright starts the web/API processes and before the setup
- * project. The API does not open a database connection at import time, so it
- * is safe to recreate the database here. Credentials are generated per run and
- * kept only in the gitignored state directory.
+ * Playwright starts its web servers, then runs this setup, then the setup
+ * project. `e2e/support/run-e2e.mjs` recreates and migrates the isolated E2E
+ * database before the servers start; this file bootstraps per-run credentials
+ * and the first administrator before any HTTP seed calls.
  */
 export default function globalSetup(): void {
   if (!fs.existsSync(python)) {
@@ -49,15 +50,25 @@ export default function globalSetup(): void {
     { mode: 0o600 },
   );
 
-  const baseEnv = { ...process.env, DATABASE_URL: e2e.databaseURL };
+  const baseEnv = {
+    ...process.env,
+    DJANGO_SETTINGS_MODULE: "config.settings",
+    APP_ENV: "test",
+    DATABASE_URL: e2e.databaseURL,
+    SECRET_KEY: e2eSecretKey,
+    COOKIE_SECURE: "false",
+    COOKIE_SAMESITE: "Lax",
+    STORAGE_MODE: "local",
+    LOCAL_STORAGE_DIR: storageDir,
+    PUBLIC_BASE_URL: e2e.baseURL,
+    CORS_ALLOWED_ORIGINS: e2e.baseURL,
+    CSRF_TRUSTED_ORIGINS: e2e.baseURL,
+    LOG_LEVEL: "WARNING",
+    // Do not retain PostgreSQL connections between requests in E2E.
+    DB_CONN_MAX_AGE: "0",
+  };
 
-  execFileSync(python, [path.join(webDir, "e2e/support/prepare_db.py")], {
-    cwd: repoRoot,
-    env: { ...process.env, E2E_DATABASE_URL: e2e.databaseURL },
-    stdio: "inherit",
-  });
-
-  execFileSync(python, ["-m", "alembic", "upgrade", "head"], {
+  execFileSync(python, ["manage.py", "migrate", "--noinput"], {
     cwd: apiDir,
     env: baseEnv,
     stdio: "inherit",
@@ -65,14 +76,19 @@ export default function globalSetup(): void {
 
   execFileSync(
     python,
-    ["-m", "app.cli.create_admin", "--email", e2e.adminEmail, "--display-name", "E2E Administrator"],
+    [
+      "manage.py",
+      "create_admin",
+      "--email",
+      e2e.adminEmail,
+      "--display-name",
+      "E2E Administrator",
+      "--password-env",
+      "E2E_ADMIN_PASSWORD",
+    ],
     {
       cwd: apiDir,
-      env: {
-        ...baseEnv,
-        INITIAL_ADMIN_PASSWORD_ENV: "E2E_ADMIN_PASSWORD",
-        E2E_ADMIN_PASSWORD: adminPassword,
-      },
+      env: { ...baseEnv, E2E_ADMIN_PASSWORD: adminPassword },
       stdio: "inherit",
     },
   );

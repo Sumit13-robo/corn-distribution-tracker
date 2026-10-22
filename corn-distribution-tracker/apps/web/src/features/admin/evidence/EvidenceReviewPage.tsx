@@ -150,12 +150,24 @@ export function EvidenceReviewPage() {
               {
                 key: "site",
                 header: "Site",
-                sortValue: (row) => row.site_id,
+                sortValue: (row) => row.site_code,
                 render: (row) => (
-                  <button type="button" className="btn ghost" style={{ padding: 0 }} onClick={() => setParams({ site_id: row.site_id })}>
-                    {row.site_id.slice(0, 8)}…
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ padding: 0 }}
+                    onClick={() => setParams({ site_id: row.site_id })}
+                    title={`Filter pending queue to ${row.site_name}`}
+                  >
+                    {row.site_code}
                   </button>
                 ),
+              },
+              {
+                key: "distributor",
+                header: "Distributor",
+                sortValue: (row) => row.distributor_name,
+                render: (row) => row.distributor_name,
               },
               {
                 key: "quantity",
@@ -210,11 +222,18 @@ export function EvidenceReviewPage() {
               <dd>{record.campaign_id ? `campaign ${record.campaign_id.slice(0, 8)}…` : "—"}</dd>
               <dt>Site</dt>
               <dd>
-                <code className="num">{record.site_id}</code>
+                {record.site_code} — {record.site_name}
               </dd>
               <dt>Distributor</dt>
               <dd>
-                <code className="num">{record.distributor_user_id}</code>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  style={{ padding: 0 }}
+                  onClick={() => setParams({ distributor_user_id: record.distributor_user_id })}
+                >
+                  {record.distributor_name}
+                </button>
               </dd>
               <dt>Coordinates</dt>
               <dd>

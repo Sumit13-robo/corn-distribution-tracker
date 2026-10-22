@@ -310,7 +310,7 @@ export function SitesPage() {
                   <StatusBadge status={record.status} />
                   <span className="num">{formatKg(record.quantity_kg)} kg</span>
                   <code className="num">{record.id.slice(0, 8)}…</code>
-                  <span className="muted">distributor {record.distributor_user_id.slice(0, 8)}…</span>
+                  <span className="muted">distributor {record.distributor_name}</span>
                   <span className="grow" />
                   <span className="muted small">{new Date(record.submitted_at).toISOString()}</span>
                 </li>

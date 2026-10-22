@@ -25,7 +25,7 @@
 - [ ] At least one test distributor, campaign, site, inventory receipt and allocation created using synthetic data in staging.
 
 ## Smoke test
-- [ ] Login/logout/refresh and session expiry work.
+- [ ] Login/logout/session expiry and CSRF-protected mutations work.
 - [ ] Admin creates a site/campaign/allocation.
 - [ ] Distributor sees only assigned sites and can submit one test delivery with evidence.
 - [ ] Admin reviews evidence and approves; exactly one ledger movement is created.

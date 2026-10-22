@@ -4,8 +4,8 @@ import { App } from "./App";
 import { restoreSession } from "./lib/session";
 import "./styles/global.css";
 
-// Session restore kick-off: the access token stays in memory; on a reload the
-// HttpOnly refresh cookie re-issues it while the router shows a loading state.
+// Session restore kick-off: ask /auth/me whether the HttpOnly session cookie is
+// still valid while the router shows a loading state.
 void restoreSession();
 
 const rootElement = document.getElementById("root");

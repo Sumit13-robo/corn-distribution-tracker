@@ -45,8 +45,10 @@ export function AuditTrailPage() {
         <div>
           <h1>Audit trail</h1>
           <p className="subtitle">
-            Immutable event history (events.data.total ={" "}
-            <span className="num">{events.data ? formatNumber(events.data.total) : "…"}</span> records across scopes)
+            Immutable event history.{" "}
+            {events.data
+              ? `${formatNumber(events.data.total)} events in this scope.`
+              : "Loading event count…"}
           </p>
         </div>
       </div>
@@ -136,7 +138,7 @@ export function AuditTrailPage() {
                 render: (row) =>
                   row.details ? (
                     <details>
-                      <summary>sanitize view</summary>
+                      <summary>View details</summary>
                       <pre className="small" style={{ whiteSpace: "pre-wrap" }}>
                         {JSON.stringify(row.details, null, 2)}
                       </pre>

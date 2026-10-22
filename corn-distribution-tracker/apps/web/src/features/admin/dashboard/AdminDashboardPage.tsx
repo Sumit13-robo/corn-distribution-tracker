@@ -51,13 +51,18 @@ export function AdminDashboardPage() {
   if (!overview.data) return <EmptyState title="No overview yet." />;
 
   const data = overview.data;
+  const targetKg = Number(data.target_kg);
+  const approvedKg = Number(data.approved_delivered_kg);
+  const progressPct = targetKg > 0 ? Math.min(100, Math.round((approvedKg / targetKg) * 1000) / 10) : null;
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h1>Overview</h1>
-          <p className="subtitle">Role-scoped metrics (docs/SCREEN_SPECS). All quantities are canonical kilograms.</p>
+          <p className="subtitle">
+            Live stock, delivery and review signals across the current scope. All quantities are in kilograms.
+          </p>
         </div>
         <Link className="btn ghost" to="/analytics">
           Open analytics →
@@ -65,6 +70,18 @@ export function AdminDashboardPage() {
       </div>
 
       <div className="metric-row">
+        <StatCard
+          label="Central on hand"
+          value={formatKg(stock?.central_on_hand_kg)}
+          unit="kg"
+          definition="Posted balance of central stock accounts."
+        />
+        <StatCard
+          label="Held by distributors"
+          value={formatKg(stock?.distributor_held_kg)}
+          unit="kg"
+          definition="Allocated stock not yet delivered."
+        />
         <StatCard
           label="Approved delivered"
           value={formatKg(data.approved_delivered_kg)}
@@ -89,18 +106,41 @@ export function AdminDashboardPage() {
           value={data.flagged_record_count}
           definition="Records carrying validation or location flags."
         />
-        <StatCard
-          label="Central stock"
-          value={formatKg(stock?.central_on_hand_kg)}
-          unit="kg"
-          definition="Posted balance of central stock accounts."
-        />
-        <StatCard
-          label="Held by distributors"
-          value={formatKg(stock?.distributor_held_kg)}
-          unit="kg"
-          definition="Allocated stock not yet delivered."
-        />
+      </div>
+
+      <div className="section progress-section">
+        <div className="progress-heading">
+          <div>
+            <h2>Delivery progress</h2>
+            <p className="muted small">
+              Approved kilograms against all assignment targets in scope. Pending records are not counted as delivered.
+            </p>
+          </div>
+          <span className="progress-figure num">
+            {formatKg(data.approved_delivered_kg)} <span className="muted">of {formatKg(data.target_kg)} kg</span>
+          </span>
+        </div>
+        {progressPct === null ? (
+          <p className="notice warning">No targets are set for this scope yet.</p>
+        ) : (
+          <>
+            <div
+              className="progress-track"
+              role="progressbar"
+              aria-label="Approved delivery against target"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPct}
+              aria-valuetext={`${progressPct} percent of target approved`}
+            >
+              <span style={{ width: `${progressPct}%` }} />
+            </div>
+            <div className="progress-labels small muted">
+              <span>{progressPct}% of target approved</span>
+              <span>{formatKg(data.remaining_target_kg)} kg remaining</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="section">
@@ -130,18 +170,18 @@ export function AdminDashboardPage() {
               {
                 key: "site",
                 header: "Site",
-                sortValue: (row) => row.site_id,
+                sortValue: (row) => row.site_code,
                 render: (row) => (
-                  <Link to={`/evidence?site_id=${row.site_id}`}>Site {row.site_id.slice(0, 8)}…</Link>
+                  <Link to={`/evidence?site_id=${row.site_id}`}>{row.site_code}</Link>
                 ),
               },
               {
                 key: "distributor",
                 header: "Distributor",
-                sortValue: (row) => row.distributor_user_id,
+                sortValue: (row) => row.distributor_name,
                 render: (row) => (
                   <Link to={`/evidence?distributor_user_id=${row.distributor_user_id}`}>
-                    {row.distributor_user_id.slice(0, 8)}…
+                    {row.distributor_name}
                   </Link>
                 ),
               },
@@ -175,9 +215,9 @@ export function AdminDashboardPage() {
               },
               {
                 key: "open",
-                header: "",
+                header: "Actions",
                 render: (row) => (
-                  <Link className="btn secondary" to={`/evidence?record_id=${row.id}`}>
+                  <Link className="btn secondary small" to={`/evidence?record_id=${row.id}`}>
                     Review
                   </Link>
                 ),
@@ -221,6 +261,7 @@ export function AdminDashboardPage() {
                 header: "Remaining (kg)",
                 numeric: true,
                 sortValue: (row) => Number(row.remaining_target_kg),
+                render: (row) => formatKg(row.remaining_target_kg),
               },
               {
                 key: "flagged_submissions",

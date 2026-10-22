@@ -14,93 +14,22 @@ Record date, decision, alternatives considered, reason, effect on data/API, secu
 
 ## Implementation decisions (2026-10-22)
 
-1. **Access tokens live in memory only; refresh uses an HttpOnly cookie.**
-   Alternative: localStorage/sessionStorage token persistence. Reason: XSS token theft resistance and contract alignment.
-   Effect: reload restores the session via `POST /auth/refresh`; API client retries a 401 once after a single-flight refresh.
-   Security: no browser-readable refresh token; access token never written to storage. No schema change.
-
-2. **Offline drafts are user-scoped and resume by assignment.**
-   Drafts use `corn-tracker:drafts:v1:{userId}` with the idempotency key generated once at draft creation and never
-   regenerated on retry. Reopening the submission screen resumes the existing `LOCAL_DRAFT`/`QUEUED` draft for that
-   assignment instead of creating a second one. Alternative: one draft per screen visit (rejected: duplicate keys and
-   stranded data). No schema change; aligns with `OFFLINE_SYNC.md`.
-
-3. **Honest offline labeling.** `LOCAL_DRAFT → QUEUED → UPLOADING → SUBMITTED`; only a server record id moves a draft
-   to `SUBMITTED`. Failed syncs return to `QUEUED` with the error. No optimistic “submitted” state.
-
-4. **Evidence upload intent flow.** The client requests an intent, uploads the blob (bearer only for relative API URLs,
-   intent headers for presigned URLs), then submits the record with evidence intent ids. Types are restricted to
-   JPEG/PNG/WebP with a 10 MB cap, content is sniffed server-side, SHA-256 hashed, and stored privately. Viewing uses
-   short-lived signed URLs. Alternative: direct multipart upload in the submission request (rejected: poor offline
-   retry/partial-failure behavior).
-
-5. **Geodesic distance uses Vincenty inverse on WGS84 with a haversine fallback.** Geo flags are advisory indicators
-   (accuracy, fix age, clock drift, distance); the UI must not present them as proof against spoofing.
-
-6. **Quantity conversion is strict Decimal arithmetic at gram precision.** kg is canonical; bag conversion requires an
-   admin-configured `kg_per_bag` and otherwise returns a 422. No silent rounding or float math.
-
-7. **Ledger integrity is database-backed.** Row locks plus unique idempotency keys guard postings; CHECK constraints
-   encode movement-sign/type implications; corrections are compensating reversals. There is no update/delete path for
-   movements or audit events.
-
-8. **Admin CSV export is an audited read.** Export uses the same scoped queries as the analytics screens and writes an
-   audit event; the client downloads the blob with the bearer token rather than a public URL.
-
-9. **Map without tiles is honest.** When `VITE_MAP_STYLE_URL` is unset, the map page renders a labelled coordinate
-   board with real site data instead of fake tiles, pins, or screenshots.
-
-10. **Dependency upgrades for security advisories.** `maplibre-gl` was upgraded 5.x → 6.15 and `vitest` 3.x → 4.1 to
-    clear critical `npm audit` findings. Typecheck, tests, lint and production build were re-run after the upgrades;
-    `npm audit` reports 0 vulnerabilities. The Vite config now references `vitest/config` types for Vitest 4.
-
-11. **Test-environment workarounds are isolated to test setup.** This workstation auto-loads ROS pytest plugins, so the
-    Makefile sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`; the suite is synchronous. Node 25's experimental `localStorage`
-    shadows jsdom's implementation, so `vitest.setup.ts` installs an in-memory `Storage` only when needed. Production
-    code has no test-only branches.
-
-12. **Same-origin deployment shape.** nginx serves the built SPA and proxies `/api/` to the API, with Vite build args as
-    the only browser-visible configuration. This keeps the refresh cookie first-party and avoids CORS in the default
-    compose topology. Docker images were authored but not built in this environment (no Docker daemon); both
-    Dockerfiles pass `hadolint` 2.15.1 and images use a fixed numeric unprivileged UID.
-
-13. **Production/staging configuration fails startup.** `get_settings()` calls `assert_secure_settings()`, which raises
-    `RuntimeError` (listing problems only, never secret values) for a placeholder secret, insecure cookies, wildcard
-    CORS with credentials, or local/missing S3 evidence storage. Four tests in `tests/test_config_security.py` cover the
-    production rejection/acceptance paths, staging rejection and development defaults. This closes the gap between the
-    deployment runbook wording and the previous log-only behavior.
-
-14. **Runtime dependency completeness is verified separately from dev tooling.** `email-validator` (needed by pydantic
-    `EmailStr` at import time) is pinned in both `pyproject.toml` and `requirements.txt`. A fresh venv with only runtime
-    requirements imported the app and completed a login/refresh/me smoke test; this catches packaging gaps that a
-    developer venv can hide. The first-admin CLI now validates emails with the same `EmailStr` rules as the API.
-
-15. **Browser E2E uses a disposable database and per-run credentials.** Playwright starts the real FastAPI and Vite
-    processes against a dedicated `corn_tracker_e2e` database. Global setup drops/recreates it, runs Alembic, generates
-    random admin/distributor passwords in the gitignored `apps/web/e2e/.state/` directory, and bootstraps the first admin;
-    a setup project then creates campaign/site/invitation/assignment/stock through the public API. Fixed test identities
-    are synthetic (`@e2e.example.org`), no real data or credentials are committed, and deleting the E2E database is the
-    explicit reset. The suite is serial and local-only because it needs PostgreSQL with CREATEDB plus Chromium.
-    Verified: 8 passed (2 setup + 6 workflow).
-
-16. **E2E caught two cross-layer defects that unit tests missed.** (a) The distributor assignment list nested a partial site object
-    that did not satisfy the declared `SiteOut` shape, so the endpoint returned 500 and never loaded assigned sites; the
-    service now returns the complete site summary (admin-only notes remain `None`) with an RBAC/contract regression test.
-    (b) A captured geolocation fix was only written to the offline draft at submit, so the UI still said “no fix captured”
-    and a reload lost it; the draft now persists the fix immediately and a component test covers it. These fixes are part
-    of the E2E-driven release verification, not test-only shims.
-
-17. **The 360 px E2E check is a release gate.** A mobile-viewport test exposed horizontal overflow from the top-bar
-    identity block and an unwrapped sidebar navigation. The 600 px breakpoint now wraps the sidebar/brand/nav and the
-    top-bar context/identity; the test asserts `scrollWidth - clientWidth <= 1` on the distributor delivery screen.
-    This complements, but does not replace, real-device and assistive-technology testing.
-
-18. **Backup and restore are one recoverable set.** The operator procedure backs up PostgreSQL and the matching private
-    evidence objects together, preserves object keys, verifies the Alembic revision and referenced objects, and uses an
-    isolated restore target. A local drill against synthetic E2E data passed (`pg_dump`/`pg_restore`, matching row counts
-    and evidence objects); production credentials/storage still require an operator-run drill. See
-    `docs/ops/BACKUP_RESTORE.md`.
-
-19. **Launch risks are explicit rather than implied.** `LOG_LEVEL` is applied to the app logger, but no APM/alerting,
-    MFA, malware scanner, email transport or automatic evidence-retention job is bundled. These are listed in the README
-    known limitations and release checklist for the operator to address before broad production rollout.
+1. **Django + DRF replaced FastAPI + SQLAlchemy.** The URL paths and JSON response shapes in `API_CONTRACT.md` are preserved so the React client did not need a route-level rewrite. Django sessions, ORM, migrations and management commands replace the JWT/refresh flow, SQLAlchemy models, Alembic and the custom admin CLI. Alternatives considered: retaining the FastAPI backend and improving only the UI (rejected: the requested stack change), or a full API redesign (rejected: unnecessary client churn). The append-only guarantees remain database triggers; the migration and tests are Django-native.
+2. **Authentication is a database-backed Django session plus CSRF.** Login sets an HttpOnly `sessionid` cookie and returns `{"user": ...}`; session restore returns the user object directly; logout deletes the server session. The SPA never stores credentials in `localStorage`. Mutating requests use the `csrftoken` cookie and `X-CSRFToken`; `/api/v1/auth/csrf` exists only for cross-origin clients that cannot read the API-origin cookie. This removes bearer access tokens and `/auth/refresh` entirely.
+3. **Password-reset mail is operator-delivered in this build.** There is no mail transport. `POST /auth/forgot-password` records a request and audit event without revealing whether the account exists. An operator runs `python manage.py issue_password_reset` and supplies the one-time URL through a secure channel. The UI and CLI state this plainly rather than pretending email was sent.
+4. **Invitation links are shown once to the creating admin.** Because there is no mail transport, the admin UI displays and helps copy the one-time invitation URL after creation; it is never logged and cannot be retrieved again. Invitations remain single-use, hashed at rest, expiring, and revocable.
+5. **Offline drafts are user-scoped and resume by assignment.** Drafts use `corn-tracker:drafts:v1:{userId}` with the idempotency key generated once at draft creation and never regenerated on retry. Reopening the submission screen resumes the existing draft instead of creating a duplicate. States are `LOCAL_DRAFT → QUEUED → UPLOADING → SUBMITTED`; only a server record id marks a draft submitted. Failed syncs return to `QUEUED` with the error. No schema change.
+6. **Evidence upload intent flow.** The client requests an intent, uploads the blob (same-origin credentials/CSRF for API calls, intent headers for presigned URLs), then submits the record with evidence intent ids. Types are restricted to JPEG/PNG/WebP with a 10 MB cap; content is sniffed server-side, SHA-256 hashed, and stored privately. Viewing uses short-lived signed URLs. Alternative: direct multipart upload in the submission request (rejected: poor offline retry and partial-failure behavior).
+7. **Geodesic distance uses Vincenty inverse on WGS84 with a haversine fallback.** Geo flags are advisory indicators (accuracy, fix age, clock drift, distance); the UI must not present them as proof against spoofing. Record-level critical flags require an explicit exception reason before approval.
+8. **Quantity conversion is strict Decimal arithmetic at gram precision.** kg is canonical; bag conversion requires an admin-configured `kg_per_bag` and otherwise returns a 422. No silent rounding or float math. API quantities are decimal strings.
+9. **Ledger integrity is database-backed.** Row locks plus unique idempotency keys guard postings; CHECK constraints encode movement-sign/type implications; corrections are compensating reversals. PostgreSQL triggers reject updates and deletes on `stock_movements` and `audit_events`.
+10. **Admin CSV export is an audited read.** Export uses the same scoped queries as the analytics screens and writes an audit event. The client downloads the CSV through the authenticated session and CSRF-safe API client rather than a public URL.
+11. **Map without tiles is honest.** When `VITE_MAP_STYLE_URL` is unset, the map page renders a list-first labelled coordinate board with real site data instead of fake tiles or pins. Marker labels are clamped inside the board, including on 360 px screens.
+12. **Dense admin data becomes cards on narrow screens.** `DataTable` switches to stacked cards at `≤700px` with mobile sorting; only its own wrapper is hidden by `data-table-responsive` so manually authored tables are not accidentally hidden. The admin map stays list-first on mobile. Tap targets are at least 44 px where controls are compact.
+13. **Same-origin deployment shape.** nginx serves the built SPA and proxies `/api/` to Django, keeping the session cookie first-party. Vite build arguments are the only browser-visible configuration. Docker images were not built in this environment (no Docker/Podman daemon), so compose startup remains unverified; the local non-Docker path is verified.
+14. **Production configuration fails at Django startup.** With `APP_ENV=production`, settings validation raises `ImproperlyConfigured` for a sample/short secret, wildcard or empty hosts, insecure cookies, unsafe SameSite/secure combinations, wildcard credentialed CORS, or non-S3/missing evidence storage. Errors list field names, never secret values. Tests cover rejection and acceptance paths.
+15. **Browser E2E uses a disposable Django database and session/CSRF auth.** Playwright starts the real Django and Vite processes against a dedicated `corn_tracker_e2e` database. Global setup drops/recreates it, runs Django migrations, and bootstraps the first admin; a setup project seeds campaign/site/invitation/assignment/stock through public HTTP APIs. Fixed test identities are synthetic, no real data or credentials are committed, and deleting the E2E database is the explicit reset. The suite is serial and local-only because it needs PostgreSQL with CREATEDB plus Chromium.
+16. **E2E caught two cross-layer defects that unit tests missed.** (a) The distributor assignment list nested a partial site object that did not satisfy the declared `SiteOut` shape, so the endpoint returned 500 and never loaded assigned sites; the service now returns the complete site summary with an RBAC/contract regression test. (b) A captured geolocation fix was only written to the offline draft at submit, so the UI still said “no fix captured” and a reload lost it; the draft now persists the fix immediately and a component test covers it.
+17. **The 360 px check is a release gate.** Responsive fixes removed top-bar/sidebar overflow, clipped sr-only text, moved inventory balances to `DataTable` cards, clamped map fallback labels, and moved route focus/scroll so page headers are not hidden under the sticky topbar. All 20 current screens (auth modes, 10 admin routes, 5 distributor routes) were screenshotted at 360 px with `scrollWidth = 360`, headings clear of the top bar, and no unexpected console errors or 5xx responses. This complements, but does not replace, real-device and assistive-technology testing.
+18. **Backup and restore are one recoverable set.** The operator procedure backs up PostgreSQL and matching private evidence objects together, preserves object keys, verifies Django migration state and referenced objects, and uses an isolated restore target. A local drill against the synthetic Django E2E database passed on 2026-10-22: both migrations restored, every listed table count matched, and all referenced evidence objects were present. A production provider drill remains operator-owned.
+19. **Launch risks are explicit rather than implied.** No APM/alerting, MFA, malware scanner, mail transport or automatic evidence-retention job is bundled. Rate limits are process-local. These are listed in the README known limitations and release checklist for the operator to address before broad production rollout.

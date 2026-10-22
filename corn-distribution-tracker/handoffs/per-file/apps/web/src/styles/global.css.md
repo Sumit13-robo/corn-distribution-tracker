@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/styles/global.css`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** Frontend  
+**Status:** IMPLEMENTED
+**Primary owner:** Frontend
 **File purpose:** Global styles
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Global reset, layout/utility classes, responsive breakpoints, focus-visible styles and reduced-motion handling. The 600 px breakpoint wraps the sidebar/navigation and top-bar identity so the distributor workspace has no horizontal page overflow at 360 px.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 8 passed including the 360 px viewport check.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 8 passed including the 360 px viewport check.
 
 **Unresolved issues:** None known.

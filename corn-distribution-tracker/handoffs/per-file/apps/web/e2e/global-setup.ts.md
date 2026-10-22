@@ -2,17 +2,16 @@
 
 **Status:** TESTED
 **Primary owner:** QA
-**File purpose:** E2E database/bootstrap lifecycle
+**File purpose:** Per-run credentials and first-admin bootstrap for Playwright.
 
-## Responsibility
-Create per-run synthetic credentials, recreate the disposable E2E database, apply Alembic migrations, and bootstrap the first administrator. Never touch non-E2E data.
+## Current implementation
 
-## Contract and dependencies
-`E2E_DATABASE_URL` (destructive), `E2E_PYTHON`, `E2E_LOCAL_STORAGE_DIR`; `e2e/support/prepare_db.py`; API Alembic config; first-admin CLI.
+Runs after Playwright starts its web servers and before the `setup` project. Generates random admin/distributor passwords in the gitignored `apps/web/e2e/.state/` directory, runs Django migrations against the already-created E2E database, and invokes `create_admin` via the password environment variable. Database recreation/migration before web-server startup is handled by `e2e/support/run-e2e.mjs`.
 
-## Implementation summary
-Playwright starts the web servers before global setup, but the API opens no database connection at import time, so it is safe to drop/recreate the database here. Passwords are generated with `crypto.randomBytes` and written mode `0600` to the gitignored `e2e/.state/credentials.json`; the admin is created via `app.cli.create_admin` using an environment-provided password. The evidence storage directory is created if absent (not recursively deleted, so an override cannot wipe an arbitrary path). The setup project runs only after this completes.
+## Verification
 
-**Verification (2026-10-22):** exercised by `npm run test:e2e`; fresh database created, migrated and seeded on every run (8 passed).
+`npm run test:e2e` → 8 passed from a clean E2E database. Credentials are synthetic and are not committed.
 
-**Unresolved issues:** Destructive by design; the README explicitly warns never to point `E2E_DATABASE_URL` at real data.
+## Unresolved issues
+
+None known.

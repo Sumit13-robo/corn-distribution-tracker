@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/tsconfig.json`
 
-**Status:** TESTED  
-**Primary owner:** DevOps / Lead Integrator  
+**Status:** TESTED
+**Primary owner:** DevOps / Lead Integrator
 **File purpose:** TypeScript config
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Strict TypeScript config (ES2022, bundler resolution, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`) covering sources, tests, setup, Vite config, Playwright config and the E2E support files; `tsc -b` is clean.
 
-**Verification (2026-10-22):** `npx tsc -b --noEmit` → clean (including E2E); `npm test` → 14 passed; `npm run test:e2e` → 8 passed; `npm run build` succeeded.
+**Verification (2026-10-22):** `npx tsc -b --noEmit` → clean (including E2E); `npm test` → 18 passed; `npm run test:e2e` → 8 passed; `npm run build` succeeded.
 
 **Unresolved issues:** None known.

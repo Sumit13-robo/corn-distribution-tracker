@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** Frontend  
+**Status:** IMPLEMENTED
+**Primary owner:** Frontend
 **File purpose:** Photo capture UI
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Camera/file inputs with type/10 MB validation, IndexedDB-backed attach/remove, object-URL previews (revoked correctly) and an offline notice.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

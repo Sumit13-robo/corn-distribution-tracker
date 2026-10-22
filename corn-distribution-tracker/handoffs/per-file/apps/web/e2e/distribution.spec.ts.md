@@ -1,26 +1,26 @@
 # File Handoff: `apps/web/e2e/distribution.spec.ts`
 
 **Status:** TESTED
-**Primary owner:** QA / Frontend
-**File purpose:** Critical distributor/reviewer browser workflow
+**Primary owner:** QA/Frontend
+**File purpose:** Critical distributor/reviewer browser workflow.
 
-## Responsibility
-Prove the real SPA + API + PostgreSQL loop: session restore, role guard, evidence submission, private image rendering, approval with ledger posting, approved-record visibility, and honest offline queue/sync.
+## Current implementation
 
-## Contract and dependencies
-Playwright config/setup; public API seeded data; `e2e/support/credentials.ts`; docs for auth, offline sync, evidence and review semantics.
+Serial Playwright tests against the real Django/DRF API, PostgreSQL and SPA:
 
-## Implementation summary
-Six serial Chromium tests:
-1. distributor login, HttpOnly refresh cookie, no token in localStorage, reload restores session, admin route denied;
-2. 25 kg submission with a valid PNG, location capture at the site coordinates, photo evidence count;
-3. admin opens the private evidence image (waits for real `naturalWidth`), approves and posts the movement;
-4. distributor sees `Approved` plus the ledger movement;
-5. offline submission stays `QUEUED` with an unchanged idempotency key, then becomes `SUBMITTED` only after reconnect and appears in history;
-6. distributor workspace remains usable at a 360 px viewport with no horizontal page overflow.
+1. distributor session-cookie login, reload restore, no browser token storage, and server role guard;
+2. photo plus device-location submission with six-decimal coordinates;
+3. admin evidence review and approval that posts the ledger movement;
+4. distributor sees the approved record and its ledger movement;
+5. offline submission stays QUEUED and syncs the same idempotency key when connectivity returns;
+6. distributor workspace has no horizontal overflow at 360 px.
 
-This suite caught three real UI/contract defects: the missing `SiteOut` fields in the distributor assignment response (500), location fixes not being persisted to the draft until submit, and horizontal overflow in the 360 px header/navigation. Regression coverage was added for all three. Table assertions target the exact quantity cell so date/timestamp text cannot satisfy a substring match.
+The identity assertion targets the current top-bar structure (`E2E Distributor` plus the email in the element title), not the removed combined text.
 
-**Verification (2026-10-22):** `npm run test:e2e` → **8 passed** total (2 setup + these 6) against real FastAPI/PostgreSQL.
+## Verification
 
-**Unresolved issues:** No real mobile-device, camera-permission or cross-browser run; Chromium only.
+`npm run test:e2e` → **8 passed** (2 setup + 6 workflow) after a clean database recreation. `1 image` and six-decimal coordinates are asserted against the actual UI.
+
+## Unresolved issues
+
+Local-only: needs PostgreSQL with CREATEDB, the repo virtualenv and Chromium. It does not replace real-device or assistive-technology testing.

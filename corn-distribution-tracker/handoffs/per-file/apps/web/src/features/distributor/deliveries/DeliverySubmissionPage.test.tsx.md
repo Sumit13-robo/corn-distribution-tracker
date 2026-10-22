@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.test.tsx`
 
-**Status:** TESTED  
-**Primary owner:** Frontend  
+**Status:** TESTED
+**Primary owner:** Frontend
 **File purpose:** Delivery workflow tests
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Submission workflow tests: draft resume with the same idempotency key, immediate location persistence, offline QUEUED honesty (no fake SUBMITTED), double-click guard, and payload/evidence-intent mapping with a mocked API. 4 tests.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; the same flow is exercised against the real API in browser E2E.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; the same flow is exercised against the real API in browser E2E.
 
 **Unresolved issues:** None known.

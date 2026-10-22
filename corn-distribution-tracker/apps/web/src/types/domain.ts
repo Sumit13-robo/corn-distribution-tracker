@@ -1,9 +1,8 @@
 /**
  * Shared domain types mirroring docs/architecture/API_CONTRACT.md and the
- * FastAPI response models in apps/api/app/schemas/. Decimal quantities are
- * serialized by Pydantic as JSON strings; they are kept as strings here so no
- * client code ever re-rounds canonical kg values. Do not invent fields the API
- * does not return.
+ * Django/DRF serializers. Decimal quantities are JSON strings; they are kept
+ * as strings here so no client code ever re-rounds canonical kg values. Do not
+ * invent fields the API does not return.
  */
 
 export type Role = "ADMIN" | "DISTRIBUTOR";
@@ -53,14 +52,10 @@ export interface UserOut {
   last_login_at: string | null;
 }
 
+/** POST /auth/login returns the current user; the session cookie is HttpOnly. */
 export interface LoginOut {
-  access_token: string;
-  token_type: "bearer";
-  expires_in: number;
   user: UserOut;
 }
-
-export type RefreshOut = LoginOut;
 
 export interface AckOut {
   status: "ok";
@@ -335,7 +330,10 @@ export interface DistributionOut {
   campaign_id: string | null;
   assignment_id: string;
   site_id: string;
+  site_code: string;
+  site_name: string;
   distributor_user_id: string;
+  distributor_name: string;
   quantity_kg: string;
   status: RecordStatus | string;
   client_created_at: string | null;

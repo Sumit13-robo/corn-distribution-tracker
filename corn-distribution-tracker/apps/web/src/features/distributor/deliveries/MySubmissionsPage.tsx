@@ -87,6 +87,19 @@ export function MySubmissionsPage() {
               </button>
             )}
             columns={[
+              {
+                key: "site",
+                header: "Site",
+                sortValue: (row) => row.site_code,
+                render: (row) => (
+                  <span>
+                    <strong>{row.site_code}</strong>
+                    <span className="muted small" style={{ display: "block" }}>
+                      {row.site_name}
+                    </span>
+                  </span>
+                ),
+              },
               { key: "submitted_at", header: "Submitted", sortValue: (row) => row.submitted_at, render: (row) => formatDateTime(row.submitted_at) },
               { key: "quantity_kg", header: "Quantity (kg)", numeric: true, sortValue: (row) => Number(row.quantity_kg), render: (row) => formatKg(row.quantity_kg) },
               { key: "status", header: "State", sortValue: (row) => row.status, render: (row) => <StatusBadge status={row.status} /> },
@@ -95,7 +108,12 @@ export function MySubmissionsPage() {
                 header: "Evidence",
                 numeric: true,
                 sortValue: (row) => row.evidence.length,
-                render: (row) => (row.evidence.length > 0 ? `${row.evidence.length} image(s)` : <StatusBadge status="EXCEPTION" label="Missing" />),
+                render: (row) =>
+                  row.evidence.length > 0 ? (
+                    `${row.evidence.length} ${row.evidence.length === 1 ? "image" : "images"}`
+                  ) : (
+                    <StatusBadge status="EXCEPTION" label="Missing" />
+                  ),
               },
               {
                 key: "review_reason",
@@ -130,6 +148,10 @@ function SubmissionDetail({ record }: { record: DistributionOut }) {
         Record <code className="num">{record.id}</code>
       </h3>
       <dl className="dl-grid">
+        <dt>Site</dt>
+        <dd>
+          {record.site_code} — {record.site_name}
+        </dd>
         <dt>State</dt>
         <dd>
           <StatusBadge status={record.status} />

@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx`
 
-**Status:** TESTED  
-**Primary owner:** Frontend  
+**Status:** TESTED
+**Primary owner:** Frontend
 **File purpose:** Delivery form workflow
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Draft auto-save with persistent idempotency key and resume-on-return, evidence capture, immediate persistence of a captured device fix into the draft (so the UI reflects it and reloads do not lose it), unit conversion preview/warnings, duplicate-submit guard, online sync vs honest QUEUED and success only after a server record id.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files, including the new location-persistence test); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; browser E2E submitted 25 kg with photo/location and approved it.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files, including the new location-persistence test); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; browser E2E submitted 25 kg with photo/location and approved it.
 
 **Unresolved issues:** None known.

@@ -1,19 +1,17 @@
 # File Handoff: `apps/api/requirements.txt`
 
-**Status:** TESTED  
-**Primary owner:** Backend  
-**File purpose:** Runtime dependency pins
+**Status:** TESTED
+**Primary owner:** Backend
+**File purpose:** Pinned runtime dependencies
 
-## Responsibility
-Exact runtime pins matching the validated virtualenv, including `email-validator` (required by pydantic `EmailStr` at import time). A fresh runtime-only install was verified to import the app without any dev packages.
+## Current implementation
 
-## Contract and dependencies
-See the relevant contract under `docs/` and the ownership table in `handoffs/file_map.md`; this file was added during implementation and integrates with the shared API/session/query layers.
+Pinned runtime dependencies. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
 
-## Implementation summary
+## Verification
 
-Exact runtime pins matching the validated virtualenv, including `email-validator` (required by pydantic `EmailStr` at import time). A fresh runtime-only install was verified to import the app without any dev packages.
+Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
-**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+## Unresolved issues
 
-**Unresolved issues:** None known.
+None known. Docker image build/runtime remains unverified on this host (no Docker daemon).

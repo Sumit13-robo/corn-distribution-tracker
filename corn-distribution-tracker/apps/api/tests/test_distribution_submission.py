@@ -2,141 +2,260 @@
 
 from __future__ import annotations
 
-from io import BytesIO
+import pytest
 
-from fastapi.testclient import TestClient
-from PIL import Image
+from corn.models import DistributionRecord, StockMovement
+from tests.conftest import AuthClient, json_request, submit_delivery, upload_png
 
-
-def _upload_photo(client: TestClient, headers: dict, color=(120, 100, 40)) -> dict:
-    intent = client.post(
-        "/api/v1/evidence/upload-intents", json={"content_type": "image/jpeg"}, headers=headers
-    ).json()
-    buf = BytesIO()
-    Image.new("RGB", (6, 6), color).save(buf, format="JPEG")
-    put = client.put(intent["upload_url"], content=buf.getvalue(), headers=headers)
-    assert put.status_code == 204, put.text
-    return {
-        "intent_id": intent["intent_id"],
-        "capture_source": "CAMERA",
-        "client_captured_at": "2026-10-21T10:00:00Z",
-    }
+pytestmark = pytest.mark.django_db
 
 
-def _submit(
-    client: TestClient,
-    org: dict,
-    *,
-    quantity: str = "20",
-    key: str = "s1",
-    evidence: list | None = None,
-    location: dict | None = None,
-    headers: dict | None = None,
-):
-    return client.post(
-        "/api/v1/deliveries",
-        json={
-            "assignment_id": org["assignment"]["id"],
-            "quantity": quantity,
-            "unit": "KG",
-            "evidence": evidence if evidence is not None else [_upload_photo(client, org["headers_dist"])],
-            "location": location
-            if location is not None
-            else {
-                "latitude": "12.5519",
-                "longitude": "15.0002",
-                "accuracy_m": "10",
-                "timestamp": "2026-10-21T10:00:00Z",
-            },
-        },
-        headers={**(headers or org["headers_dist"]), "Idempotency-Key": key},
-    )
+def account_for(client, account_type: str) -> dict:
+    summary = client.get("/api/v1/inventory/summary").json()
+    return next(account for account in summary["accounts"] if account["account_type"] == account_type)
 
 
-def test_submit_creates_pending_record_and_reservation(org_factory, client: TestClient):
+def test_submit_creates_pending_record_and_reservation(org_factory):
     org = org_factory()
-    response = _submit(client, org, key="sub-a")
-    assert response.status_code == 201, response.text
+    evidence = upload_png(org["dist_client"])
+    response = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="20",
+        evidence=evidence,
+        idempotency_key="sub-a",
+    )
+    assert response.status_code == 201, response.content
     body = response.json()
     assert body["status"] == "SUBMITTED"
     assert body["geo_status"] in {"PASS", "WARNING"}
     assert len(body["evidence"]) == 1
+    assert body["quantity_kg"] == "20.000"
 
-    summary = client.get("/api/v1/inventory/summary", headers=org["headers_dist"]).json()
-    own = summary["accounts"][0]
-    assert float(own["reserved_kg"]) == 20.0
-    assert float(own["available_kg"]) == 80.0  # 100 allocated - 20 reserved
+    own = account_for(org["dist_client"], "DISTRIBUTOR")
+    assert own["reserved_kg"] == "20.000"
+    assert own["available_kg"] == "80.000"  # 100 allocated - 20 reserved
 
 
-def test_duplicate_idempotency_key_returns_original_record(org_factory, client: TestClient):
+def test_duplicate_idempotency_key_returns_original_record(org_factory):
     org = org_factory()
-    first = _submit(client, org, key="dup-1")
-    retry = _submit(client, org, key="dup-1")
-    assert first.status_code == 201 and retry.status_code == 201
-    assert first.json()["id"] == retry.json()["id"], (
-        "retry after lost response must return the original record"
+    evidence = upload_png(org["dist_client"])
+    first = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="20",
+        evidence=evidence,
+        idempotency_key="dup-1",
     )
+    assert first.status_code == 201, first.content
+    # The intent is already consumed; an idempotent retry must not re-read it.
+    retry = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="20",
+        evidence=evidence,
+        idempotency_key="dup-1",
+    )
+    assert retry.status_code == 201, retry.content
+    assert first.json()["id"] == retry.json()["id"]
+    assert DistributionRecord.objects.count() == 1
 
 
-def test_cannot_submit_for_another_distributor_assignment_by_id(org_factory, client: TestClient):
-    """IDOR: a second distributor cannot submit against the first distributor's assignment."""
+def test_cannot_submit_for_another_distributor_assignment_by_id(org_factory):
     org = org_factory()
-    other_token = org["auth"].create_distributor(email="dist2@example.org", name="Other Field")
-    headers_other = org["auth"].bearer(other_token)
-    fabricated_intent = "00000000-0000-0000-0000-000000000000"
-    submit = client.post(
+    other = AuthClient()
+    other.create_distributor(email="dist2@example.org", name="Other Field")
+    evidence = upload_png(other.client)
+    response = submit_delivery(
+        other.client,
+        assignment_id=org["assignment"]["id"],
+        quantity="5",
+        evidence=evidence,
+        idempotency_key="foreign-1",
+    )
+    assert response.status_code == 404, response.content
+
+
+def test_invalid_quantity_and_missing_evidence_rejected(org_factory):
+    org = org_factory()
+    evidence = upload_png(org["dist_client"])
+    zero = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="0",
+        evidence=evidence,
+        idempotency_key="q-zero",
+    )
+    assert zero.status_code == 422
+
+    no_evidence = json_request(
+        org["dist_client"],
+        "post",
         "/api/v1/deliveries",
-        json={
+        {
             "assignment_id": org["assignment"]["id"],
             "quantity": "5",
             "unit": "KG",
-            "evidence": [{"intent_id": fabricated_intent, "capture_source": "CAMERA"}],
+            "evidence": [],
         },
-        headers={**headers_other, "Idempotency-Key": "foreign-1"},
+        HTTP_IDEMPOTENCY_KEY="e-missing",
     )
-    # Either 404 (assignment not owned) or 404 (no stock account yet) — never 2xx.
-    assert submit.status_code == 404, submit.text
-
-
-def test_invalid_quantity_and_missing_evidence_rejected(org_factory, client: TestClient):
-    org = org_factory()
-    zero = _submit(client, org, quantity="0", key="q-zero")
-    assert zero.status_code == 422
-
-    no_evidence = _submit(client, org, evidence=[], key="e-missing")
     assert no_evidence.status_code == 422
 
-    used_intent = client.post(
-        "/api/v1/evidence/upload-intents", json={"content_type": "image/jpeg"}, headers=org["headers_dist"]
+    unused_intent = json_request(
+        org["dist_client"],
+        "post",
+        "/api/v1/evidence/upload-intents",
+        {"content_type": "image/png"},
     ).json()
-    fabricated = _submit(
-        client,
-        org,
-        evidence=[{"intent_id": used_intent["intent_id"], "capture_source": "CAMERA"}],
-        key="e-unuploaded",
+    unuploaded = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="5",
+        evidence={"intent_id": unused_intent["intent_id"], "capture_source": "CAMERA"},
+        idempotency_key="e-unuploaded",
     )
-    assert fabricated.status_code in (400, 422, 404), fabricated.text
+    assert unuploaded.status_code == 400, unuploaded.content
 
 
-def test_insufficient_stock_submission_conflict(org_factory, client: TestClient):
-    org = org_factory()  # 100 kg available
-    response = _submit(client, org, quantity="150", key="over-1")
+def test_insufficient_stock_submission_conflict(org_factory):
+    org = org_factory()
+    evidence = upload_png(org["dist_client"])
+    response = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="150",
+        evidence=evidence,
+        idempotency_key="over-1",
+    )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "INSUFFICIENT_STOCK"
+    assert not DistributionRecord.objects.exists()
 
 
-def test_cancel_releases_reservation(org_factory, client: TestClient):
+def test_cancel_releases_reservation(org_factory):
     org = org_factory()
-    submit = _submit(client, org, key="cancel-1")
-    assert submit.status_code == 201
-    record_id = submit.json()["id"]
-    cancel = client.post(
-        f"/api/v1/deliveries/{record_id}/cancel",
-        json={"reason": "distributor retrace"},
-        headers=org["headers_dist"],
+    evidence = upload_png(org["dist_client"])
+    submit = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="20",
+        evidence=evidence,
+        idempotency_key="cancel-1",
     )
-    assert cancel.status_code == 200, cancel.text
+    assert submit.status_code == 201, submit.content
+    record_id = submit.json()["id"]
+    cancel = json_request(
+        org["dist_client"],
+        "post",
+        f"/api/v1/deliveries/{record_id}/cancel",
+        {"reason": "distributor retrace"},
+    )
+    assert cancel.status_code == 200, cancel.content
     assert cancel.json()["status"] == "CANCELLED"
+    own = account_for(org["dist_client"], "DISTRIBUTOR")
+    assert own["reserved_kg"] == "0.000"
 
-    summary = client.get("/api/v1/inventory/summary", headers=org["headers_dist"]).json()
-    assert float(summary["accounts"][0]["reserved_kg"]) == 0.0
+
+def test_distributor_cannot_approve_own_delivery(org_factory):
+    org = org_factory()
+    evidence = upload_png(org["dist_client"])
+    submit = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="10",
+        evidence=evidence,
+        idempotency_key="self-approve",
+    )
+    record_id = submit.json()["id"]
+    response = json_request(
+        org["dist_client"],
+        "post",
+        f"/api/v1/deliveries/{record_id}/approve",
+        {},
+        HTTP_IDEMPOTENCY_KEY="self-approve-review",
+    )
+    assert response.status_code == 403
+
+
+def test_outside_geofence_requires_exception_reason(org_factory):
+    org = org_factory()
+    evidence = upload_png(org["dist_client"])
+    submit = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="10",
+        evidence=evidence,
+        idempotency_key="outside-1",
+        latitude="12.700000",
+        longitude="15.100000",
+    )
+    assert submit.status_code == 201, submit.content
+    record = submit.json()
+    assert "OUTSIDE_GEOFENCE" in record["geo_flags"]
+    declined = json_request(
+        org["admin_client"],
+        "post",
+        f"/api/v1/deliveries/{record['id']}/approve",
+        {},
+        HTTP_IDEMPOTENCY_KEY="outside-review-1",
+    )
+    assert declined.status_code == 409
+    assert declined.json()["error"]["code"] == "REASON_REQUIRED"
+    approved = json_request(
+        org["admin_client"],
+        "post",
+        f"/api/v1/deliveries/{record['id']}/approve",
+        {"exception_reason": "Site coordinates verified by district officer."},
+        HTTP_IDEMPOTENCY_KEY="outside-review-2",
+    )
+    assert approved.status_code == 200, approved.content
+    assert approved.json()["status"] == "APPROVED"
+    assert approved.json()["review_exception_reason"]
+
+
+def test_approved_record_posts_stock_and_cannot_be_cancelled(org_factory):
+    org = org_factory()
+    evidence = upload_png(org["dist_client"])
+    submit = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="35",
+        evidence=evidence,
+        idempotency_key="approve-then-cancel",
+    )
+    record_id = submit.json()["id"]
+    approved = json_request(
+        org["admin_client"],
+        "post",
+        f"/api/v1/deliveries/{record_id}/approve",
+        {},
+        HTTP_IDEMPOTENCY_KEY="approve-1",
+    )
+    assert approved.status_code == 200, approved.content
+    assert approved.json()["stock_movement_id"]
+    assert StockMovement.objects.filter(movement_type="DELIVERY").count() == 1
+    cancel = json_request(
+        org["dist_client"], "post", f"/api/v1/deliveries/{record_id}/cancel", {}
+    )
+    assert cancel.status_code == 409
+
+    own = account_for(org["admin_client"], "DISTRIBUTOR")
+    assert own["posted_balance_kg"] == "65.000"
+    assert own["reserved_kg"] == "0.000"
+
+
+def test_upload_intent_is_bound_to_the_uploading_user(org_factory):
+    org = org_factory()
+    other = AuthClient()
+    other.create_distributor(email="dist3@example.org", name="Third Field")
+    foreign_intent = upload_png(other.client)
+    response = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="5",
+        evidence=foreign_intent,
+        idempotency_key="foreign-intent",
+    )
+    assert response.status_code == 404
+    assert not DistributionRecord.objects.exists()

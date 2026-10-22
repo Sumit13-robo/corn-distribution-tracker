@@ -1,37 +1,17 @@
 # File Handoff: `apps/api/tests/test_inventory_ledger.py`
 
-**Status:** TESTED  
-**Primary owner:** Backend  
-**File purpose:** Ledger integrity tests
+**Status:** TESTED
+**Primary owner:** Backend
+**File purpose:** Ledger postings, reservations, reversals, append-only triggers and concurrency tests
 
-## Responsibility
-Test receipt/allocation/delivery/loss/reversal, decimal unit conversion, insufficient stock, concurrent allocations and reconciliation.
+## Current implementation
 
-## Contract and dependencies
-inventory service
+Ledger postings, reservations, reversals, append-only triggers and concurrency tests. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
 
-Read the relevant contract in `architecture/` or `design/` before implementing. Preserve the APIs, enum values, permission rules, quantity semantics and state transitions established in those documents. Do not create a parallel implementation of the same domain rule in another layer.
+## Verification
 
-## Implementation requirements
-- Implement the file fully; do not leave placeholder bodies for required behavior.
-- Keep concerns local to this module and expose a narrow, typed interface to dependent modules.
-- Validate untrusted input at the appropriate boundary and return/report useful safe errors.
-- Consider authorization scope, concurrency, duplicate requests, accessibility and recoverable failure states where applicable.
-- Add or update adjacent tests for important success and failure cases.
-- Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
+Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
-## Acceptance criteria
-- No negative balance or duplicate movement under retry/race.
-- The file builds and is integrated with its stated dependencies.
-- The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
+## Unresolved issues
 
-## Handoff back to integrator
-When done, report: exported interfaces/endpoints; other files changed; test commands and actual results; environment/config requirements; known limitations; and whether the `file_map.md` status should move to `IMPLEMENTED` or `TESTED`. Only mark `TESTED` when tests were actually run and passed.
-
-## Implementation summary
-
-Ledger coverage: receipts, allocations, adjustments, reversals, duplicate idempotency keys, insufficient stock, over-allocation, unit conversion and append-only behavior.
-
-**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
-
-**Unresolved issues:** None known.
+None known. Docker image build/runtime remains unverified on this host (no Docker daemon).

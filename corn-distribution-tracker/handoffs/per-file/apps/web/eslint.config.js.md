@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/eslint.config.js`
 
-**Status:** TESTED  
-**Primary owner:** DevOps/Lead  
+**Status:** TESTED
+**Primary owner:** DevOps/Lead
 **File purpose:** ESLint flat config
 
 ## Responsibility
@@ -14,6 +14,6 @@ See the relevant contract under `docs/` and the ownership table in `handoffs/fil
 
 ESLint 9 flat config: JS/TypeScript recommended + react-hooks rules, test-file overrides. `eslint src --max-warnings=0` passes.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

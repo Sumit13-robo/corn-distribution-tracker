@@ -6,7 +6,7 @@ User credentials and sessions; site and distributor records; geotagged photos an
 ## Authentication/session
 - Hash passwords using Argon2id or another currently recommended password hash with reviewed parameters; never encrypt for reversibility or log passwords.
 - Enforce reasonable password policy and breached-password checks if a suitable provider exists; rate-limit login/reset/invitation endpoints and use generic messages for account recovery.
-- Prefer short-lived access credentials with refresh-token rotation and revocation. Store refresh credentials only in Secure, HttpOnly cookies with appropriate SameSite policy; protect cookie-driven endpoints against CSRF and validate Origin. Keep token/session secrets out of localStorage.
+- Use Django's database-backed server sessions with an HttpOnly, Secure, SameSite cookie in production. Protect cookie-driven mutations with Django's CSRF check (`csrftoken` cookie + `X-CSRFToken`) and validate `Origin` when present. Keep session and CSRF secrets out of localStorage and browser-readable response bodies.
 - Configure HTTPS at the edge; set Secure cookies in production; set trusted proxy headers correctly; disable permissive wildcard CORS in production.
 - Admin accounts should support/require MFA where feasible before broad production rollout. If MFA is not implemented in the first build, explicitly list it as a launch risk rather than pretending it exists.
 - Create first admin through a controlled CLI/bootstrap process; prevent public role elevation.

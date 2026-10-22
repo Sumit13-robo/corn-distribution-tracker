@@ -47,8 +47,9 @@ export function useDeviceLocation(): UseDeviceLocationResult {
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         setCoordinates({
-          latitude: latitude.toFixed(7),
-          longitude: longitude.toFixed(7),
+          // API/database coordinates use six decimal places (~0.11 m at the equator).
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
           accuracy_m: accuracy === null || accuracy === undefined ? "" : accuracy.toFixed(1),
           timestamp: new Date(position.timestamp).toISOString(),
           device_time: new Date(position.timestamp).toISOString(),

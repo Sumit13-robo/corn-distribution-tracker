@@ -1,19 +1,17 @@
 # File Handoff: `apps/web/nginx.conf`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** DevOps/Lead  
-**File purpose:** Web container server
+**Status:** IMPLEMENTED
+**Primary owner:** DevOps/Lead
+**File purpose:** SPA server with same-origin API proxy.
 
-## Responsibility
-SPA history fallback, cache/security headers and same-origin `/api/` proxy to `api:8000`.
+## Current implementation
 
-## Contract and dependencies
-See the relevant contract under `docs/` and the ownership table in `handoffs/file_map.md`; this file was added during implementation and integrates with the shared API/session/query layers.
+Serves the built SPA with history fallback, caches hashed assets, adds security headers, and proxies `/api/` to `api:8000`. Same-origin API calls keep the Django `sessionid` cookie first-party; no refresh-token cookie or bearer header is involved. `/api/v1/auth/csrf` supports explicit CSRF bootstrap when needed.
 
-## Implementation summary
+## Verification
 
-SPA server with history fallback, static asset caching, security headers and a same-origin `/api/` proxy to `api:8000` (keeps the refresh cookie first-party). Not executed here (Docker unavailable).
+Static configuration review only; Docker/nginx runtime was not executed on this host (no Docker daemon).
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+## Unresolved issues
 
-**Unresolved issues:** Image/compose build was not executed because Docker is unavailable in this environment.
+Runtime proxy/cookie behavior must be checked on a Docker-capable host.

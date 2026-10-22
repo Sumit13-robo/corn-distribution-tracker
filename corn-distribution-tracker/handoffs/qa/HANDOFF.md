@@ -23,9 +23,9 @@ Backend tests under `apps/api/tests/**`, web component tests, smoke/E2E tests an
 
 ## Release-gate evidence (2026-10-22)
 
-- Backend: **46 passed** (`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`), Ruff clean, mypy clean in 65 files.
-- Frontend unit/component: **14 passed** across 3 Vitest files; ESLint 0 warnings; `tsc -b` clean; production build succeeded.
-- Browser E2E: **8 passed** (2 API-seeded setup + 6 workflow) against real FastAPI + PostgreSQL + Chromium. See `apps/web/playwright.config.ts` and `e2e/distribution.spec.ts`; the suite uses a disposable database, per-run generated credentials and only synthetic data.
-- E2E regression finds: distributor assignment nested-site contract (500), captured location not persisted until submit, and horizontal overflow at 360 px. All three are fixed with backend/component/browser regression coverage.
-- Backup/restore: local synthetic PostgreSQL dump/restore drill passed (Alembic revision, row counts and evidence objects matched); production provider drill remains operator-owned. See `docs/ops/BACKUP_RESTORE.md`.
-- Docker: images/compose **not executed** (no Docker/Podman daemon on this host). Dockerfiles pass hadolint 2.15.1 and compose parses; treat runtime verification as pending on a Docker-capable host.
+- Backend: **58 passed**, Ruff clean, mypy clean in 49 source files, Django migration check clean.
+- Frontend unit/component: **18 passed** across 3 Vitest files; ESLint 0 warnings; `tsc -b` clean; production build succeeded.
+- Browser E2E: **8 passed** (2 API-seeded setup + 6 workflow) against real Django/DRF + PostgreSQL + Chromium. The suite uses a disposable database, per-run generated credentials and only synthetic data; `run-e2e.mjs` prepares the database before Playwright web servers start.
+- 360 px audit: all **20 screens** (login, forgot/reset/invite/change-password modes, 10 admin routes and 5 distributor routes) had `scrollWidth = 360`, headings clear of the top bar, no horizontal overflow, no unexpected console errors and no 5xx responses. Invitation one-time-link dialog, audit action filter, local draft discard, settings round-trip and drawer scroll lock/Escape/focus restoration were checked separately.
+- Backup/restore: local Django-schema drill passed (83,441-byte dump; both corn migrations restored; all table counts matched; zero missing evidence objects). Production provider drill remains operator-owned.
+- Docker: images/compose **not executed** (no Docker/Podman daemon on this host); treat runtime verification as pending on a Docker-capable host.

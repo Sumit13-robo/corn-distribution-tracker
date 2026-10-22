@@ -1,5 +1,5 @@
 import { expect, test as setup } from "@playwright/test";
-import type { APIResponse } from "@playwright/test";
+import type { APIRequestContext, APIResponse } from "@playwright/test";
 
 import { e2e } from "./support/config";
 import { credentials } from "./support/credentials";
@@ -23,6 +23,13 @@ async function body<T>(response: APIResponse, label: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+/** Read a fresh CSRF token; Django rotates it when the session logs in. */
+async function csrf(request: APIRequestContext): Promise<string> {
+  const response = await request.get("/api/v1/auth/csrf");
+  const payload = await body<{ csrf_token: string }>(response, "csrf bootstrap");
+  return payload.csrf_token;
+}
+
 /**
  * Seed the E2E world through the public HTTP API (not direct database writes):
  * one active campaign/site, one accepted distributor invitation, one target,
@@ -32,11 +39,15 @@ setup("seed campaign, site, distributor, assignment and stock", async ({ request
   const creds = credentials();
   const api = (route: string) => `/api/v1${route}`;
 
-  const loginResponse = await request.post(api("/auth/login"), {
-    data: { email: creds.adminEmail, password: creds.adminPassword },
-  });
-  const login = await body<{ access_token: string; user: CreatedUser }>(loginResponse, "admin login");
-  const auth = { Authorization: `Bearer ${login.access_token}` };
+  await csrf(request);
+  const login = await body<{ user: CreatedUser }>(
+    await request.post(api("/auth/login"), {
+      data: { email: creds.adminEmail, password: creds.adminPassword },
+    }),
+    "admin login",
+  );
+  const csrfToken = await csrf(request);
+  const auth = { "X-CSRFToken": csrfToken };
 
   const campaign = await body<NamedRow>(
     await request.post(api("/campaigns"), {
@@ -83,6 +94,7 @@ setup("seed campaign, site, distributor, assignment and stock", async ({ request
 
   const distributor = await body<CreatedUser>(
     await request.post(api("/auth/accept-invitation"), {
+      headers: auth,
       data: {
         token: invitation.invite_token,
         password: creds.distributorPassword,
@@ -147,6 +159,7 @@ setup("seed campaign, site, distributor, assignment and stock", async ({ request
  */
 setup("verify seeded distributor credentials", async ({ request }) => {
   const creds = credentials();
+  await csrf(request);
   const response = await request.post("/api/v1/auth/login", {
     data: { email: creds.distributorEmail, password: creds.distributorPassword },
   });

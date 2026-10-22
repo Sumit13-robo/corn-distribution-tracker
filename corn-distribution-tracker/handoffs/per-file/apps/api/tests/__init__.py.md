@@ -1,19 +1,17 @@
 # File Handoff: `apps/api/tests/__init__.py`
 
-**Status:** IMPLEMENTED  
-**Primary owner:** Backend  
-**File purpose:** Package marker for the backend test suite
+**Status:** IMPLEMENTED
+**Primary owner:** Backend
+**File purpose:** Backend test package marker
 
-## Responsibility
-Package marker for the backend test suite.
+## Current implementation
 
-## Contract and dependencies
-See the relevant contract under `docs/` and the ownership table in `handoffs/file_map.md`; this file was added during implementation and integrates with the shared API/session/query layers.
+Backend test package marker. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
 
-## Implementation summary
+## Verification
 
-Package marker for the backend test suite.
+Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
-**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+## Unresolved issues
 
-**Unresolved issues:** None known.
+None known. Docker image build/runtime remains unverified on this host (no Docker daemon).

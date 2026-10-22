@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { api } from "../../../lib/api-client";
 import { queryKeys } from "../../../lib/query-client";
 import { DataTable } from "../../../components/common/DataTable";
@@ -10,12 +10,12 @@ import { FormField } from "../../../components/common/FormField";
 import { StatusBadge } from "../../../components/common/StatusBadge";
 import { useToast } from "../../../app/providers";
 import { formatDateTime, formatKg } from "../../../lib/format";
-import type { DistributorDetailOut } from "../../../types/domain";
+import type { DistributorDetailOut, InvitationCreatedOut } from "../../../types/domain";
 
 /**
  * Distributor management (SCREEN_SPECS): list with status and stock, invite
- * creation, rename, deactivation. The raw invitation token is never shown —
- * invite state comes from the server's has_open_invitation flag.
+ * creation, rename, deactivation. The raw invitation token is returned once by
+ * the API and shown once here for secure delivery; it is never logged.
  */
 export function DistributorsPage() {
   const [search, setSearch] = useState("");
@@ -24,6 +24,9 @@ export function DistributorsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [createdInvite, setCreatedInvite] = useState<InvitationCreatedOut | null>(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [deactivating, setDeactivating] = useState<DistributorDetailOut | null>(null);
@@ -39,9 +42,13 @@ export function DistributorsPage() {
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["distributors"] });
 
   const invite = useMutation({
-    mutationFn: () => api.createInvitation({ email: inviteEmail.trim(), display_name: inviteName.trim(), role: "DISTRIBUTOR" }),
-    onSuccess: () => {
-      toast.notify("success", "Invitation created and handed to the delivery channel.");
+    mutationFn: () =>
+      api.createInvitation({ email: inviteEmail.trim(), display_name: inviteName.trim(), role: "DISTRIBUTOR" }),
+    onSuccess: (result) => {
+      setCreatedInvite(result);
+      setInviteCopied(false);
+      setCopyError(null);
+      toast.notify("success", "Invitation created. Deliver the one-time link securely.");
       setInviteOpen(false);
       setInviteEmail("");
       setInviteName("");
@@ -49,6 +56,20 @@ export function DistributorsPage() {
       refresh();
     },
   });
+
+  const inviteUrl = createdInvite
+    ? `${window.location.origin}/reset-password?mode=invite&token=${encodeURIComponent(createdInvite.invite_token)}`
+    : "";
+
+  async function copyInviteLink(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteCopied(true);
+      setCopyError(null);
+    } catch {
+      setCopyError("Copy was blocked by the browser. Select the link and copy it manually.");
+    }
+  }
 
   const rename = useMutation({
     mutationFn: (input: { id: string; displayName: string }) =>
@@ -213,7 +234,7 @@ export function DistributorsPage() {
               { key: "last_login", header: "Last login", sortValue: (row) => row.last_login_at ?? "", render: (row) => formatDateTime(row.last_login_at) },
               {
                 key: "actions",
-                header: "",
+                header: "Actions",
                 render: (row) =>
                   row.is_active ? (
                     <button type="button" className="btn ghost small" onClick={() => setDeactivating(row)}>
@@ -232,8 +253,8 @@ export function DistributorsPage() {
         message={
           <div className="stack">
             <p className="small muted">
-              The one-time invitation token is delivered through your organization's configured channel; it is never
-              shown again and never stored in this interface.
+              A one-time invitation link will be created and shown here once. Deliver it to the distributor through
+              your organization&rsquo;s approved secure channel.
             </p>
             <FormField id="invite-email" label="Email" required>
               {(ids) => (
@@ -278,9 +299,53 @@ export function DistributorsPage() {
       />
 
       <ConfirmDialog
+        open={createdInvite !== null}
+        title="Invitation link ready"
+        message={
+          <div className="stack">
+            <p>
+              Send this one-time link to <strong>{createdInvite?.email}</strong> through your organization&rsquo;s
+              approved secure channel. It disappears when you close this dialog and cannot be shown again.
+            </p>
+            <label className="form-field" htmlFor="created-invite-link">
+              <span className="label">Invitation link</span>
+              <input
+                id="created-invite-link"
+                type="text"
+                readOnly
+                value={inviteUrl}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </label>
+            {inviteCopied ? (
+              <p className="notice success" role="status">
+                Link copied to the clipboard.
+              </p>
+            ) : null}
+            {copyError ? (
+              <p className="notice warning" role="alert">
+                {copyError}
+              </p>
+            ) : null}
+            <p className="small muted">
+              The recipient will set their display name and password after opening the link.
+            </p>
+          </div>
+        }
+        confirmLabel={inviteCopied ? "Copied" : "Copy link"}
+        cancelLabel="Close"
+        onConfirm={() => void copyInviteLink()}
+        onCancel={() => {
+          setCreatedInvite(null);
+          setInviteCopied(false);
+          setCopyError(null);
+        }}
+      />
+
+      <ConfirmDialog
         open={deactivating !== null}
         title={`Deactivate ${deactivating?.display_name ?? ""}?`}
-        message="The distributor can no longer sign in; active refresh sessions are revoked server-side. Drafts on their device remain local to them."
+        message="The distributor can no longer sign in and active sessions are revoked server-side. Drafts on their device remain local to them."
         confirmLabel="Deactivate"
         destructive
         busy={deactivate.isPending}

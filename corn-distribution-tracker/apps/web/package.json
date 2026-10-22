@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "node e2e/support/run-e2e.mjs",
     "lint": "eslint src",
     "typecheck": "tsc -b --noEmit"
   },

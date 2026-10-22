@@ -166,45 +166,46 @@ export function InventoryPage() {
             ) : null}
           </div>
           <h2 style={{ marginTop: "var(--space-3)" }}>Account balances</h2>
-          <div className="data-table-wrap">
-            <table className="data-table">
-              <caption>Stock account balances</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Account</th>
-                  <th scope="col">Type</th>
-                  <th scope="col" className="num">
-                    Posted balance (kg)
-                  </th>
-                  <th scope="col" className="num">
-                    Reserved (kg)
-                  </th>
-                  <th scope="col" className="num">
-                    Available (kg)
-                  </th>
-                  <th scope="col">Ledger</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.data.accounts.map((account) => (
-                  <tr key={account.id}>
-                    <td>{account.name}</td>
-                    <td>
-                      <StatusBadge status="ACTIVE" label={account.account_type} tone="info" />
-                    </td>
-                    <td className="num">{formatKg(account.posted_balance_kg)}</td>
-                    <td className="num">{formatKg(account.reserved_kg)}</td>
-                    <td className="num">{formatKg(account.available_kg)}</td>
-                    <td>
-                      <button type="button" className="btn ghost small" onClick={() => setSelectedAccountId(account.id)}>
-                        View ledger
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            caption="Stock account balances"
+            rowKey={(account) => account.id}
+            rows={summary.data.accounts}
+            columns={[
+              { key: "account", header: "Account", render: (account) => account.name },
+              {
+                key: "type",
+                header: "Type",
+                render: (account) => <StatusBadge status="ACTIVE" label={account.account_type} tone="info" />,
+              },
+              {
+                key: "posted",
+                header: "Posted balance (kg)",
+                numeric: true,
+                render: (account) => formatKg(account.posted_balance_kg),
+              },
+              {
+                key: "reserved",
+                header: "Reserved (kg)",
+                numeric: true,
+                render: (account) => formatKg(account.reserved_kg),
+              },
+              {
+                key: "available",
+                header: "Available (kg)",
+                numeric: true,
+                render: (account) => formatKg(account.available_kg),
+              },
+              {
+                key: "ledger",
+                header: "Ledger",
+                render: (account) => (
+                  <button type="button" className="btn ghost small" onClick={() => setSelectedAccountId(account.id)}>
+                    View ledger
+                  </button>
+                ),
+              },
+            ]}
+          />
         </div>
       )}
 

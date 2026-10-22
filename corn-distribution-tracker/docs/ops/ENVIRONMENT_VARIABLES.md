@@ -1,32 +1,43 @@
 # Environment Variables
 
-Use `.env.example` with safe placeholders only. Validate required values at API startup and fail fast for missing or insecure production settings. Keep `.env` out of source control.
+Use `.env.example` with safe placeholders only. Django validates configuration at startup and fails fast on insecure production settings. Keep `.env` out of source control.
 
-## API
-- `APP_ENV` — `development|test|staging|production`.
-- `APP_NAME` — display/service name.
+## API (Django)
+- `APP_ENV` — `development|test|staging|production`. `production` enables the fail-fast policy.
+- `APP_NAME` — service/display name.
 - `API_V1_PREFIX` — normally `/api/v1`.
-- `DATABASE_URL` — PostgreSQL connection string, with credentials from secret manager in production.
-- `SECRET_KEY` / token signing key — high-entropy secret from secret manager; never use a sample default in production.
-- `ACCESS_TOKEN_TTL_MINUTES` — short access lifetime.
-- `REFRESH_TOKEN_TTL_DAYS` — explicit refresh lifetime with rotation/revocation.
-- `CORS_ALLOWED_ORIGINS` — comma-separated exact origins; never wildcard with credentials.
-- `COOKIE_SECURE`, `COOKIE_SAMESITE`, `COOKIE_DOMAIN` — production-safe cookie settings; document CSRF/Origin requirements.
-- `RATE_LIMIT_BACKEND_URL` — optional shared backend for distributed rate limiting.
+- `DATABASE_URL` — PostgreSQL URL (`postgresql+psycopg://user:pass@host:port/db`); credentials come from a secret manager in production.
+- `DB_CONN_MAX_AGE` — Django database connection lifetime in seconds. The template uses `0` for the threaded development server, which avoids accumulating idle connections; Gunicorn deployments may use `30`-`60` within the database connection budget.
+- `SECRET_KEY` — high-entropy Django secret (for example `openssl rand -hex 48`). The development sample is rejected in production.
+- `SESSION_TTL_DAYS` — database-backed session lifetime (default 14).
+- `SESSION_COOKIE_NAME` — default `sessionid`; HttpOnly is always enabled.
+- `ALLOWED_HOSTS` — comma-separated hostnames; `*` is rejected in production.
+- `CORS_ALLOWED_ORIGINS` — exact SPA origins, comma separated. Never a wildcard when credentials are enabled.
+- `CSRF_TRUSTED_ORIGINS` — exact origins that may send unsafe requests through a proxy. Add the public SPA origin when nginx terminates TLS or strips a port.
+- `CORS_ALLOW_CREDENTIALS` — must remain `true` for cookie sessions (default).
+- `COOKIE_SECURE` — `true` in production. Controls both session and CSRF cookies.
+- `COOKIE_SAMESITE` — `Lax` (default) or `Strict`; `None` requires `COOKIE_SECURE=true`.
+- `COOKIE_DOMAIN` — optional cookie domain; empty means host-only (recommended).
+- `TRUST_X_FORWARDED_PROTO` — enable only behind a trusted proxy that overwrites the header.
+- `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD` — TLS/HSTS behavior behind the ingress.
+- `STORAGE_MODE` — `local` for development/tests or `s3` for production private object storage.
 - `STORAGE_ENDPOINT_URL`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` — private S3-compatible storage.
-- `STORAGE_SIGNED_URL_TTL_SECONDS` — short-lived signed URL expiry.
-- `MAX_EVIDENCE_UPLOAD_BYTES` — configured limit.
-- `MAP_TILE_STYLE_URL` / public map provider settings — public key only if provider explicitly supports safe browser use; set domain restrictions at provider.
-- `ORG_TIMEZONE` — explicit IANA timezone.
-- `DEFAULT_GEOFENCE_RADIUS_M`, `MAX_ACCEPTABLE_GPS_ACCURACY_M`, `MAX_LOCATION_AGE_SECONDS` — documented evidence thresholds.
-- `LOG_LEVEL` — API application log level. No metrics/APM exporter or alerting integration is bundled; see the launch risks in the README.
-- `INITIAL_ADMIN_EMAIL` should only be used by a controlled one-shot bootstrap tool, not as an automatic public startup user; avoid password env var where secure interactive prompt is possible.
+- `STORAGE_SIGNED_URL_TTL_SECONDS` — short-lived evidence URL expiry (default 120).
+- `MAX_EVIDENCE_UPLOAD_BYTES` — configured upload cap (default 10 MiB).
+- `LOCAL_STORAGE_DIR` — private local evidence directory when `STORAGE_MODE=local`.
+- `PUBLIC_BASE_URL` — public API origin used where absolute URLs are needed.
+- `ORG_TIMEZONE` — initial IANA timezone for a new organization.
+- `DEFAULT_GEOFENCE_RADIUS_M`, `MAX_ACCEPTABLE_GPS_ACCURACY_M`, `MAX_LOCATION_AGE_SECONDS`, `MAX_CAPTURE_TIME_DRIFT_SECONDS` — initial evidence thresholds.
+- `LOG_LEVEL` — structured application log level. No metrics/APM exporter is bundled.
+- First-admin bootstrap uses the CLI, not a startup env user:
+  `python manage.py create_admin --email ops@example.org --password-env INITIAL_ADMIN_PASSWORD_ENV`.
+  The password is read from that env var or an interactive prompt and is never passed on the command line or logged.
 
-## Web
-- `VITE_API_BASE_URL` — public API origin/path only.
-- `VITE_MAP_STYLE_URL` — public map style URL/key with provider restrictions only.
+## Web (build-time, public)
+- `VITE_API_BASE_URL` — public API path/origin; the default `/api/v1` keeps the same-origin proxy and first-party session cookie.
+- `VITE_MAP_STYLE_URL` — public map style URL/key with provider restrictions only. Empty uses the coordinate board.
 
 ## Rules
-- Vite variables are compiled into browser code; never put DB, storage secret, signing key, SMTP password, or private API secret under `VITE_`.
+- Vite variables are compiled into browser code; never put a database URL, storage secret, Django secret, SMTP password, or private API secret under `VITE_`.
 - Do not commit real values, actual addresses, real site coordinates, real photos, or credentials.
-- Production startup must reject insecure secrets, public storage configuration when detectable, and unsafe CORS/cookie combinations.
+- Production startup must reject insecure secrets, invalid CORS/CSRF/cookie combinations, non-S3 storage, and missing storage configuration.

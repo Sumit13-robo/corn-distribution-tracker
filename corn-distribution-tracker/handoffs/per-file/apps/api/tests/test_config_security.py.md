@@ -1,23 +1,17 @@
 # File Handoff: `apps/api/tests/test_config_security.py`
 
-**Status:** TESTED  
-**Primary owner:** Backend  
-**File purpose:** Configuration fail-fast tests
+**Status:** TESTED
+**Primary owner:** Backend
+**File purpose:** Production/staging configuration fail-fast tests
 
-## Responsibility
-Prove that production/staging refuse insecure configuration (placeholder secret, insecure cookies, local evidence
-storage, wildcard CORS with credentials) while development/test may keep the documented sample defaults. Settings are
-constructed with synthetic values and `_env_file=None` so a local `.env` cannot change the result.
+## Current implementation
 
-## Contract and dependencies
-`app/core/config.py`; deployment runbook; security/privacy contract.
+Production/staging configuration fail-fast tests. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
 
-## Implementation summary
+## Verification
 
-Adds four tests: production rejects placeholder defaults (validation list + `RuntimeError` on startup),
-hardened production settings pass, staging rejects the sample secret, and development remains convenient.
-`get_settings()` now fails startup via `assert_secure_settings()` instead of only logging.
+Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
-**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → clean; `make typecheck-api` → clean.
+## Unresolved issues
 
-**Unresolved issues:** None known.
+None known. Docker image build/runtime remains unverified on this host (no Docker daemon).

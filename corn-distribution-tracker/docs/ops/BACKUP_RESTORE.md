@@ -8,8 +8,9 @@ restore a backup over a live database without an explicit incident/release decis
 
 Back up these as one recoverable set:
 
-1. **PostgreSQL** — the source of truth for users, stock movements, distributions, reservations, audit
-   events and evidence metadata. The Alembic revision (`alembic_version.version_num`) is in the same dump.
+1. **PostgreSQL** — the source of truth for users, sessions, stock movements, distributions,
+   reservations, audit events and evidence metadata. Django migration history
+   (`django_migrations`) is in the same dump.
 2. **Evidence object storage** — the private S3-compatible bucket, or the local `LOCAL_STORAGE_DIR` in
    development. Preserve object keys exactly; evidence rows reference them.
 3. **Configuration and secrets** — kept in the secret manager, not in the repository or the database dump.
@@ -33,8 +34,8 @@ database backups and bucket versioning/lifecycle rules, or an equivalent control
 
 ## PostgreSQL backup
 
-Convert the SQLAlchemy driver URL to a `pg_dump`-compatible URL (do not put real credentials in shell
-history; use your secret manager or a protected environment file):
+Convert the Django/psycopg driver URL to a `pg_dump`-compatible libpq URL. Do not put real credentials in
+shell history; use your secret manager or a protected environment file.
 
 ```bash
 export PG_URL="${DATABASE_URL/postgresql+psycopg:/postgresql:}"
@@ -87,9 +88,10 @@ Local mode is for development/testing only. Production startup rejects it.
    ```
 
 3. Restore evidence objects into the configured bucket/path **before** running the readiness check.
-4. Start the API with the target `DATABASE_URL`, storage settings, and a non-production `SECRET_KEY`.
+4. Point the restored application at the target `DATABASE_URL` and storage settings with a non-production
+   `SECRET_KEY`. Confirm `APP_ENV` is not `production` unless this is a production restore exercise.
 5. Verify:
-   - `alembic current` reports the expected revision;
+   - `python manage.py showmigrations corn` reports all migrations applied;
    - `/health/ready` returns 200 with `database: ok` and `storage: ok`;
    - row counts for users, distribution records, stock movements, photo evidence and audit events match
      the source snapshot;
@@ -112,24 +114,27 @@ done
 ```
 
 For S3, replace the file test with `aws s3api head-object --bucket "$STORAGE_BUCKET" --key "$key"`.
+The exact table name is confirmed with `\dt` in the restored database if a future migration renames it.
 
 ## Rollback
 
 Prefer backward-compatible migrations and keep the previous API/web artifacts. Do not run a destructive
-down-migration as a rollback shortcut. Restore the database and evidence set together, then verify the
-ledger reconciliation endpoint and audit trail before reopening traffic.
+down-migration as a rollback shortcut. Restore the database and evidence set together, then verify ledger
+reconciliation and the audit trail before reopening traffic. The append-only database triggers intentionally
+make ledger/audit deletion fail.
 
-## Tested local drill (2026-10-22)
+## Tested local drill (2026-10-22, Django schema)
 
-A drill was run against the synthetic `corn_tracker_e2e` database (not production data):
+Run against the synthetic `corn_tracker_e2e` database; not production data:
 
-- `pg_dump --format=custom` produced a 61,116-byte dump.
+- `pg_dump --format=custom` produced an 83,441-byte dump and checksum.
 - Restored into isolated `corn_tracker_restore_e2e`.
-- Source and restored Alembic revision: `0001`.
-- Row counts matched: users 2/2, distribution records 2/2, stock movements 3/3, photo evidence 2/2,
-  audit events 21/21.
-- Both referenced evidence objects were present under the local synthetic storage directory.
+- Restored Django migrations: `corn.0001_initial`, `corn.0002_append_only_triggers`.
+- Row counts matched exactly: users 2, campaigns 1, sites 1, assignments 1, distribution records 2,
+  photo evidence 2, stock movements 3, audit events 23, inventory accounts 3.
+- Both referenced evidence objects were present under the synthetic local storage directory.
 - The drill database was dropped after verification.
 
-This proves the local PostgreSQL dump/restore procedure; it does not substitute for a restore drill against
-the production database/storage provider, which requires operator credentials and a maintenance window.
+This proves the local PostgreSQL/evidence dump-restore procedure for the current schema. It does not
+substitute for a restore drill against the production database/storage provider, which requires operator
+credentials and a maintenance window.

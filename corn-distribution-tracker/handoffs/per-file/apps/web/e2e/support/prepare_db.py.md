@@ -2,17 +2,16 @@
 
 **Status:** TESTED
 **Primary owner:** QA
-**File purpose:** Disposable E2E database creation
+**File purpose:** Recreate only the disposable E2E PostgreSQL database.
 
-## Responsibility
-Drop and recreate only the E2E database before Alembic runs, using a maintenance connection derived from `E2E_DATABASE_URL`.
+## Current implementation
 
-## Contract and dependencies
-SQLAlchemy/psycopg in the repo venv; PostgreSQL role with CREATEDB; explicit destructive E2E database.
+Derives a maintenance connection from `E2E_DATABASE_URL`, validates the PostgreSQL scheme and a safe database name containing `e2e`, then drops/recreates that database with `WITH (FORCE)`. It runs from `run-e2e.mjs` before Playwright starts Django. The connecting role must own the E2E database or be able to create/drop it.
 
-## Implementation summary
-Parses `E2E_DATABASE_URL`, validates the database name against `[A-Za-z0-9_]+` and requires the name to contain `e2e` (a guard against accidentally dropping a real database), connects to the `postgres` maintenance database in autocommit mode, then runs `DROP DATABASE IF EXISTS ... WITH (FORCE)` and `CREATE DATABASE`. Fails closed on unsafe names. Used only by Playwright global setup, never by application startup.
+## Verification
 
-**Verification (2026-10-22):** recreated `corn_tracker_e2e` on each of the passing E2E runs; migrations and seeding followed.
+Exercised on a fresh clean-database run; `npm run test:e2e` → 8 passed. The target is always the isolated `corn_tracker_e2e` database.
 
-**Unresolved issues:** Requires database-creation privileges. The default local URL is documented; CI/other hosts must set `E2E_DATABASE_URL`.
+## Unresolved issues
+
+If a database with the same name is owned by a different role, PostgreSQL refuses the drop with `must be owner of database`; drop it with the owning role first. No real database should be targeted.

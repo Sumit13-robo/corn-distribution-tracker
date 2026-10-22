@@ -4,8 +4,11 @@ PY ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 ARGS ?=
 
-.PHONY: help venv api-install web-install e2e-install migrate migrate-down test-api test-web test-e2e \
-        lint-api lint-web typecheck-api typecheck-web build-web run-api run-web dev-up dev-dump-clean
+.PHONY: help venv api-install web-install e2e-install migrate migrate-check create-admin test-api test-web \
+        test-e2e lint-api lint-web typecheck-api typecheck-web build-web run-api run-web dev-up db-up
+
+help:
+	@grep -E '^[a-zA-Z_-]+:' Makefile | sort
 
 venv:
 	python3 -m venv .venv && $(PIP) install --upgrade pip
@@ -20,16 +23,17 @@ e2e-install:
 	cd apps/web && npx playwright install chromium
 
 migrate:
-	cd apps/api && ../../.venv/bin/alembic upgrade head
+	cd apps/api && ../../.venv/bin/python manage.py migrate
 
-migrate-down:
-	cd apps/api && ../../.venv/bin/alembic downgrade -1
+migrate-check:
+	cd apps/api && ../../.venv/bin/python manage.py makemigrations --check --dry-run
 
 create-admin:
-	cd apps/api && ../../.venv/bin/python -m app.cli.create_admin $(ARGS)
+	cd apps/api && ../../.venv/bin/python manage.py create_admin $(ARGS)
 
 test-api:
-	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest apps/api/tests
+	cd apps/api && DJANGO_SETTINGS_MODULE=config.settings_test PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+		../../.venv/bin/pytest -p pytest_django.plugin tests -q
 
 test-web:
 	cd apps/web && npm test
@@ -38,13 +42,13 @@ test-e2e:
 	cd apps/web && npm run test:e2e
 
 lint-api:
-	.venv/bin/ruff check apps/api/app apps/api/tests
+	.venv/bin/ruff check apps/api/config apps/api/corn apps/api/tests apps/api/manage.py
 
 lint-web:
 	cd apps/web && npx eslint src --max-warnings=0
 
 typecheck-api:
-	.venv/bin/mypy apps/api/app --config-file apps/api/pyproject.toml
+	cd apps/api && ../../.venv/bin/mypy config corn --config-file pyproject.toml
 
 typecheck-web:
 	cd apps/web && npx tsc -b --noEmit
@@ -52,11 +56,14 @@ typecheck-web:
 build-web:
 	cd apps/web && npm run build
 
-dev-up: ## start docker compose stack
-	docker compose up --build
-
 run-api:
-	cd apps/api && ../../.venv/bin/uvicorn app.main:app --reload --port 8000
+	cd apps/api && ../../.venv/bin/python manage.py runserver 127.0.0.1:8000
 
 run-web:
 	cd apps/web && npm run dev
+
+db-up:
+	docker compose up -d db
+
+dev-up:
+	docker compose up --build

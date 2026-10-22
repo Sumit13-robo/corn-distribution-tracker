@@ -6,8 +6,8 @@ import { credentials } from "./support/credentials";
 
 /**
  * End-to-end proof of the critical distributor/reviewer loop against real
- * PostgreSQL, real FastAPI, and the real SPA:
- *   1. refresh-cookie session restore + role guard,
+ * PostgreSQL, real Django/DRF, and the real SPA:
+ *   1. session-cookie restore + role guard,
  *   2. photo/geo delivery submission,
  *   3. reviewer approval that posts the stock movement,
  *   4. distributor sees the approved record,
@@ -72,21 +72,24 @@ async function attachEvidence(page: Page, name: string = e2e.evidenceName): Prom
   await expect(page.getByTestId("photo-thumbs").locator("figure")).toHaveCount(1);
 }
 
-test("distributor session survives reload without persisting the access token", async ({ page, context }) => {
+test("distributor session survives reload without persisting auth tokens", async ({ page, context }) => {
   await signIn(page, "distributor");
   await expect(page.getByRole("heading", { name: "My workspace" })).toBeVisible();
-  await expect(page.getByText(`E2E Distributor · ${e2e.distributorEmail}`)).toBeVisible();
+  const identity = page.locator(".who-identity");
+  await expect(identity).toContainText("E2E Distributor");
+  await expect(identity).toHaveAttribute("title", `E2E Distributor — ${e2e.distributorEmail}`);
 
   const cookies = await context.cookies();
-  const refresh = cookies.find((cookie) => cookie.name === "refresh_token");
-  expect(refresh, "refresh cookie must be set by login").toBeTruthy();
-  expect(refresh?.httpOnly).toBe(true);
-  expect(refresh?.secure).toBe(false); // local E2E runs over http; production requires secure.
+  const session = cookies.find((cookie) => cookie.name === "sessionid");
+  expect(session, "session cookie must be set by login").toBeTruthy();
+  expect(session?.httpOnly).toBe(true);
+  expect(session?.secure).toBe(false); // local E2E runs over http; production requires secure.
+  expect(cookies.filter((cookie) => /refresh|access|jwt/i.test(cookie.name))).toEqual([]);
 
   const storageKeys = await page.evaluate(() => Object.keys(window.localStorage));
   expect(storageKeys.filter((key) => /token|jwt|auth/i.test(key))).toEqual([]);
 
-  // Reload loses the in-memory access token; the app must restore via /auth/refresh.
+  // The HttpOnly session cookie survives reload and restores the server session.
   await page.reload();
   await expect(page.getByRole("heading", { name: "My workspace" })).toBeVisible();
 
@@ -105,7 +108,7 @@ test("distributor submits a delivery with photo and location evidence", async ({
   await attachEvidence(page);
 
   await page.getByRole("button", { name: "Capture location" }).click();
-  await expect(page.getByText("4.8510000, 31.5820000", { exact: false })).toBeVisible();
+  await expect(page.getByText("4.851000, 31.582000", { exact: false })).toBeVisible();
 
   const submit = page.getByTestId("submit-delivery");
   await expect(submit).toBeEnabled();
@@ -116,7 +119,7 @@ test("distributor submits a delivery with photo and location evidence", async ({
   await expect(page.getByRole("heading", { name: "My submissions" })).toBeVisible();
   const row = page.getByRole("row").filter({ hasText: "25" });
   await expect(row).toContainText("Submitted");
-  await expect(row).toContainText("1 image(s)");
+  await expect(row).toContainText("1 image");
 });
 
 test("admin reviews evidence and approves, posting the stock movement", async ({ page }) => {

@@ -1,7 +1,7 @@
 # File Handoff: `apps/web/vite.config.ts`
 
-**Status:** TESTED  
-**Primary owner:** DevOps / Lead Integrator  
+**Status:** TESTED
+**Primary owner:** DevOps / Lead Integrator
 **File purpose:** Vite config
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 React plugin, dev server on 5173 with a same-origin `/api` proxy to :8000, Vitest jsdom configuration, and an explicit `src/**/*.test.*` include so Playwright specs are never collected by Vitest.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 8 passed.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 8 passed.
 
 **Unresolved issues:** None known.

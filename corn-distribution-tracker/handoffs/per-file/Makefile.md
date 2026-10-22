@@ -1,7 +1,7 @@
 # File Handoff: `Makefile`
 
-**Status:** TESTED  
-**Primary owner:** DevOps / Lead Integrator  
+**Status:** TESTED
+**Primary owner:** DevOps / Lead Integrator
 **File purpose:** Developer commands
 
 ## Responsibility
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Developer targets for venv/install/migrations/admin bootstrap/tests/lint/typecheck/build/run, plus `e2e-install` (Chromium) and `test-e2e` (real API + disposable PostgreSQL). `test-api` disables third-party pytest autoload (ROS plugins on this workstation); commands verified.
 
-**Verification (2026-10-22):** Backend 46 tests passed (ruff/mypy clean); web 14 tests passed (lint/build clean); `make test-e2e` 8 passed; `npm audit` 0 vulnerabilities. Docker image builds were **not executed** because no Docker/Podman daemon was available; both Dockerfiles pass hadolint 2.15.1.
+**Verification (2026-10-22):** Backend 58 tests passed (ruff/mypy clean); web 18 tests passed (lint/build clean); `make test-e2e` 8 passed; `npm audit` 0 vulnerabilities. Docker image builds were **not executed** because no Docker/Podman daemon was available; both Dockerfiles pass hadolint 2.15.1.
 
 **Unresolved issues:** None known.

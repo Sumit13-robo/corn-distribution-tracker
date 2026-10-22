@@ -1,34 +1,45 @@
 # Deployment and Operations Runbook
 
 ## Environments
-Use isolated development, staging and production environments. Each has separate database, object storage bucket, credentials, map provider config and permitted origins. Never use production photos/user records in test fixtures.
+Use isolated development, staging and production environments. Each has a separate database, object storage bucket, credentials, map provider config and permitted origins. Never use production photos or user records in test fixtures.
 
 ## Production topology
-- HTTPS reverse proxy / managed ingress.
-- Web static assets served over HTTPS.
-- FastAPI API behind the same origin path if possible; otherwise strict explicit CORS and credential policy.
-- PostgreSQL with PostGIS in a managed/private network, encrypted disks, automated backups and tested restore.
-- Private object bucket with public access blocked, encryption, lifecycle/retention rules, access logging policy and short-lived signed URLs.
-- Secret manager for DB, session, storage and external provider secrets.
+- HTTPS reverse proxy or managed ingress.
+- Static SPA assets served over HTTPS.
+- Django/DRF API behind the same origin path where possible; otherwise use explicit CORS origins with credentials and a matching `CSRF_TRUSTED_ORIGINS` entry.
+- PostgreSQL in a managed/private network, encrypted disks, automated backups and tested restore. PostGIS is not required by this schema.
+- Private object bucket with public access blocked, encryption, lifecycle/retention rules, access logging and short-lived signed URLs.
+- Secret manager for database, Django `SECRET_KEY`, storage and external provider secrets.
 - Central logs/metrics/error reporting with sensitive data redaction.
 
-## Required environment values
-See `ops/ENVIRONMENT_VARIABLES.md` and `.env.example`. Production must fail startup if required secrets are missing, default values remain, an insecure cookie mode is selected, CORS is wildcard with credentials, or the storage bucket is public.
+## Production startup requirements
+Django reads settings from the environment (and optionally a local `.env` in development). With `APP_ENV=production`, startup fails fast when:
+- `SECRET_KEY` is missing, too short, or still the development sample;
+- `ALLOWED_HOSTS` is empty or contains `*`;
+- session/CSRF cookies are not `Secure`, or SameSite=None is combined with insecure cookies;
+- CORS uses a wildcard or includes an invalid origin while credentials are enabled;
+- `STORAGE_MODE` is not `s3` or required storage fields are missing.
+
+Set `TRUST_X_FORWARDED_PROTO=true` only behind a trusted proxy that overwrites `X-Forwarded-Proto`; never expose that trust directly to clients. See `ops/ENVIRONMENT_VARIABLES.md` and `.env.example`.
 
 ## Release sequence
 1. Build and scan immutable artifacts; pin dependency lockfiles.
-2. Back up database and record current migration revision.
-3. Run migrations as a controlled release step; avoid every app replica racing to apply migrations.
-4. Deploy API/web and verify health/readiness, authentication, authorized photo URL, test distribution flow and logs.
-5. Verify first admin can sign in; confirm invitations, mail provider settings if enabled, map tiles, private storage, and geofence configuration.
-6. Perform smoke checks with synthetic test data; check balances reconcile and map/data filters are scoped.
-7. Monitor error rates, API latency, upload errors, database pool, pending review queue, rejected uploads and background cleanup jobs.
-
-## Backups and recovery
-Document automated backup cadence, encryption, retention, who can restore, RPO/RTO targets chosen by the operator, and restore steps into a separate environment. Restore database and required object versions together where evidence retention depends on both. Perform a periodic restore drill and record results. The concrete procedure and the synthetic restore drill are in [`docs/ops/BACKUP_RESTORE.md`](../ops/BACKUP_RESTORE.md).
+2. Back up the database and record applied Django migrations (`python manage.py showmigrations`).
+3. Run `python manage.py migrate --noinput` as a controlled release step. Do not let every Gunicorn worker race to migrate; migrate once before starting replicas.
+4. Start Gunicorn against `config.wsgi:application` and verify `/health/live` plus `/health/ready`.
+5. Verify sign-in, an authorized evidence URL, an admin mutation with CSRF, and the distributor submission/review flow using synthetic data.
+6. Confirm balances reconcile, role scoping is enforced, and the bundle contains no secrets.
+7. Monitor error rates, latency, upload failures, database connections, pending review age and ledger reconciliation.
 
 ## Health and observability
-Expose unauthenticated minimal liveness and readiness endpoints without internal secrets; readiness should test dependencies safely. Include request IDs, structured logs, metrics for endpoint latency/errors, DB pool, auth throttles, upload failures, job failures, pending-approval age and ledger reconciliation. Alert on sustained errors or reconciliation mismatch.
+- Liveness: `GET /health/live` (also available under `/api/v1`).
+- Readiness: `GET /health/ready` probes the database and configured evidence storage without exposing secrets.
+- Requests carry sanitized `X-Request-ID` values and structured method/path/status/duration logs.
+- There is no bundled APM or metrics exporter; connect the logs and health endpoints to the operator's monitoring platform.
+- Rate limits are process-local in this build. A multi-replica deployment should move counters to a shared store such as Redis.
+
+## Backups and recovery
+Document automated backup cadence, encryption, retention, who can restore, RPO/RTO targets, and restore steps into a separate environment. Restore the database and required object versions together where evidence retention depends on both. The concrete procedure and synthetic restore drill are in [`docs/ops/BACKUP_RESTORE.md`](../ops/BACKUP_RESTORE.md).
 
 ## Rollback
-Prefer backward-compatible schema migrations. Keep previous web/API artifacts. Define rollback behavior if a migration is destructive; never run an unreviewed down-migration that loses ledger/evidence. Use additive migrations and a separate data-migration step for changes that affect stock history.
+Prefer backward-compatible additive schema migrations. Keep the previous web/API artifacts. Never run an unreviewed down-migration that loses ledger or evidence rows. Django migration history lives in `django_migrations`; the append-only database triggers intentionally make ledger/audit deletion fail. Roll back application code first, then use a separately reviewed data-migration plan if the schema must change.

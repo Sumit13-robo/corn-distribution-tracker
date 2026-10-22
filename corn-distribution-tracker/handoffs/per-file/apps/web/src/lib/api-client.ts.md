@@ -1,37 +1,17 @@
 # File Handoff: `apps/web/src/lib/api-client.ts`
 
-**Status:** TESTED  
-**Primary owner:** Frontend  
-**File purpose:** Typed API client
+**Status:** TESTED
+**Primary owner:** Frontend
+**File purpose:** Typed API client over Django session auth and CSRF.
 
-## Responsibility
-Centralize base URL, auth/session refresh strategy, JSON/error parsing, request IDs, abort signals, idempotency header support and safe retry policy. Never blindly retry non-idempotent mutations without key.
+## Current implementation
 
-## Contract and dependencies
-API contract
+Fetches JSON with same-origin credentials, reads the `csrftoken` cookie for unsafe methods and bootstraps it via `GET /auth/csrf` when necessary. A 401 clears session state and returns the caller to authentication; there is no refresh call/retry or bearer header. Adds request IDs and the uniform API error envelope, handles pagination/query serialization, protected evidence view URLs, CSV downloads and all domain endpoints.
 
-Read the relevant contract in `architecture/` or `design/` before implementing. Preserve the APIs, enum values, permission rules, quantity semantics and state transitions established in those documents. Do not create a parallel implementation of the same domain rule in another layer.
+## Verification
 
-## Implementation requirements
-- Implement the file fully; do not leave placeholder bodies for required behavior.
-- Keep concerns local to this module and expose a narrow, typed interface to dependent modules.
-- Validate untrusted input at the appropriate boundary and return/report useful safe errors.
-- Consider authorization scope, concurrency, duplicate requests, accessibility and recoverable failure states where applicable.
-- Add or update adjacent tests for important success and failure cases.
-- Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
+`npm test` → 18 passed (including session/CSRF client tests). `npx tsc -b --noEmit`, ESLint and production build pass.
 
-## Acceptance criteria
-- 401 refresh/retry and validation/conflict errors tested.
-- The file builds and is integrated with its stated dependencies.
-- The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
+## Unresolved issues
 
-## Handoff back to integrator
-When done, report: exported interfaces/endpoints; other files changed; test commands and actual results; environment/config requirements; known limitations; and whether the `file_map.md` status should move to `IMPLEMENTED` or `TESTED`. Only mark `TESTED` when tests were actually run and passed.
-
-## Implementation summary
-
-Typed fetch wrapper with error-envelope mapping, memory-only bearer token, single-flight 401 refresh + retry-once, upload helper (bearer only for relative URLs; intent headers for presigned URLs), CSV download and all endpoint functions.
-
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
-
-**Unresolved issues:** None known.
+None known.

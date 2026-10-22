@@ -88,6 +88,35 @@ export function DistributionMapPage() {
         </div>
       </div>
 
+      {sites.length > 0 ? (
+        <div className="section">
+          <h2>Sites in scope</h2>
+          <div className="stack small">
+            {sites.map((site) => (
+              <button
+                key={site.id}
+                type="button"
+                className={`map-site-item${selectedSiteId === site.id ? " is-selected" : ""}`}
+                aria-pressed={selectedSiteId === site.id}
+                onClick={() => setSelectedSiteId(site.id)}
+                data-testid={`site-list-item-${site.site_code}`}
+              >
+                <span className="map-site-title">
+                  <span aria-hidden="true">{selectedSiteId === site.id ? "▸" : "○"}</span>
+                  <strong>{site.site_code}</strong>
+                  <span className="map-site-name">{site.name}</span>
+                </span>
+                <span className="map-site-meta">
+                  <StatusBadge status={site.status} />
+                  <span className="num">approved {formatKg(site.approved_kg)} kg</span>
+                  <span className="num">pending {formatKg(site.pending_kg)} kg</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {mapSites.isError ? (
         <ErrorState error={mapSites.error} onRetry={() => void mapSites.refetch()} />
       ) : mapSites.isLoading ? (
@@ -121,33 +150,6 @@ export function DistributionMapPage() {
           </div>
         </div>
       )}
-
-      <div className="section">
-        <h2>Sites in scope</h2>
-        <div className="stack small">
-          {sites.map((site) => (
-            <button
-              key={site.id}
-              type="button"
-              className="btn ghost"
-              style={{
-                justifyContent: "flex-start",
-                color: selectedSiteId === site.id ? "var(--color-brand-700)" : undefined,
-                fontWeight: selectedSiteId === site.id ? "var(--weight-strong)" : undefined,
-              }}
-              onClick={() => setSelectedSiteId(site.id)}
-              data-testid={`site-list-item-${site.site_code}`}
-            >
-              <span>{selectedSiteId === site.id ? "▶" : "○"}</span>
-              <strong>{site.site_code}</strong> {site.name}
-              <StatusBadge status={site.status} />
-              <span className="muted num">
-                approved {formatKg(site.approved_kg)} kg · pending {formatKg(site.pending_kg)} kg
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {selected ? (
         <div className="section" data-testid="site-drawer">
@@ -337,7 +339,7 @@ function FallbackCoordinateBoard({
             className="btn ghost"
             style={{
               position: "absolute",
-              left: `${Math.min(left, 92)}%`,
+              left: `${Math.max(16, Math.min(left, 84))}%`,
               top: `${Math.max(4, Math.min(top, 94))}%`,
               transform: "translate(-50%, -50%)",
               padding: "2px 6px",

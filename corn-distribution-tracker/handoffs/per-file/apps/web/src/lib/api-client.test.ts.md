@@ -1,19 +1,17 @@
 # File Handoff: `apps/web/src/lib/api-client.test.ts`
 
-**Status:** TESTED  
-**Primary owner:** Frontend  
-**File purpose:** API client tests
+**Status:** TESTED
+**Primary owner:** Frontend
+**File purpose:** API client session/CSRF tests.
 
-## Responsibility
-Covers single-flight refresh, rotated-token retry, failed-refresh auth loss, token-less requests and error envelope mapping (4 tests).
+## Current implementation
 
-## Contract and dependencies
-See the relevant contract under `docs/` and the ownership table in `handoffs/file_map.md`; this file was added during implementation and integrates with the shared API/session/query layers.
+Covers session bootstrap, unsafe requests carrying `X-CSRFToken`, no bearer/refresh flow, structured error parsing, evidence URL handling and logout behavior with mocked fetch. Uses first-party session cookies.
 
-## Implementation summary
+## Verification
 
-Covers single-flight refresh, rotated-token retry, failed-refresh auth loss, token-less requests and error envelope mapping (4 tests).
+`npm test -- --run` → 18 passed across 3 files.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+## Unresolved issues
 
-**Unresolved issues:** None known.
+None known.

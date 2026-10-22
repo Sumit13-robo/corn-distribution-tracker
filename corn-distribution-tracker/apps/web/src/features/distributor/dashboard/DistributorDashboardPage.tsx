@@ -23,16 +23,27 @@ export function DistributorDashboardPage() {
   const userId = getCurrentUserId();
   const drafts = userId ? loadDrafts(userId) : [];
 
+  const loading = overview.isLoading || assignments.isLoading || stock.isLoading;
+  const assignmentRows = assignments.data ?? [];
+  const approvedTotal = assignmentRows.reduce((acc, item) => acc + Number(item.approved_kg), 0);
+  const pendingTotal = assignmentRows.reduce((acc, item) => acc + Number(item.pending_kg), 0);
+  const remainingTotal = assignmentRows.reduce((acc, item) => acc + Number(item.remaining_target_kg), 0);
+
   const myAvailable = (stock.data?.accounts ?? [])
     .filter((account) => account.account_type === "DISTRIBUTOR")
     .reduce((acc, account) => acc + Number(account.available_kg), 0);
 
-  const approvedTotal = (assignments.data ?? []).reduce((acc, item) => acc + Number(item.approved_kg), 0);
-  const pendingTotal = (assignments.data ?? []).reduce((acc, item) => acc + Number(item.pending_kg), 0);
-  const remainingTotal = (assignments.data ?? []).reduce((acc, item) => acc + Number(item.remaining_target_kg), 0);
-
   if (overview.isError) {
     return <ErrorState error={overview.error} onRetry={() => void overview.refetch()} />;
+  }
+
+  if (loading) {
+    return (
+      <section aria-busy="true" aria-live="polite">
+        <div className="skeleton" style={{ height: 90, marginBottom: "var(--space-4)" }} />
+        <div className="skeleton" style={{ height: 300 }} />
+      </section>
+    );
   }
 
   return (
@@ -51,10 +62,33 @@ export function DistributorDashboardPage() {
       </div>
 
       <div className="metric-row">
-        <StatCard label="Available stock" value={formatKg(String(myAvailable))} unit="kg" definition="Allocated to you and not yet reserved by a pending submission." />
-        <StatCard label="Remaining target" value={formatKg(String(remainingTotal))} unit="kg" definition="Assignment targets minus approved kilograms." />
-        <StatCard label="Pending review" value={formatKg(String(pendingTotal))} unit="kg" hint={`${overview.data?.open_review_count ?? 0} record(s)`} definition="Submitted and awaiting reviewer decision." />
-        <StatCard label="Approved" value={formatKg(String(approvedTotal))} unit="kg" definition="Approved by a reviewer and posted to the site account." />
+        <StatCard
+          label="Available stock"
+          value={stock.data ? formatKg(String(myAvailable)) : "—"}
+          unit={stock.data ? "kg" : undefined}
+          hint={stock.isError ? "Stock summary could not be loaded." : undefined}
+          definition="Allocated to you and not yet reserved by a pending submission."
+        />
+        <StatCard
+          label="Remaining target"
+          value={assignments.data ? formatKg(String(remainingTotal)) : "—"}
+          unit={assignments.data ? "kg" : undefined}
+          hint={assignments.isError ? "Assignments could not be loaded." : undefined}
+          definition="Assignment targets minus approved kilograms."
+        />
+        <StatCard
+          label="Pending review"
+          value={assignments.data ? formatKg(String(pendingTotal)) : "—"}
+          unit={assignments.data ? "kg" : undefined}
+          hint={`${overview.data?.open_review_count ?? 0} record(s)`}
+          definition="Submitted and awaiting a reviewer decision."
+        />
+        <StatCard
+          label="Approved"
+          value={assignments.data ? formatKg(String(approvedTotal)) : "—"}
+          unit={assignments.data ? "kg" : undefined}
+          definition="Approved by a reviewer and posted to the site account."
+        />
         <StatCard
           label="Local drafts / queue"
           value={drafts.filter((draft) => draft.state !== "SUBMITTED").length}
