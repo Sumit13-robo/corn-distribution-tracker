@@ -1,0 +1,52 @@
+# Local development stack: Postgres (+PostGIS if image available) and dev object storage.
+# Production uses a managed DB, S3-compatible bucket and HTTPS reverse proxy - see
+# docs/architecture/DEPLOYMENT_RUNBOOK.md and infra/.
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: corn_tracker
+      POSTGRES_USER: corn
+      POSTGRES_PASSWORD: corn
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corn -d corn_tracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./apps/api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://corn:corn@db:5432/corn_tracker
+      APP_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "alembic upgrade head &&
+             alembic current &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        # Vite variables are build-time; rebuild the image when they change.
+        # /api/v1 + the nginx proxy keeps API calls same-origin (first-party cookie).
+        VITE_API_BASE_URL: /api/v1
+        VITE_MAP_STYLE_URL: ""
+        VITE_APP_NAME: Corn Distribution Tracker
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

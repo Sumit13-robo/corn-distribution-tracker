@@ -1,0 +1,38 @@
+# Dependencies / builds
+node_modules/
+.venv/
+dist/
+build/
+*.py[cod]
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+coverage.xml
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local object-storage beta data (private evidence must never be committed)
+data/
+storage-data/
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Original handoff archive (kept as workspace reference, not part of the app repo)
+corn-distribution-tracker-handoff/
+*.zip
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/

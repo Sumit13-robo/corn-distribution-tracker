@@ -1,0 +1,60 @@
+[project]
+name = "corn-tracker-api"
+version = "0.1.0"
+description = "Corn Distribution Tracker API (FastAPI + SQLAlchemy 2 + PostgreSQL)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "email-validator>=2.3",
+    "sqlalchemy>=2.0.40",
+    "alembic>=1.15",
+    "psycopg[binary,pool]>=3.2",
+    "argon2-cffi>=23.1",
+    "pyjwt>=2.10",
+    "pillow>=11.0",
+    "boto3>=1.35",
+    "python-multipart>=0.0.18",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "types-Pillow",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = ["S101", "B008", "UP046", "UP047"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106", "S107", "S108", "E501"]
+"apps/api/tests/*" = ["S105", "S106", "S107", "S108", "E501"]
+
+[tool.pytest.ini_options]
+pythonpath = ["apps/api"]
+testpaths = ["apps/api/tests"]
+addopts = "-q --strict-markers"
+loop_scope = "function"
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = true
+plugins = []
+
+[[tool.mypy.overrides]]
+# boto3/botocore ship no py.typed marker or bundled stubs; the S3 storage
+# backend wraps them in narrow, typed functions of its own.
+module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true
