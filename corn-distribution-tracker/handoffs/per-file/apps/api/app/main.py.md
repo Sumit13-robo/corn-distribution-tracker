@@ -30,7 +30,7 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Builds the FastAPI app with request-id/security middleware, settings-driven CORS, the uniform JSON error envelope (validation, 404, AppError, unhandled), `/health/live` and `/health/ready` (DB + storage probes), and mounts all routers under `/api/v1`. Docs/OpenAPI are disabled in production.
+Builds the FastAPI app with request-id/security middleware, settings-driven CORS and `LOG_LEVEL`, the uniform JSON error envelope (validation, 404, AppError, unhandled), `/health/live` and `/health/ready` (DB + storage probes), and mounts all routers under `/api/v1`. Docs/OpenAPI are disabled in production.
 
 **Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 

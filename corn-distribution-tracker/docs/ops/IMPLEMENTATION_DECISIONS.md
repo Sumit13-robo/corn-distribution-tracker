@@ -81,11 +81,26 @@ Record date, decision, alternatives considered, reason, effect on data/API, secu
     a setup project then creates campaign/site/invitation/assignment/stock through the public API. Fixed test identities
     are synthetic (`@e2e.example.org`), no real data or credentials are committed, and deleting the E2E database is the
     explicit reset. The suite is serial and local-only because it needs PostgreSQL with CREATEDB plus Chromium.
-    Verified: 7 passed (2 setup + 5 workflow).
+    Verified: 8 passed (2 setup + 6 workflow).
 
-16. **E2E caught two defects that unit tests missed.** (a) The distributor assignment list nested a partial site object
+16. **E2E caught two cross-layer defects that unit tests missed.** (a) The distributor assignment list nested a partial site object
     that did not satisfy the declared `SiteOut` shape, so the endpoint returned 500 and never loaded assigned sites; the
     service now returns the complete site summary (admin-only notes remain `None`) with an RBAC/contract regression test.
     (b) A captured geolocation fix was only written to the offline draft at submit, so the UI still said “no fix captured”
     and a reload lost it; the draft now persists the fix immediately and a component test covers it. These fixes are part
     of the E2E-driven release verification, not test-only shims.
+
+17. **The 360 px E2E check is a release gate.** A mobile-viewport test exposed horizontal overflow from the top-bar
+    identity block and an unwrapped sidebar navigation. The 600 px breakpoint now wraps the sidebar/brand/nav and the
+    top-bar context/identity; the test asserts `scrollWidth - clientWidth <= 1` on the distributor delivery screen.
+    This complements, but does not replace, real-device and assistive-technology testing.
+
+18. **Backup and restore are one recoverable set.** The operator procedure backs up PostgreSQL and the matching private
+    evidence objects together, preserves object keys, verifies the Alembic revision and referenced objects, and uses an
+    isolated restore target. A local drill against synthetic E2E data passed (`pg_dump`/`pg_restore`, matching row counts
+    and evidence objects); production credentials/storage still require an operator-run drill. See
+    `docs/ops/BACKUP_RESTORE.md`.
+
+19. **Launch risks are explicit rather than implied.** `LOG_LEVEL` is applied to the app logger, but no APM/alerting,
+    MFA, malware scanner, email transport or automatic evidence-retention job is bundled. These are listed in the README
+    known limitations and release checklist for the operator to address before broad production rollout.

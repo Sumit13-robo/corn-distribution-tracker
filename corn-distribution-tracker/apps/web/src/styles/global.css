@@ -771,3 +771,41 @@ textarea:disabled {
     padding: var(--space-3);
   }
 }
+
+@media (max-width: 600px) {
+  .sidebar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .sidebar .brand {
+    flex: 1 1 100%;
+  }
+
+  .sidebar nav {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .topbar .page-context {
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .topbar .who {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .topbar .who > span {
+    overflow-wrap: anywhere;
+  }
+}

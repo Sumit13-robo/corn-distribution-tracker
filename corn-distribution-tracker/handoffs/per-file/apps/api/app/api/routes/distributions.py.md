@@ -30,7 +30,7 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Distributor submission (≥1 evidence, idempotent), listing/detail for both roles, admin review queue, approve/reject/cancel and audited CSV export; record scope checked server-side.
+Distributor submission (≥1 evidence, idempotent), listing/detail for both roles, admin review queue, approve/reject/cancel and audited CSV export; record scope checked server-side. Idempotent submission retries return the original record without a second reservation.
 
 **Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 

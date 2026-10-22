@@ -19,7 +19,7 @@ Use `.env.example` with safe placeholders only. Validate required values at API 
 - `MAP_TILE_STYLE_URL` / public map provider settings — public key only if provider explicitly supports safe browser use; set domain restrictions at provider.
 - `ORG_TIMEZONE` — explicit IANA timezone.
 - `DEFAULT_GEOFENCE_RADIUS_M`, `MAX_ACCEPTABLE_GPS_ACCURACY_M`, `MAX_LOCATION_AGE_SECONDS` — documented evidence thresholds.
-- `LOG_LEVEL`, `SENTRY_DSN` or equivalent error monitoring DSN — never log secrets/coordinates unnecessarily.
+- `LOG_LEVEL` — API application log level. No metrics/APM exporter or alerting integration is bundled; see the launch risks in the README.
 - `INITIAL_ADMIN_EMAIL` should only be used by a controlled one-shot bootstrap tool, not as an automatic public startup user; avoid password env var where secure interactive prompt is possible.
 
 ## Web

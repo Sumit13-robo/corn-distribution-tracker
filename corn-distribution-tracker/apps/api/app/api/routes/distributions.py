@@ -72,7 +72,8 @@ def submit_delivery(
     key = idempotency_key or f"delivery:{uuid.uuid4()}"
     if len(key) > 64:
         key = key[:64]
-    record, is_duplicate = distribution_service.submit_delivery(
+    # The service returns (record, is_duplicate); retries return the original row.
+    record, _ = distribution_service.submit_delivery(
         db,
         user=user.user,
         assignment_id=payload.assignment_id,
@@ -85,11 +86,7 @@ def submit_delivery(
         ctx=ctx,
     )
     db.commit()
-    body = _record_out(db, record)
-    if is_duplicate:
-        # Idempotent retry: the original record, no second reservation.
-        pass
-    return body
+    return _record_out(db, record)
 
 
 @router.get("", response_model=Page[DistributionOut])

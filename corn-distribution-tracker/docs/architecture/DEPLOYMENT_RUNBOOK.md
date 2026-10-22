@@ -25,7 +25,7 @@ See `ops/ENVIRONMENT_VARIABLES.md` and `.env.example`. Production must fail star
 7. Monitor error rates, API latency, upload errors, database pool, pending review queue, rejected uploads and background cleanup jobs.
 
 ## Backups and recovery
-Document automated backup cadence, encryption, retention, who can restore, RPO/RTO targets chosen by the operator, and restore steps into a separate environment. Restore database and required object versions together where evidence retention depends on both. Perform a periodic restore drill and record results.
+Document automated backup cadence, encryption, retention, who can restore, RPO/RTO targets chosen by the operator, and restore steps into a separate environment. Restore database and required object versions together where evidence retention depends on both. Perform a periodic restore drill and record results. The concrete procedure and the synthetic restore drill are in [`docs/ops/BACKUP_RESTORE.md`](../ops/BACKUP_RESTORE.md).
 
 ## Health and observability
 Expose unauthenticated minimal liveness and readiness endpoints without internal secrets; readiness should test dependencies safely. Include request IDs, structured logs, metrics for endpoint latency/errors, DB pool, auth throttles, upload failures, job failures, pending-approval age and ledger reconciliation. Alert on sustained errors or reconciliation mismatch.

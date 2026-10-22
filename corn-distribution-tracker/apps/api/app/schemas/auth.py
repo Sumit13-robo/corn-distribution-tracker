@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from decimal import Decimal
 from typing import Literal
 
 from pydantic import EmailStr, Field
@@ -89,13 +88,3 @@ class InvitationCreatedOut(InvitationOut):
     """Raw token returned exactly once; never logged or stored in plaintext."""
 
     invite_token: str
-
-
-class AdminBootstrapIn(ApiModel):
-    """Intentionally unused by HTTP routes: bootstrap is CLI-only (contract)."""
-
-    email: EmailStr
-    password: str
-    display_name: str | None = None
-
-    quantity_kg: Decimal | None = None  # placeholder to keep import surface aligned

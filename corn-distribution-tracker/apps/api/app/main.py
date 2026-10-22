@@ -29,6 +29,12 @@ def _error_body(code: str, message: str, details: list | None, request_id: str |
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+    logging.getLogger("app").setLevel(log_level)
     app = FastAPI(
         title=settings.app_name,
         docs_url="/docs" if not settings.is_production else None,

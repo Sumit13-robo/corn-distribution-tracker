@@ -115,7 +115,7 @@ make test-e2e
 - Default database: `postgresql+psycopg://localhost:5432/corn_tracker_e2e`. **The suite drops and recreates this database**; never point `E2E_DATABASE_URL` at real data. The database name is required to contain `e2e` as a guard, but that is not a substitute for pointing the URL at a disposable instance.
 - Overrides: `E2E_DATABASE_URL`, `E2E_PYTHON`, and `E2E_LOCAL_STORAGE_DIR` (default `/tmp/corn-tracker-e2e-storage`).
 - Each run creates its own admin and distributor with randomly generated passwords and seeds campaign/site/assignment/stock through the public API. Credentials are written only to the gitignored `apps/web/e2e/.state/` directory and are deleted on the next run. No credentials or real data are committed.
-- Covered flow: refresh-cookie session restore and role guard; photo/geolocation submission; private evidence rendering; admin approval posting the ledger movement; distributor view of the approved record; offline draft staying `QUEUED` and syncing only after connectivity returns.
+- Covered flow: refresh-cookie session restore and role guard; photo/geolocation submission; private evidence rendering; admin approval posting the ledger movement; distributor view of the approved record; offline draft staying `QUEUED` and syncing only after connectivity returns; and a 360 px mobile-viewport usability/overflow check.
 
 ## Verification (run on 2026-10-22)
 
@@ -127,10 +127,11 @@ make test-e2e
 | `cd apps/web && npm test` (Vitest 4.1.12) | **14 passed** across 3 files |
 | `cd apps/web && npm run lint` (ESLint 9 + typescript-eslint + react-hooks) | **0 errors, 0 warnings** |
 | `cd apps/web && npm run build` | **tsc clean + Vite production build** (`dist` ≈ 491 kB JS / 146 kB gzip) |
-| `make test-e2e` (Playwright 1.64.1, Chromium, real API + PostgreSQL) | **7 passed** (2 setup + 5 workflow) |
+| `make test-e2e` (Playwright 1.64.1, Chromium, real API + PostgreSQL) | **8 passed** (2 setup + 6 workflow) |
 | `npm audit` (web) | **0 vulnerabilities** after upgrading `maplibre-gl` 6.15 and `vitest` 4.1 |
 | `hadolint` 2.15.1 on both Dockerfiles | **clean** |
 | `alembic upgrade head → downgrade base → upgrade head` on a fresh PostgreSQL DB | **passed** (temporary DB dropped afterwards) |
+| PostgreSQL backup/restore drill on the synthetic E2E DB | **passed** — `pg_dump`/`pg_restore`, Alembic `0001`, matching user/record/movement/evidence/audit counts, all referenced evidence objects present |
 | API runtime smoke (uvicorn on a fresh DB) | `/health/live` → 200; `/health/ready` → 200 (`database: ok`, `storage: ok`); dev `/openapi.json` → 200 |
 | First-admin CLI smoke (fresh DB) | admin created and settings/central account ensured; second run refused with “An administrator already exists” |
 | Runtime-only install (fresh venv, no dev deps) | `pip install -r requirements.txt` succeeded; app import + login/refresh smoke passed with an HttpOnly refresh cookie |
@@ -163,9 +164,13 @@ Environment note: this workstation auto-loads ROS pytest plugins into any pytest
 - **Offline photos** live in IndexedDB and survive reloads in real browsers. In environments without IndexedDB (some test shells), the store falls back to memory — drafts persist in `localStorage`, but attached blobs do not survive a reload.
 - **BAG conversions** require an admin-configured `kg_per_bag`; the API rejects bag quantities otherwise.
 - **Invitation/reset delivery is not implemented** (see above); tokens are never displayed in the UI.
+- **No MFA yet.** Admin MFA should be required/assessed before broad production rollout; the current build is password + session based.
+- **No malware scanner.** Evidence uploads are size/type restricted, decoded, content-sniffed and hashed; integrate a scanning hook before accepting untrusted public uploads at scale.
+- **No metrics/APM/alerting integration is bundled.** Structured request logs, request IDs and liveness/readiness checks are implemented, but production dashboards/alerts must be wired by the operator.
+- **No automatic evidence-retention job.** Configure bucket lifecycle/retention and database backup retention operationally; see [`docs/ops/BACKUP_RESTORE.md`](docs/ops/BACKUP_RESTORE.md).
 - **Docker images were not built** in this environment (no Docker/Podman daemon; user namespaces are blocked). Both Dockerfiles pass `hadolint` 2.15.1, but image build and compose startup remain unverified on a Docker-capable host.
 - **Single organization** by design; multi-tenancy would require explicit row-level isolation and tests.
-- **Browser E2E is local-only**: it needs a PostgreSQL role allowed to create/drop the isolated E2E database plus Playwright Chromium; no CI pipeline is shipped. The automated flow covers the critical submission/review/offline path, not every screen or a real mobile device.
+- **Browser E2E is local-only**: it needs a PostgreSQL role allowed to create/drop the isolated E2E database plus Playwright Chromium; no CI pipeline is shipped. The automated flow covers the critical submission/review/offline path and a 360 px viewport check, not every screen or a real mobile device.
 
 ## Documentation index
 
@@ -174,5 +179,6 @@ Environment note: this workstation auto-loads ROS pytest plugins into any pytest
 - [`docs/design/SCREEN_SPECS.md`](docs/design/SCREEN_SPECS.md) — screen-by-screen behaviour and copy rules.
 - [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) — tokens, components, accessibility.
 - [`docs/ops/ENVIRONMENT_VARIABLES.md`](docs/ops/ENVIRONMENT_VARIABLES.md) — every setting and its security constraints.
+- [`docs/ops/BACKUP_RESTORE.md`](docs/ops/BACKUP_RESTORE.md) — database/evidence backup, restore verification and retention.
 - [`docs/ops/IMPLEMENTATION_DECISIONS.md`](docs/ops/IMPLEMENTATION_DECISIONS.md) — decision log, including implementation additions.
 - [`handoffs/file_map.md`](handoffs/file_map.md) — per-file ownership, status, and implementation notes.

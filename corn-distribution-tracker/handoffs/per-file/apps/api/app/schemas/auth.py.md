@@ -30,7 +30,7 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Strict auth schemas for login, refresh, logout, current user, password change/reset and invitation flows. `InvitationCreatedOut` returns the raw token exactly once to the creating admin.
+Strict auth schemas for login, refresh, logout, current user, password change/reset and invitation flows. `InvitationCreatedOut` returns the raw token exactly once to the creating admin. There is deliberately no HTTP bootstrap schema; the first admin is created only by the CLI.
 
 **Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 

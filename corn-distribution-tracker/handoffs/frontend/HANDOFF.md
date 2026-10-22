@@ -24,4 +24,4 @@
 List pages completed, endpoints consumed, keyboard/mobile checks, tests/build results, and missing API contract fields.
 
 ## Final verification (2026-10-22)
-All planned screens and the offline delivery flow are implemented. 14 Vitest tests and 7 Playwright E2E tests pass; the browser flow covers session restore, photo/geolocation submission, evidence review/approval, approved history and offline QUEUED→SUBMITTED sync. Browser E2E also exposed and drove fixes for the assignment nested-site response and immediate location persistence.
+All planned screens and the offline delivery flow are implemented. 14 Vitest tests and 8 Playwright E2E tests pass; the browser flow covers session restore, photo/geolocation submission, evidence review/approval, approved history, offline QUEUED→SUBMITTED sync and a 360 px viewport check. Browser E2E also exposed and drove fixes for the assignment nested-site response, immediate location persistence and mobile header/navigation overflow.

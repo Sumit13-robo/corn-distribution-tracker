@@ -148,7 +148,9 @@ test("admin reviews evidence and approves, posting the stock movement", async ({
 test("distributor sees the approved record and its ledger movement", async ({ page }) => {
   await signIn(page, "distributor");
   await page.goto("/deliveries");
-  const row = page.getByRole("row").filter({ hasText: "25" });
+  const row = page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: "25", exact: true }) });
   await expect(row).toContainText("Approved");
 
   await row.getByRole("button", { name: "Detail", exact: true }).click();
@@ -193,5 +195,22 @@ test("offline submission stays QUEUED and syncs honestly when connectivity retur
 
   await page.goto("/deliveries");
   await expect(page.getByRole("cell", { name: "7", exact: true })).toBeVisible();
-  await expect(page.getByRole("row").filter({ hasText: "7" })).toContainText("Submitted");
+  const offlineRow = page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: "7", exact: true }) });
+  await expect(offlineRow).toContainText("Submitted");
+});
+
+test("distributor workspace is usable at a 360 px mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await signIn(page, "distributor");
+  await expect(page.getByRole("heading", { name: "My workspace" })).toBeVisible();
+  await openFirstAssignment(page);
+
+  await expect(page.locator("#delivery-quantity")).toBeVisible();
+  await expect(page.getByTestId("submit-delivery")).toBeVisible();
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(1);
 });

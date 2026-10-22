@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Assignment create/update with unique active scope, target math (approved + pending vs target) and distributor-scoped listings. The distributor listing now returns the complete site summary required by `SiteOut` (including `is_active`/`created_at`; admin-only notes stay `None`), fixing a 500 found by browser E2E.
 
-**Verification (2026-10-22):** `make test-api` → 46 passed (including the new assignment-shape regression); ruff/mypy clean; `make test-e2e` → 7 passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed (including the new assignment-shape regression); ruff/mypy clean; `make test-e2e` → 8 passed.
 
 **Unresolved issues:** None known.

@@ -17,6 +17,8 @@ coverage.xml
 .env
 .env.*
 !.env.example
+# Handoff note for the env template is documentation, not secret configuration.
+!handoffs/per-file/.env.example.md
 *.pem
 *.key
 

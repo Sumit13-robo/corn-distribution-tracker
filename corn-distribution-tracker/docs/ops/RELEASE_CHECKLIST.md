@@ -1,5 +1,10 @@
 # Release Checklist
 
+> **Status:** This is the operator checklist for a real staging/production deployment, not a claim that one has
+> happened. Repository-level tests, lint/type checks, build, migrations and a synthetic local restore drill are
+> recorded in the README; Docker runtime verification and all environment/operator items below remain to be completed
+> on the target platform. See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) for the database/evidence procedure.
+
 ## Before deployment
 - [ ] Review PRs and file handoff completion; no critical TODOs or hardcoded credentials.
 - [ ] Lockfiles committed; dependency scan/license policy reviewed.
