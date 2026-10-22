@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Single audit writer recording actor/action/entity/request id with recursive secret/PII redaction; audit writes are committed with the triggering transaction.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 
 **Unresolved issues:** None known.

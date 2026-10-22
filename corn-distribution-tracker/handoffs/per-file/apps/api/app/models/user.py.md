@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 User, RefreshSession, Invitation and PasswordResetToken tables: unique normalized email, role enum, token digests only, expiry/revocation timestamps, and no plaintext secrets.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 
 **Unresolved issues:** None known.

@@ -20,3 +20,11 @@ Backend tests under `apps/api/tests/**`, web component tests, smoke/E2E tests an
 - Tests must verify database outcomes, not just response codes.
 - Make race-condition tests deterministic where possible and repeat them as a stress/smoke test.
 - Report flaky tests honestly and never weaken authorization tests to get a green build.
+
+## Release-gate evidence (2026-10-22)
+
+- Backend: **46 passed** (`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`), Ruff clean, mypy clean in 65 files.
+- Frontend unit/component: **14 passed** across 3 Vitest files; ESLint 0 warnings; `tsc -b` clean; production build succeeded.
+- Browser E2E: **7 passed** (2 API-seeded setup + 5 workflow) against real FastAPI + PostgreSQL + Chromium. See `apps/web/playwright.config.ts` and `e2e/distribution.spec.ts`; the suite uses a disposable database, per-run generated credentials and only synthetic data.
+- E2E regression finds: distributor assignment nested-site contract (500) and captured location not persisted until submit. Both fixed with a backend contract test and a component test.
+- Docker: images/compose **not executed** (no Docker/Podman daemon on this host). Dockerfiles pass hadolint 2.15.1 and compose parses; treat runtime verification as pending on a Docker-capable host.

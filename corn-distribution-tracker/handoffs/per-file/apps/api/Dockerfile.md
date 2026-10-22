@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Python 3.14-slim runtime image: unprivileged user, pinned requirements, read-only app code with a writable `/app/storage-data`, liveness healthcheck and uvicorn on :8000. Not built here (Docker unavailable).
+Python 3.14-slim runtime image: fixed numeric unprivileged UID/GID (10001), pinned requirements, read-only app code with a writable `/app/storage-data`, exec-form liveness healthcheck and uvicorn on :8000. Not built here (Docker unavailable); hadolint 2.15.1 is clean.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed; hadolint clean.
 
 **Unresolved issues:** Image/compose build was not executed because Docker is unavailable in this environment.

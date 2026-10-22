@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Scripts (dev/build/test/lint/typecheck) and pinned dependencies. maplibre-gl 6.15 and Vitest 4.1 upgrades cleared npm audit advisories and were re-verified.
+Scripts (dev/build/test/lint/typecheck/test:e2e) and pinned dependencies, including Playwright and `@types/node`. maplibre-gl 6.15 and Vitest 4.1 upgrades cleared npm audit advisories.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 7 passed; `npm audit` → 0 vulnerabilities.
 
 **Unresolved issues:** None known.

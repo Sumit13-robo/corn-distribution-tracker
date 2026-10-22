@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Run guide covering architecture, Docker and local workflows, verified command results, invitation-token delivery caveat, configuration and honest limitations.
+Run guide covering architecture, Docker and local workflows, verified command results, browser E2E instructions (including the destructive isolated database warning), invitation-token delivery caveat, configuration and honest limitations.
 
-**Verification (2026-10-22):** Backend 45 tests passed (ruff/mypy clean); web 13 tests passed (lint/build clean); Makefile targets exercised. Docker images were **not built** because no Docker daemon was available.
+**Verification (2026-10-22):** Backend 46 tests passed (ruff/mypy clean); web 14 tests passed (lint/build clean); Playwright E2E 7 passed; `npm audit` clean; Docker image build not executed (no daemon); hadolint clean on both Dockerfiles.
 
 **Unresolved issues:** None known.

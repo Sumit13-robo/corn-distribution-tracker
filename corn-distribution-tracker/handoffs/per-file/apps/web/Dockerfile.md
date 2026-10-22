@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Multi-stage Node 22 build → nginx runtime. VITE_* values are build args (public only); nginx serves the SPA and proxies `/api/` to the API. Not built here (Docker unavailable).
+Multi-stage Node 22 build → nginx runtime. VITE_* values are build args (public only); nginx serves the SPA and proxies `/api/` to the API. Healthcheck uses exec-form wget; the unused `VITE_APP_NAME` build arg was removed in favor of a literal document title. Not built here (Docker unavailable); hadolint 2.15.1 is clean.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; hadolint clean.
 
 **Unresolved issues:** Image/compose build was not executed because Docker is unavailable in this environment.

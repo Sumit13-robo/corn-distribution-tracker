@@ -143,3 +143,10 @@ These files were not in the original plan. Each has a handoff note under `handof
 | `apps/web/.dockerignore` | DevOps/Lead | Web build context filter | [`per-file/apps/web/.dockerignore.md`](per-file/apps/web/.dockerignore.md) | IMPLEMENTED |
 | `apps/web/package-lock.json` | DevOps/Lead | Reproducible npm lockfile | [`per-file/apps/web/package-lock.json.md`](per-file/apps/web/package-lock.json.md) | TESTED |
 | `apps/api/tests/test_config_security.py` | Backend | Config fail-fast tests | [`per-file/apps/api/tests/test_config_security.py.md`](per-file/apps/api/tests/test_config_security.py.md) | TESTED |
+| `apps/web/playwright.config.ts` | QA/Frontend | Browser E2E orchestration | [`per-file/apps/web/playwright.config.ts.md`](per-file/apps/web/playwright.config.ts.md) | TESTED |
+| `apps/web/e2e/global-setup.ts` | QA | E2E database/bootstrap lifecycle | [`per-file/apps/web/e2e/global-setup.ts.md`](per-file/apps/web/e2e/global-setup.ts.md) | TESTED |
+| `apps/web/e2e/setup.spec.ts` | QA/Backend | E2E data seeding via public APIs | [`per-file/apps/web/e2e/setup.spec.ts.md`](per-file/apps/web/e2e/setup.spec.ts.md) | TESTED |
+| `apps/web/e2e/distribution.spec.ts` | QA/Frontend | Critical distributor/reviewer browser flow | [`per-file/apps/web/e2e/distribution.spec.ts.md`](per-file/apps/web/e2e/distribution.spec.ts.md) | TESTED |
+| `apps/web/e2e/support/config.ts` | QA | Shared E2E identifiers/fixtures | [`per-file/apps/web/e2e/support/config.ts.md`](per-file/apps/web/e2e/support/config.ts.md) | TESTED |
+| `apps/web/e2e/support/credentials.ts` | QA | Per-run E2E credential reader | [`per-file/apps/web/e2e/support/credentials.ts.md`](per-file/apps/web/e2e/support/credentials.ts.md) | TESTED |
+| `apps/web/e2e/support/prepare_db.py` | QA | Disposable E2E database creation | [`per-file/apps/web/e2e/support/prepare_db.py.md`](per-file/apps/web/e2e/support/prepare_db.py.md) | TESTED |

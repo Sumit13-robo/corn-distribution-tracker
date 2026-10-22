@@ -216,6 +216,36 @@ describe("DeliverySubmissionPage", () => {
     expect(drafts[0]?.idempotencyKey).toBe(originalKey);
   });
 
+  it("persists a captured device fix into the draft before submission", async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) =>
+      success({
+        coords: {
+          latitude: 12.3456789,
+          longitude: -1.2345678,
+          accuracy: 8,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition),
+    );
+    Object.defineProperty(window.navigator, "geolocation", {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+    try {
+      renderPage();
+      await waitForDraft();
+      fireEvent.click(screen.getByRole("button", { name: "Capture location" }));
+      await waitFor(() => expect(readDrafts()[0]?.location?.accuracy_m).toBe("8.0"));
+      expect(screen.getByText("12.3456789, -1.2345678", { exact: false })).toBeInTheDocument();
+    } finally {
+      delete (window.navigator as unknown as Record<string, unknown>).geolocation;
+    }
+  });
+
   it("keeps an offline submission QUEUED and never claims it was submitted", async () => {
     const restoreOnline = setOnline(false);
     try {

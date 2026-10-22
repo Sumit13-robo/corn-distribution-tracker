@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Typed fetch wrapper with error-envelope mapping, memory-only bearer token, single-flight 401 refresh + retry-once, upload helper (bearer only for relative URLs; intent headers for presigned URLs), CSV download and all endpoint functions.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

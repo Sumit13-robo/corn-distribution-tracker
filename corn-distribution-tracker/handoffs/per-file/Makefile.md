@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Developer targets for venv/install/migrations/admin bootstrap/tests/lint/typecheck/build/run. `test-api` disables third-party pytest autoload (ROS plugins on this workstation); commands verified.
+Developer targets for venv/install/migrations/admin bootstrap/tests/lint/typecheck/build/run, plus `e2e-install` (Chromium) and `test-e2e` (real API + disposable PostgreSQL). `test-api` disables third-party pytest autoload (ROS plugins on this workstation); commands verified.
 
-**Verification (2026-10-22):** Backend 45 tests passed (ruff/mypy clean); web 13 tests passed (lint/build clean); Makefile targets exercised. Docker images were **not built** because no Docker daemon was available.
+**Verification (2026-10-22):** Backend 46 tests passed (ruff/mypy clean); web 14 tests passed (lint/build clean); `make test-e2e` 7 passed; `npm audit` 0 vulnerabilities. Docker image builds were **not executed** because no Docker/Podman daemon was available; both Dockerfiles pass hadolint 2.15.1.
 
 **Unresolved issues:** None known.

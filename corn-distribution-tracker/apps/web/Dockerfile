@@ -11,10 +11,8 @@ COPY . .
 # Vite variables are build-time and therefore public. Never pass secrets here.
 ARG VITE_API_BASE_URL=/api/v1
 ARG VITE_MAP_STYLE_URL=
-ARG VITE_APP_NAME="Corn Distribution Tracker"
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
-    VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL \
-    VITE_APP_NAME=$VITE_APP_NAME
+    VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL
 
 RUN npm run build
 
@@ -26,4 +24,4 @@ COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://127.0.0.1/ >/dev/null || exit 1
+    CMD ["wget", "-qO-", "http://127.0.0.1/"]

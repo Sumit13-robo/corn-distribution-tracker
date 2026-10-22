@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Submission workflow tests: draft resume with the same idempotency key, offline QUEUED honesty (no fake SUBMITTED), double-click guard, and payload/evidence-intent mapping with a mocked API. 3 tests.
+Submission workflow tests: draft resume with the same idempotency key, immediate location persistence, offline QUEUED honesty (no fake SUBMITTED), double-click guard, and payload/evidence-intent mapping with a mocked API. 4 tests.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; the same flow is exercised against the real API in browser E2E.
 
 **Unresolved issues:** None known.

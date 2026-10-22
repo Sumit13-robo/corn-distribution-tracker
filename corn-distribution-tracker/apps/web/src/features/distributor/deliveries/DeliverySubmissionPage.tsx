@@ -108,6 +108,24 @@ export function DeliverySubmissionPage() {
     });
   }, [userId, refreshDrafts]);
 
+  /* A captured fix belongs to the draft immediately, not only at submit:
+   * otherwise the UI says "no fix captured" and a reload would lose it. */
+  useEffect(() => {
+    if (location.status !== "CAPTURED" || !location.coordinates || !userId || !draftId) return;
+    const coordinates = location.coordinates;
+    const updated = updateDraft(userId, draftId, {
+      location: {
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        accuracy_m: coordinates.accuracy_m,
+        timestamp: coordinates.timestamp,
+        device_time: coordinates.device_time,
+        client_created_at: new Date().toISOString(),
+      },
+    });
+    if (updated) setDraft(updated);
+  }, [location.status, location.coordinates, userId, draftId]);
+
   /* Load photo metadata when the draft id materializes. */
   useEffect(() => {
     if (!draftId) {

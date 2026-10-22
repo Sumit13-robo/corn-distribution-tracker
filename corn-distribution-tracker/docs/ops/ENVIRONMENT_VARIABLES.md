@@ -25,7 +25,6 @@ Use `.env.example` with safe placeholders only. Validate required values at API 
 ## Web
 - `VITE_API_BASE_URL` — public API origin/path only.
 - `VITE_MAP_STYLE_URL` — public map style URL/key with provider restrictions only.
-- `VITE_APP_NAME` — public label.
 
 ## Rules
 - Vite variables are compiled into browser code; never put DB, storage secret, signing key, SMTP password, or private API secret under `VITE_`.

@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Local stack: PostGIS Postgres with healthcheck, API container (migrations then uvicorn) and nginx-served web with build-time VITE_* args. Not built here (Docker unavailable).
+Local stack: PostGIS Postgres with healthcheck, API container (migrations then uvicorn) and nginx-served web with build-time VITE_* args (API base and optional map style; public only). YAML parses cleanly; the unused `VITE_APP_NAME` arg was removed. Not built here (Docker unavailable).
 
-**Verification (2026-10-22):** Backend 45 tests passed (ruff/mypy clean); web 13 tests passed (lint/build clean); Makefile targets exercised. Docker images were **not built** because no Docker daemon was available.
+**Verification (2026-10-22):** Parsed with PyYAML (`api`, `db`, `web` services resolved); both Dockerfiles pass hadolint 2.15.1. Backend 46 tests and web 14 tests pass; E2E 7 passed. Docker image/compose execution was **not** run because no Docker/Podman daemon is available.
 
 **Unresolved issues:** Image/compose build was not executed because Docker is unavailable in this environment.

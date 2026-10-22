@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Draft auto-save with persistent idempotency key and resume-on-return, evidence capture, device-location snapshot, unit conversion preview/warnings, duplicate-submit guard, online sync vs honest QUEUED and success only after a server record id.
+Draft auto-save with persistent idempotency key and resume-on-return, evidence capture, immediate persistence of a captured device fix into the draft (so the UI reflects it and reloads do not lose it), unit conversion preview/warnings, duplicate-submit guard, online sync vs honest QUEUED and success only after a server record id.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files, including the new location-persistence test); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; browser E2E submitted 25 kg with photo/location and approved it.
 
 **Unresolved issues:** None known.

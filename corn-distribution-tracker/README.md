@@ -35,8 +35,8 @@ Monorepo reference implementation of a corn distribution tracker: a **React 19 +
 ## Repository layout
 
 ```text
-apps/api            FastAPI app, Alembic migrations, tests (45 tests)
-apps/web            React SPA, Vitest tests (13 tests)
+apps/api            FastAPI app, Alembic migrations, tests (46 tests)
+apps/web            React SPA, Vitest tests (14 tests), Playwright E2E suite
 docs/               Product/API/design/offline/ops contracts (source of truth)
 handoffs/           File ownership map + per-file implementation notes
 docker-compose.yml  Postgres (PostGIS image) + API + nginx-served SPA
@@ -71,7 +71,7 @@ docker compose exec api python -m app.cli.create_admin --email admin@example.org
 # prompts for the password twice; never passed via the command line
 ```
 
-> **Honest status:** the Dockerfiles and nginx config are committed and the compose wiring is consistent, but **Docker was not available on the machine where this repo was finished**, so the images were not built here. The non-Docker path below was executed end-to-end (tests, lint, typecheck, production build, migrations).
+> **Honest status:** the Dockerfiles and nginx config are committed and the compose wiring is consistent, but **Docker was not available on the machine where this repo was finished**, so the images were not built or started here. Both Dockerfiles pass `hadolint` 2.15.1 and the compose file parses as valid YAML, but that is static validation only. The non-Docker path below was executed end-to-end (tests, lint, typecheck, production build, migrations, browser E2E).
 
 ## Option B — Local development (verified commands)
 
@@ -100,22 +100,42 @@ The default `.env` values are local-development-only. Production startup fails f
 
 `POST /admin/users/invitations` returns the raw invite token **once** so a deployment can hand it to an email/SMS delivery integration. The admin UI intentionally never displays it (per `docs/design/SCREEN_SPECS.md`). No mail transport is shipped; for local evaluation, create invites through a trusted API client when you need the token, or wire your own delivery channel server-side.
 
+### Browser E2E (verified locally)
+
+The Playwright suite starts the real FastAPI app and Vite dev server, recreates an **isolated** PostgreSQL database, and drives the critical distributor → reviewer loop in Chromium.
+
+```bash
+# One-time browser install (after `npm ci`; repo venv + PostgreSQL required)
+make e2e-install
+
+# Run the suite (ports 8000 and 5173 must be free)
+make test-e2e
+```
+
+- Default database: `postgresql+psycopg://localhost:5432/corn_tracker_e2e`. **The suite drops and recreates this database**; never point `E2E_DATABASE_URL` at real data. The database name is required to contain `e2e` as a guard, but that is not a substitute for pointing the URL at a disposable instance.
+- Overrides: `E2E_DATABASE_URL`, `E2E_PYTHON`, and `E2E_LOCAL_STORAGE_DIR` (default `/tmp/corn-tracker-e2e-storage`).
+- Each run creates its own admin and distributor with randomly generated passwords and seeds campaign/site/assignment/stock through the public API. Credentials are written only to the gitignored `apps/web/e2e/.state/` directory and are deleted on the next run. No credentials or real data are committed.
+- Covered flow: refresh-cookie session restore and role guard; photo/geolocation submission; private evidence rendering; admin approval posting the ledger movement; distributor view of the approved record; offline draft staying `QUEUED` and syncing only after connectivity returns.
+
 ## Verification (run on 2026-10-22)
 
 | Command | Result |
 |---|---|
-| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **45 passed** |
+| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **46 passed** |
 | `make lint-api` (ruff 0.17.1) | **All checks passed** |
 | `make typecheck-api` (mypy 2.4.0) | **Success: no issues found in 65 source files** |
-| `cd apps/web && npm test` (Vitest 4.1.12) | **13 passed** across 3 files |
+| `cd apps/web && npm test` (Vitest 4.1.12) | **14 passed** across 3 files |
 | `cd apps/web && npm run lint` (ESLint 9 + typescript-eslint + react-hooks) | **0 errors, 0 warnings** |
-| `cd apps/web && npm run build` | **tsc clean + Vite production build** (`dist` ≈ 490 kB JS / 146 kB gzip) |
+| `cd apps/web && npm run build` | **tsc clean + Vite production build** (`dist` ≈ 491 kB JS / 146 kB gzip) |
+| `make test-e2e` (Playwright 1.64.1, Chromium, real API + PostgreSQL) | **7 passed** (2 setup + 5 workflow) |
 | `npm audit` (web) | **0 vulnerabilities** after upgrading `maplibre-gl` 6.15 and `vitest` 4.1 |
+| `hadolint` 2.15.1 on both Dockerfiles | **clean** |
 | `alembic upgrade head → downgrade base → upgrade head` on a fresh PostgreSQL DB | **passed** (temporary DB dropped afterwards) |
 | API runtime smoke (uvicorn on a fresh DB) | `/health/live` → 200; `/health/ready` → 200 (`database: ok`, `storage: ok`); dev `/openapi.json` → 200 |
 | First-admin CLI smoke (fresh DB) | admin created and settings/central account ensured; second run refused with “An administrator already exists” |
 | Runtime-only install (fresh venv, no dev deps) | `pip install -r requirements.txt` succeeded; app import + login/refresh smoke passed with an HttpOnly refresh cookie |
 | Production/staging config fail-fast | covered by 4 tests in `apps/api/tests/test_config_security.py` |
+| Docker image build + `docker compose up` | **Not executed** — no Docker/Podman daemon on this host |
 
 Environment note: this workstation auto-loads ROS pytest plugins into any pytest invocation, which is why `make test-api` disables plugin autoload. In a clean venv, `.venv/bin/pytest apps/api/tests -q` also works. The test suite is synchronous (Starlette `TestClient`); pytest-asyncio config warnings under the disabled-autoload flag are harmless.
 
@@ -143,9 +163,9 @@ Environment note: this workstation auto-loads ROS pytest plugins into any pytest
 - **Offline photos** live in IndexedDB and survive reloads in real browsers. In environments without IndexedDB (some test shells), the store falls back to memory — drafts persist in `localStorage`, but attached blobs do not survive a reload.
 - **BAG conversions** require an admin-configured `kg_per_bag`; the API rejects bag quantities otherwise.
 - **Invitation/reset delivery is not implemented** (see above); tokens are never displayed in the UI.
-- **Docker images were not built** in this environment (no Docker daemon); compose/Dockerfile correctness was reviewed but not executed.
+- **Docker images were not built** in this environment (no Docker/Podman daemon; user namespaces are blocked). Both Dockerfiles pass `hadolint` 2.15.1, but image build and compose startup remain unverified on a Docker-capable host.
 - **Single organization** by design; multi-tenancy would require explicit row-level isolation and tests.
-- **No screenshot/browser E2E suite**; the web tests cover the critical API-client refresh path, permissions, and the offline submission state machine. Screen layouts were typechecked and built, not browser-automated.
+- **Browser E2E is local-only**: it needs a PostgreSQL role allowed to create/drop the isolated E2E database plus Playwright Chromium; no CI pipeline is shipped. The automated flow covers the critical submission/review/offline path, not every screen or a real mobile device.
 
 ## Documentation index
 

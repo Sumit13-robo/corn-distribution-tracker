@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 One-time admin bootstrap: refuses when an admin exists, validates email, reads the password via getpass or env indirection (`INITIAL_ADMIN_PASSWORD_ENV` names the variable), hashes with Argon2id and never prints/logs the secret.
 
-**Verification (2026-10-22):** manual CLI smoke on a disposable PostgreSQL DB — first run created the admin, ensured settings/central account, and exited 0; a second run refused with “An administrator already exists” (exit 1). Backend suite: 45 passed; ruff/mypy clean.
+**Verification (2026-10-22):** manual CLI smoke on a disposable PostgreSQL DB — first run created the admin, ensured settings/central account, and exited 0; a second run refused with “An administrator already exists” (exit 1). Backend suite: 46 passed; ruff/mypy clean.
 
 **Unresolved issues:** No automated test for the interactive CLI; the non-interactive path was smoke-tested manually.

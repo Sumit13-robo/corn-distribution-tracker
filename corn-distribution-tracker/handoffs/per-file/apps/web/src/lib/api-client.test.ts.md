@@ -14,6 +14,6 @@ See the relevant contract under `docs/` and the ownership table in `handoffs/fil
 
 Covers single-flight refresh, rotated-token retry, failed-refresh auth loss, token-less requests and error envelope mapping (4 tests).
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

@@ -61,7 +61,8 @@ Record date, decision, alternatives considered, reason, effect on data/API, secu
 
 12. **Same-origin deployment shape.** nginx serves the built SPA and proxies `/api/` to the API, with Vite build args as
     the only browser-visible configuration. This keeps the refresh cookie first-party and avoids CORS in the default
-    compose topology. Docker images were authored but not built in this environment (no Docker daemon).
+    compose topology. Docker images were authored but not built in this environment (no Docker daemon); both
+    Dockerfiles pass `hadolint` 2.15.1 and images use a fixed numeric unprivileged UID.
 
 13. **Production/staging configuration fails startup.** `get_settings()` calls `assert_secure_settings()`, which raises
     `RuntimeError` (listing problems only, never secret values) for a placeholder secret, insecure cookies, wildcard
@@ -73,3 +74,18 @@ Record date, decision, alternatives considered, reason, effect on data/API, secu
     `EmailStr` at import time) is pinned in both `pyproject.toml` and `requirements.txt`. A fresh venv with only runtime
     requirements imported the app and completed a login/refresh/me smoke test; this catches packaging gaps that a
     developer venv can hide. The first-admin CLI now validates emails with the same `EmailStr` rules as the API.
+
+15. **Browser E2E uses a disposable database and per-run credentials.** Playwright starts the real FastAPI and Vite
+    processes against a dedicated `corn_tracker_e2e` database. Global setup drops/recreates it, runs Alembic, generates
+    random admin/distributor passwords in the gitignored `apps/web/e2e/.state/` directory, and bootstraps the first admin;
+    a setup project then creates campaign/site/invitation/assignment/stock through the public API. Fixed test identities
+    are synthetic (`@e2e.example.org`), no real data or credentials are committed, and deleting the E2E database is the
+    explicit reset. The suite is serial and local-only because it needs PostgreSQL with CREATEDB plus Chromium.
+    Verified: 7 passed (2 setup + 5 workflow).
+
+16. **E2E caught two defects that unit tests missed.** (a) The distributor assignment list nested a partial site object
+    that did not satisfy the declared `SiteOut` shape, so the endpoint returned 500 and never loaded assigned sites; the
+    service now returns the complete site summary (admin-only notes remain `None`) with an RBAC/contract regression test.
+    (b) A captured geolocation fix was only written to the offline draft at submit, so the UI still said “no fix captured”
+    and a reload lost it; the draft now persists the fix immediately and a component test covers it. These fixes are part
+    of the E2E-driven release verification, not test-only shims.

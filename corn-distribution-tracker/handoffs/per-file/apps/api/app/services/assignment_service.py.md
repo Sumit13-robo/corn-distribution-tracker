@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Assignment create/update with unique active scope, target math (approved + pending vs target) and distributor-scoped listings.
+Assignment create/update with unique active scope, target math (approved + pending vs target) and distributor-scoped listings. The distributor listing now returns the complete site summary required by `SiteOut` (including `is_active`/`created_at`; admin-only notes stay `None`), fixing a 500 found by browser E2E.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed (including the new assignment-shape regression); ruff/mypy clean; `make test-e2e` → 7 passed.
 
 **Unresolved issues:** None known.

@@ -14,6 +14,6 @@ See the relevant contract under `docs/` and the ownership table in `handoffs/fil
 
 Shared formatting helpers for kg/numbers, dates/times, relative age, distances, bytes, class names and enum status labels; used across screens and tested indirectly.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

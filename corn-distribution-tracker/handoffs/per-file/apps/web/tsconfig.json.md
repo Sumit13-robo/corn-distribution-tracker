@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Strict TypeScript config (ES2022, bundler resolution, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`) covering sources, tests, setup and Vite config; `tsc -b` is clean.
+Strict TypeScript config (ES2022, bundler resolution, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`) covering sources, tests, setup, Vite config, Playwright config and the E2E support files; `tsc -b` is clean.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `npx tsc -b --noEmit` → clean (including E2E); `npm test` → 14 passed; `npm run test:e2e` → 7 passed; `npm run build` succeeded.
 
 **Unresolved issues:** None known.

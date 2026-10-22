@@ -71,6 +71,24 @@ def test_admin_requests_shipper_ids_are_erroring_not_leaking(org_factory, client
     assert r.status_code == 404
 
 
+def test_distributor_assignment_list_returns_complete_site_summary(org_factory, client: TestClient):
+    """Regression: the nested site must satisfy SiteOut or every distributor 500s."""
+    org = org_factory()
+    r = client.get("/api/v1/distributors/me/assignments", headers=org["headers_dist"])
+    assert r.status_code == 200, r.text
+    assert len(r.json()) == 1
+    item = r.json()[0]
+    assert item["assignment_id"] == org["assignment"]["id"]
+    site = item["site"]
+    assert site["id"] == org["site"]["id"]
+    assert site["is_active"] is True
+    assert site["created_at"]
+    assert site["latitude"] == org["site"]["latitude"]
+    assert site["longitude"] == org["site"]["longitude"]
+    # Admin-internal notes must never leak to a distributor response.
+    assert site["notes"] is None
+
+
 def test_login_rate_limit_locks_repeated_failures(client: TestClient):
     for _ in range(10):
         r = client.post("/api/v1/auth/login", json={"email": "nobody@example.org", "password": "wrong"})

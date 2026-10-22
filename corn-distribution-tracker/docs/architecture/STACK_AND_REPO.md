@@ -5,7 +5,7 @@
 - **API:** Python supported stable release at implementation time, FastAPI, Pydantic v2-compatible schemas, SQLAlchemy 2, Alembic, PostgreSQL + PostGIS, structured logging, server-side rate limiting.
 - **Evidence storage:** S3-compatible private bucket with short-lived signed URLs, upload size/type controls and optional thumbnail derivatives.
 - **Local dev/deploy:** Docker Compose for web/API/PostgreSQL/PostGIS; external object storage in production. Do not embed cloud keys in the frontend.
-- **Tests:** Pytest, API/client integration tests, frontend component tests (Vitest + Testing Library or equivalent), and optional Playwright end-to-end smoke tests.
+- **Tests:** Pytest, API/client integration tests, frontend component tests (Vitest + Testing Library or equivalent), and Playwright browser E2E for the critical submission/review/offline flow.
 
 Pin compatible dependencies in lockfiles. Choose stable versions during implementation and verify library APIs against official docs rather than relying on deprecated examples.
 

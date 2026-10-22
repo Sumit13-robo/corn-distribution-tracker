@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Typed pydantic-settings configuration for DB, auth, cookies, storage, geo defaults and organization defaults, including environment parsing helpers. `assert_secure_settings()` makes production/staging fail startup on placeholder secrets, insecure cookies, wildcard CORS with credentials or local/missing S3 configuration; development/test keep documented defaults. Covered by four tests in `tests/test_config_security.py`.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 
 **Unresolved issues:** None known.

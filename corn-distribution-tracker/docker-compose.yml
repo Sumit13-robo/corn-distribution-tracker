@@ -42,7 +42,6 @@ services:
         # /api/v1 + the nginx proxy keeps API calls same-origin (first-party cookie).
         VITE_API_BASE_URL: /api/v1
         VITE_MAP_STYLE_URL: ""
-        VITE_APP_NAME: Corn Distribution Tracker
     ports:
       - "5173:80"
     depends_on:

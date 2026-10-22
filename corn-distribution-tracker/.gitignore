@@ -3,6 +3,7 @@ node_modules/
 .venv/
 dist/
 build/
+*.tsbuildinfo
 *.py[cod]
 __pycache__/
 .pytest_cache/
@@ -27,6 +28,12 @@ uploads/
 # Logs
 logs/
 *.log
+
+# Browser E2E artifacts (traces, screenshots, per-run credentials, local evidence)
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/e2e/.state/
+.e2e-storage/
 
 # Original handoff archive (kept as workspace reference, not part of the app repo)
 corn-distribution-tracker-handoff/

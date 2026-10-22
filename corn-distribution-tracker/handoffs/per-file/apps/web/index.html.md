@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-HTML shell with `%VITE_APP_NAME%`, viewport/meta tags and the React mount point.
+HTML shell with a literal product title, viewport/meta tags and the React mount point. The unused `%VITE_APP_NAME%` placeholder was removed so a plain production build is warning-free.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded without env substitution warnings.
 
 **Unresolved issues:** None known.

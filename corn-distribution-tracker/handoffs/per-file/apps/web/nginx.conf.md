@@ -14,6 +14,6 @@ See the relevant contract under `docs/` and the ownership table in `handoffs/fil
 
 SPA server with history fallback, static asset caching, security headers and a same-origin `/api/` proxy to `api:8000` (keeps the refresh cookie first-party). Not executed here (Docker unavailable).
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 13 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-22):** `cd apps/web && npm test` → 14 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** Image/compose build was not executed because Docker is unavailable in this environment.

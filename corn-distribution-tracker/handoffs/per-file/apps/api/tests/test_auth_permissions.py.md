@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Auth/RBAC coverage: login/refresh rotation/logout, invite and reset single-use behavior, role guards, ownership denials, and the first-admin CLI rejecting emails the login schema can never accept. Part of the 45-test backend suite.
+Auth/RBAC coverage: login/refresh rotation/logout, invite and reset single-use behavior, role guards, ownership denials, first-admin CLI rejection, and a regression that the distributor assignment payload satisfies the nested `SiteOut` contract without leaking admin notes. Part of the 46-test backend suite.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
+**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 65 files; fresh PostgreSQL DB `alembic upgrade head → downgrade base → upgrade head` passed.
 
 **Unresolved issues:** None known.

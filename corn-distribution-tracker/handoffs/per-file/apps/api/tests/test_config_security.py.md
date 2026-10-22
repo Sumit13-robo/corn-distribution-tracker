@@ -18,6 +18,6 @@ Adds four tests: production rejects placeholder defaults (validation list + `Run
 hardened production settings pass, staging rejects the sample secret, and development remains convenient.
 `get_settings()` now fails startup via `assert_secure_settings()` instead of only logging.
 
-**Verification (2026-10-22):** `make test-api` → 45 passed; `make lint-api` → clean; `make typecheck-api` → clean.
+**Verification (2026-10-22):** `make test-api` → 46 passed; `make lint-api` → clean; `make typecheck-api` → clean.
 
 **Unresolved issues:** None known.

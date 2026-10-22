@@ -156,13 +156,19 @@ def distributor_me_assignments(db: Session, *, user: User) -> list[dict]:
                 "over_target_kg": max(approved - target, Decimal(0)),
                 "site": {
                     "id": site.id,
-                    "site_code": site.site_code,
                     "name": site.name,
+                    "site_code": site.site_code,
                     "address_text": site.address_text,
+                    "region": site.region,
                     "latitude": site.latitude,
                     "longitude": site.longitude,
                     "geofence_radius_m": site.geofence_radius_m,
                     "max_acceptable_accuracy_m": site.max_acceptable_accuracy_m,
+                    "is_active": site.is_active,
+                    # Site notes are admin-internal and intentionally omitted.
+                    "notes": None,
+                    "created_at": site.created_at,
+                    "updated_at": site.updated_at,
                 }
                 if site
                 else None,

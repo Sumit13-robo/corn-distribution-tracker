@@ -4,7 +4,7 @@ PY ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 ARGS ?=
 
-.PHONY: help venv api-install web-install migrate migrate-down test-api test-web \
+.PHONY: help venv api-install web-install e2e-install migrate migrate-down test-api test-web test-e2e \
         lint-api lint-web typecheck-api typecheck-web build-web run-api run-web dev-up dev-dump-clean
 
 venv:
@@ -15,6 +15,9 @@ api-install: venv
 
 web-install:
 	cd apps/web && npm ci
+
+e2e-install:
+	cd apps/web && npx playwright install chromium
 
 migrate:
 	cd apps/api && ../../.venv/bin/alembic upgrade head
@@ -30,6 +33,9 @@ test-api:
 
 test-web:
 	cd apps/web && npm test
+
+test-e2e:
+	cd apps/web && npm run test:e2e
 
 lint-api:
 	.venv/bin/ruff check apps/api/app apps/api/tests
