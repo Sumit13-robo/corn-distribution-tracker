@@ -1,0 +1,92 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sign in to the Corn Distribution Tracker Lite edition.">
+  <title>Sign in · Corn Distribution Tracker Lite</title>
+  <link rel="icon" href="{% static 'tracker/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'tracker/lite.css' %}">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#auth-form">Skip to sign-in form</a>
+  <div class="auth-shell">
+    <aside class="auth-brand" aria-label="About the Lite edition">
+      <div class="auth-wordmark">
+        {% include "tracker/partials/brand_mark.html" %}
+        <div>
+          <strong>Corn Distribution Tracker</strong>
+          <small>Lite edition · Django only</small>
+        </div>
+      </div>
+
+      <div class="auth-message">
+        <p class="auth-kicker">Receipt to site, simply</p>
+        <h2>Every kilogram accounted for.</h2>
+        <p>
+          A deliberately small edition of the tracker. One Django process, one
+          SQLite file, and the same accountable workflow.
+        </p>
+        <ul class="auth-points">
+          <li>Central receipt, distributor allocation, site delivery</li>
+          <li>Admin review with private evidence photos</li>
+          <li>Decimal kilograms and a readable stock ledger</li>
+        </ul>
+      </div>
+
+      <p class="auth-brand-note">Authorized accounts only. No public registration and no email reset in this edition.</p>
+    </aside>
+
+    <main class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-mobile-mark">
+          {% include "tracker/partials/brand_mark.html" %}
+          <span>Corn Tracker <small>Lite</small></span>
+        </div>
+        <p class="auth-eyebrow">Operations sign-in</p>
+        <h1>Welcome back</h1>
+        <p class="auth-intro">Use the account issued by your administrator.</p>
+
+        {% include "tracker/partials/messages.html" %}
+
+        {% if form.non_field_errors %}
+          <div class="auth-alert" role="alert">
+            <strong>Sign-in failed</strong>
+            {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% endif %}
+
+        <form class="auth-form" id="auth-form" method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+          {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+          <div class="form-field">
+            <label for="{{ form.username.id_for_label }}">Email</label>
+            {{ form.username }}
+            {% for error in form.username.errors %}<p class="error" id="login-email-error-{{ forloop.counter }}">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="form-field">
+            <label for="{{ form.password.id_for_label }}">Password</label>
+            {{ form.password }}
+            {% for error in form.password.errors %}<p class="error" id="login-password-error-{{ forloop.counter }}">{{ error }}</p>{% endfor %}
+          </div>
+
+          <button class="btn auth-submit" type="submit">Sign in</button>
+        </form>
+
+        <p class="auth-help">
+          Sessions use an HttpOnly cookie and Django's CSRF protection. Evidence
+          photos are served only through an authorized view.
+        </p>
+        <div class="auth-secondary">
+          <span>Need access?</span>
+          <span>Ask an administrator to create or reset your account.</span>
+        </div>
+      </div>
+      <p class="auth-privacy">Lite edition · Synthetic demo data only</p>
+    </main>
+  </div>
+  <script src="{% static 'tracker/app.js' %}" defer></script>
+</body>
+</html>

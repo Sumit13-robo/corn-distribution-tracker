@@ -1,0 +1,131 @@
+{% extends "tracker/base.html" %}
+{% load lite_tags %}
+{% block title %}My delivery day · Corn Tracker Lite{% endblock %}
+{% block topbar_context %}My delivery day{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="page-kicker">Signed in as {{ user.email }}</p>
+    <h1>Hello, {{ user.short_name }}</h1>
+    <p class="subtitle">Your stock, assignments and recent delivery updates.</p>
+  </div>
+  <div class="page-actions">
+    {% if assignments %}
+      <a class="btn" href="{% url 'delivery_create' %}">Submit delivery</a>
+    {% endif %}
+    <a class="btn secondary" href="{% url 'deliveries' %}">My deliveries</a>
+  </div>
+</header>
+
+{% if available <= 0 %}
+  <div class="notice warning" role="status">
+    <span>No unreserved stock is available right now. Pending submissions reserve their quantity until an administrator reviews them.</span>
+  </div>
+{% endif %}
+
+<div class="metric-row">
+  <article class="stat-card">
+    <p class="label">Available to deliver</p>
+    <p class="value">{{ available|kg }}<span class="unit">kg</span></p>
+    <p class="hint">Held stock minus submissions awaiting review.</p>
+  </article>
+  <article class="stat-card">
+    <p class="label">Held stock</p>
+    <p class="value">{{ held|kg }}<span class="unit">kg</span></p>
+    <p class="hint">Allocated to you by an administrator.</p>
+  </article>
+  <article class="stat-card">
+    <p class="label">Awaiting review</p>
+    <p class="value">{{ pending|kg }}<span class="unit">kg</span></p>
+    <p class="hint">Reserved while an administrator checks evidence.</p>
+  </article>
+  <article class="stat-card">
+    <p class="label">Approved</p>
+    <p class="value">{{ approved|kg }}<span class="unit">kg</span></p>
+    <p class="hint">Posted to site stock after review.</p>
+  </article>
+</div>
+
+<section class="section progress-section">
+  {% include "tracker/partials/progress.html" with heading="My active target" percent=progress approved=approved target=target remaining=remaining %}
+</section>
+
+<div class="dashboard-grid">
+  <section class="section">
+    <div class="section-heading">
+      <div>
+        <h2>Active assignments</h2>
+        <p class="muted small">Where and how much you are expected to deliver.</p>
+      </div>
+    </div>
+    {% if assignments %}
+      <ul class="assignment-list">
+        {% for assignment in assignments %}
+          <li class="assignment-card">
+            <div class="assignment-head">
+              <div>
+                <p class="assignment-site">{{ assignment.site.code }} · {{ assignment.site.name }}</p>
+                <p class="record-meta">{{ assignment.campaign.name }}{% if assignment.due_on %} · due {{ assignment.due_on|date:"j M Y" }}{% endif %}</p>
+              </div>
+              {% include "tracker/partials/status_badge.html" with value=assignment.status label=assignment.get_status_display %}
+            </div>
+            <div class="assignment-progress">
+              <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ assignment.progress_percent }}" aria-valuetext="{{ assignment.progress_percent }} percent of assignment target met">
+                <span style="width: {{ assignment.progress_percent }}%"></span>
+              </div>
+              <p class="progress-labels">
+                <span>{{ assignment.approved_kg|kg }} kg approved</span>
+                <span class="muted">{{ assignment.target_kg|kg }} kg target</span>
+              </p>
+            </div>
+            <div class="assignment-actions">
+              <span class="muted small">{{ assignment.pending_kg|kg }} kg awaiting review</span>
+              <a class="btn small secondary" href="{% url 'delivery_create' %}?assignment={{ assignment.pk }}">Submit update</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <strong>No active assignments</strong>
+        <p>Ask an administrator to assign you to a site and campaign.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="section">
+    <div class="section-heading">
+      <div>
+        <h2>Recent deliveries</h2>
+        <p class="muted small">The last six updates you submitted.</p>
+      </div>
+      <a class="text-link" href="{% url 'deliveries' %}">View all</a>
+    </div>
+    {% if recent_deliveries %}
+      <ul class="record-list">
+        {% for delivery in recent_deliveries %}
+          <li class="record-row">
+            <div class="record-main">
+              <div class="record-title">
+                <a href="{% url 'delivery_detail' delivery.pk %}">{{ delivery.site.code }}</a>
+                {% include "tracker/partials/status_badge.html" with value=delivery.status label=delivery.get_status_display %}
+              </div>
+              <p class="record-meta">{{ delivery.site.name }} · {{ delivery.submitted_at|date:"j M, H:i" }}</p>
+            </div>
+            <div class="record-side">
+              <span class="record-figure">{{ delivery.quantity_kg|kg }} kg</span>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <strong>No deliveries yet</strong>
+        <p>Your submissions and review outcomes will appear here.</p>
+      </div>
+    {% endif %}
+    <p class="footnote">Submitted quantities reserve stock immediately. Only an approved delivery moves stock to the site.</p>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "tracker/base.html" %}
+{% load lite_tags %}
+{% block title %}Deliveries · Corn Tracker Lite{% endblock %}
+{% block topbar_context %}Deliveries{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>{% if is_admin %}Delivery review{% else %}My deliveries{% endif %}</h1>
+    <p class="subtitle">
+      {% if is_admin %}
+        Submitted quantities stay reserved until an administrator makes a decision.
+      {% else %}
+        Track what is waiting for review and what has reached site stock.
+      {% endif %}
+    </p>
+  </div>
+  <div class="page-actions">
+    {% if not is_admin %}
+      <a class="btn" href="{% url 'delivery_create' %}">New delivery</a>
+    {% endif %}
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Filter deliveries by status">
+  <a class="tab" href="{% url 'deliveries' %}" {% if not status %}aria-current="page"{% endif %}>All <span>{{ counts.all }}</span></a>
+  <a class="tab" href="{% url 'deliveries' %}?status=SUBMITTED" {% if status == "SUBMITTED" %}aria-current="page"{% endif %}>Awaiting review <span>{{ counts.SUBMITTED }}</span></a>
+  <a class="tab" href="{% url 'deliveries' %}?status=APPROVED" {% if status == "APPROVED" %}aria-current="page"{% endif %}>Approved <span>{{ counts.APPROVED }}</span></a>
+  <a class="tab" href="{% url 'deliveries' %}?status=REJECTED" {% if status == "REJECTED" %}aria-current="page"{% endif %}>Rejected <span>{{ counts.REJECTED }}</span></a>
+</nav>
+
+<section class="section">
+  {% if deliveries %}
+    <div class="table-wrap">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <table class="data-table wide">
+        <thead>
+          <tr>
+            <th scope="col">Submitted</th>
+            <th scope="col">Site</th>
+            {% if is_admin %}<th scope="col">Distributor</th>{% endif %}
+            <th scope="col" class="num">Quantity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Evidence</th>
+            <th scope="col">Review</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for delivery in deliveries %}
+            <tr>
+              <td>{{ delivery.submitted_at|date:"j M Y, H:i" }}</td>
+              <td>
+                <strong>{{ delivery.site.code }}</strong>
+                <p class="record-meta">{{ delivery.site.name }}</p>
+              </td>
+              {% if is_admin %}<td>{{ delivery.distributor.short_name }}</td>{% endif %}
+              <td class="num">{{ delivery.quantity_kg|kg }} kg</td>
+              <td>{% include "tracker/partials/status_badge.html" with value=delivery.status label=delivery.get_status_display %}</td>
+              <td>{% if delivery.has_photo %}<span class="meta-pill">Photo</span>{% else %}<span class="muted">None</span>{% endif %}</td>
+              <td>
+                {% if delivery.status == "SUBMITTED" %}
+                  <span class="muted">Waiting</span>
+                {% elif delivery.reviewed_at %}
+                  {{ delivery.reviewed_at|date:"j M Y" }}
+                {% else %}
+                  <span class="muted">—</span>
+                {% endif %}
+              </td>
+              <td class="row-actions">
+                <a class="btn small secondary" href="{% url 'delivery_detail' delivery.pk %}">{% if is_admin and delivery.status == "SUBMITTED" %}Review{% else %}View{% endif %}</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      {% if status == "SUBMITTED" %}
+        <strong>No deliveries waiting</strong>
+        <p>The review queue is clear.</p>
+      {% elif status == "APPROVED" %}
+        <strong>No approved deliveries</strong>
+        <p>Approved deliveries post stock to site accounts and appear here.</p>
+      {% elif status == "REJECTED" %}
+        <strong>No rejected deliveries</strong>
+        <p>Rejected submissions keep their reason on the record.</p>
+      {% else %}
+        <strong>No deliveries yet</strong>
+        <p>{% if is_admin %}Distributor submissions will appear here for review.{% else %}Submit your first delivery update to begin.{% endif %}</p>
+        {% if not is_admin %}<a class="btn" href="{% url 'delivery_create' %}">Submit delivery</a>{% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+
+<div class="notice">
+  <span>{% if is_admin %}Approving a delivery moves stock from the distributor to the site. Rejecting releases the reserved quantity without changing balances.{% else %}A submitted delivery is not yet site stock. Your available balance subtracts pending submissions to prevent double allocation.{% endif %}</span>
+</div>
+{% endblock %}

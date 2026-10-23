@@ -1,0 +1,13 @@
+{% load lite_tags %}
+<div class="progress-block">
+  <div class="progress-heading">
+    <div>
+      <h2>{{ heading|default:"Delivery progress" }}</h2>
+      <p class="muted small">{{ approved|kg }} kg approved against {{ target|kg }} kg target{% if remaining %} · {{ remaining|kg }} kg remaining{% endif %}</p>
+    </div>
+    <p class="progress-figure">{{ percent }}<span class="muted">%</span></p>
+  </div>
+  <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ percent }}" aria-valuetext="{{ percent }} percent of target met">
+    <span style="width: {{ percent }}%"></span>
+  </div>
+</div>

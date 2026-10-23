@@ -1,0 +1,73 @@
+{% extends "tracker/base.html" %}
+{% load lite_tags %}
+{% block title %}Assignments · Corn Tracker Lite{% endblock %}
+{% block topbar_context %}Assignments{% endblock %}
+
+{% block content %}
+<header class="page-header">
+  <div>
+    <h1>Assignments</h1>
+    <p class="subtitle">Who delivers to which site, under which campaign and target.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="{% url 'assignment_create' %}">New assignment</a>
+  </div>
+</header>
+
+<section class="section">
+  {% if assignments %}
+    <div class="table-wrap">
+      <p class="table-scroll-hint">Scroll sideways to see every column.</p>
+      <table class="data-table wide">
+        <thead>
+          <tr>
+            <th scope="col">Site</th>
+            <th scope="col">Distributor</th>
+            <th scope="col">Campaign</th>
+            <th scope="col" class="num">Target</th>
+            <th scope="col" class="num">Approved</th>
+            <th scope="col">Due</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in assignments %}
+            <tr>
+              <td>
+                <strong>{{ assignment.site.code }}</strong>
+                <p class="record-meta">{{ assignment.site.name }}</p>
+              </td>
+              <td>
+                {{ assignment.distributor.short_name }}
+                <p class="record-meta">{{ assignment.distributor.email }}</p>
+              </td>
+              <td>{{ assignment.campaign.code }}<p class="record-meta">{{ assignment.campaign.name }}</p></td>
+              <td class="num">{{ assignment.target_kg|kg }} kg</td>
+              <td class="num">{{ assignment.approved_kg|kg }} kg</td>
+              <td>{{ assignment.due_on|date:"j M Y"|default:"—" }}</td>
+              <td>{% include "tracker/partials/status_badge.html" with value=assignment.status label=assignment.get_status_display %}</td>
+              <td class="row-actions">
+                <form method="post" action="{% url 'assignment_toggle' assignment.pk %}" data-confirm="{% if assignment.status == 'ACTIVE' %}Mark this assignment complete? The target will stop counting toward the active total.{% else %}Reopen this assignment?{% endif %}">
+                  {% csrf_token %}
+                  <button class="text-link" type="submit">{% if assignment.status == "ACTIVE" %}Complete{% else %}Reopen{% endif %}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <strong>No assignments yet</strong>
+      <p>Create a campaign and site first, then assign a distributor.</p>
+      <a class="btn" href="{% url 'assignment_create' %}">Create the first assignment</a>
+    </div>
+  {% endif %}
+</section>
+
+<div class="notice">
+  <span>Submitting a delivery is only possible while both the assignment and its campaign are active. Completing an assignment does not move stock; the delivery review does.</span>
+</div>
+{% endblock %}

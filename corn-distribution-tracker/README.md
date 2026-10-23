@@ -2,6 +2,8 @@
 
 Monorepo reference implementation of a corn distribution tracker: a **React 19 + TypeScript** single-page app and a **Django 5.2 + Django REST Framework + PostgreSQL** API. It implements the contracts in [`docs/`](docs/) — append-only stock ledger, geotagged evidence, reviewer workflow, offline-safe distributor drafts, and an auditable admin surface.
 
+> **Two editions:** the full application documented below remains unchanged. A deliberately simple, server-rendered Django/SQLite edition lives in the sibling folder [`../corn-distribution-tracker-lite`](../corn-distribution-tracker-lite). It shares the core workflow and visual language, runs on port `8001`, and documents its reduced scope and limitations in its own README.
+
 ## What is implemented
 
 **Authentication and roles**
