@@ -7,6 +7,7 @@ Monorepo reference implementation of a corn distribution tracker: a **React 19 +
 **Authentication and roles**
 - Email/password login with Argon2id hashing and a database-backed Django session.
 - HttpOnly `sessionid` cookie, CSRF double-submit for unsafe requests, and server-side session revocation on logout/deactivation.
+- Per-IP sign-in throttling counts failed attempts only; a `429` shows the server's retry window instead of blaming the password.
 - Invitation, password-reset and password-change flows. Invitation links are shown once to the creating admin; password-reset links are issued by an operator because no mail transport ships.
 - Server-authoritative RBAC (`ADMIN`, `DISTRIBUTOR`); UI guards are supplementary only.
 
@@ -36,8 +37,8 @@ Monorepo reference implementation of a corn distribution tracker: a **React 19 +
 ## Repository layout
 
 ```text
-apps/api            Django/DRF app, migrations, management commands, tests (58 tests)
-apps/web            React SPA, Vitest tests (18 tests), Playwright E2E suite (8 tests)
+apps/api            Django/DRF app, migrations, management commands, tests (60 tests)
+apps/web            React SPA, Vitest tests (23 tests), Playwright E2E suite (8 tests)
 docs/               Product/API/design/offline/ops contracts (source of truth)
 handoffs/           File ownership map + per-file implementation notes
 docker-compose.yml  PostgreSQL 17 + Django/Gunicorn API + nginx-served SPA
@@ -123,18 +124,18 @@ make test-e2e      # ports 8000 and 5173 must be free
 - Each run generates random admin/distributor passwords in the gitignored `apps/web/e2e/.state/` directory. No credentials or real data are committed.
 - Covered flow: session-cookie restore and role guard; photo/geolocation submission; private evidence rendering; admin approval posting the ledger movement; distributor view of the approved record; offline draft staying `QUEUED` and syncing only after connectivity returns; and a 360 px mobile-viewport overflow check.
 
-## Verification (run on 2026-10-22)
+## Verification (run on 2026-10-23)
 
 | Command | Result |
 |---|---|
-| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **58 passed** |
+| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **60 passed** |
 | `make lint-api` (ruff 0.17.1) | **All checks passed** |
 | `make typecheck-api` (mypy 2.4.0 + django-stubs 5.2.9) | **No issues in 49 source files** |
 | `python manage.py makemigrations --check --dry-run` | **No changes detected** |
 | `npx tsc -b --noEmit` (web) | **passed** |
-| `npm test -- --run` (Vitest 4.1.12) | **18 passed** across 3 files |
+| `npm test -- --run` (Vitest 4.1.12) | **23 passed** across 4 files |
 | `npm run lint` (ESLint 9 + typescript-eslint + react-hooks) | **0 errors, 0 warnings** |
-| `npm run build` | **passed** — `dist` JS 512.83 kB (`gzip 152.26 kB`), CSS 31.10 kB; Vite warns one chunk exceeds 500 kB |
+| `npm run build` | **passed** — `dist` JS 513.50 kB (`gzip 152.53 kB`), CSS 31.10 kB; Vite warns one chunk exceeds 500 kB |
 | `make test:e2e` (Playwright 1.64.1, Chromium, real Django + PostgreSQL) | **8 passed** (2 setup + 6 workflow) |
 | `gunicorn --check-config config.wsgi:application` | **passed** |
 | `python manage.py check` | **No issues identified** |

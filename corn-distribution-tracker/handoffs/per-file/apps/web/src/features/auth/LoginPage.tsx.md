@@ -1,6 +1,6 @@
 # File Handoff: `apps/web/src/features/auth/LoginPage.tsx`
 
-**Status:** IMPLEMENTED
+**Status:** TESTED
 **Primary owner:** Frontend
 **File purpose:** Login page
 
@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Email/password login with safe error display, redirect-on-success and a link to the reset flow.
+Email/password login with safe error display, redirect-on-success and a link to the reset flow. `loginErrorMessage()` keeps credential failures generic but reports `429` with the server's retry window, `5xx`/network outages as temporary unavailability, and `403` as an expired sign-in session.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files, including the new login-message tests); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded. Browser check with a live `429` confirmed `Too many sign-in attempts. Try again in 5 minutes.`
 
 **Unresolved issues:** None known.

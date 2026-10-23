@@ -20,7 +20,7 @@ from django.utils import timezone
 from ..enums import Role
 from ..errors import AppError, AuthRequiredError, ConflictError, RateLimitedError
 from ..models import Invitation, PasswordResetToken, User
-from ..rate_limit import hit
+from ..rate_limit import check, hit, record
 from ..security import (
     hash_token,
     new_invitation_token,
@@ -51,7 +51,7 @@ def _validated_email(email: str) -> str:
 
 
 def authenticate_login(*, email: str, password: str, ctx: RequestContext, ip_key: str) -> User:
-    allowed, retry_after = hit("auth.login", ip_key)
+    allowed, retry_after = check("auth.login", ip_key)
     if not allowed:
         raise RateLimitedError(retry_after=retry_after)
 
@@ -60,12 +60,17 @@ def authenticate_login(*, email: str, password: str, ctx: RequestContext, ip_key
     generic = AuthRequiredError("Invalid email or password.")
     if user is None:
         verify_password(DUMMY_PASSWORD_HASH, password)
+        record("auth.login", ip_key)
         raise generic
-    if user.locked_until and user.locked_until > timezone.now():
+    now = timezone.now()
+    if user.locked_until and user.locked_until > now:
+        retry_after = max(int((user.locked_until - now).total_seconds()) + 1, 1)
         raise RateLimitedError(
-            "Account temporarily locked after repeated failures; try again later."
+            "Account temporarily locked after repeated failures; try again later.",
+            retry_after=retry_after,
         )
     if not user.password or not verify_password(user.password, password):
+        record("auth.login", ip_key)
         user.failed_login_count = (user.failed_login_count or 0) + 1
         if user.failed_login_count >= MAX_FAILED_LOGINS:
             user.locked_until = timezone.now() + timedelta(minutes=LOCKOUT_MINUTES)

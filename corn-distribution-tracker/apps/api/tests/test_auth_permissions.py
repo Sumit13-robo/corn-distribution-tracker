@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import timedelta
 
 import pytest
 from django.test import Client
+from django.utils import timezone
 
 from corn.errors import AppError
 from corn.models import User
@@ -88,6 +90,35 @@ def test_login_rate_limit_locks_repeated_failures():
     assert locked.status_code == 429
     assert locked.json()["error"]["code"] == "RATE_LIMITED"
     assert locked["Retry-After"]
+
+
+def test_locked_account_returns_retry_window(auth: AuthClient):
+    auth.create_admin()
+    User.objects.filter(email="admin@example.org").update(
+        locked_until=timezone.now() + timedelta(minutes=10)
+    )
+    response = json_request(
+        Client(),
+        "post",
+        "/api/v1/auth/login",
+        {"email": "admin@example.org", "password": ADMIN_PASSWORD},
+    )
+    assert response.status_code == 429
+    assert response["Retry-After"]
+    assert response.json()["error"]["details"][0]["retry_after"] > 0
+
+
+def test_successful_logins_do_not_consume_failure_rate_limit(auth: AuthClient):
+    """A shared/NAT IP is only throttled for failures, not normal sign-ins."""
+    auth.create_admin()
+    for _ in range(12):
+        response = json_request(
+            auth.client,
+            "post",
+            "/api/v1/auth/login",
+            {"email": "admin@example.org", "password": ADMIN_PASSWORD},
+        )
+        assert response.status_code == 200, response.content
 
 
 def test_session_login_me_logout_and_csrf(csrf_client: Client):

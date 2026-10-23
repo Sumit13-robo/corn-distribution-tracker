@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { ApiError } from "../../lib/api-client";
 import { login, useSession } from "../../lib/session";
 import { FormField } from "../../components/common/FormField";
 import { AuthLayout } from "./AuthLayout";
@@ -7,6 +8,38 @@ import { AuthLayout } from "./AuthLayout";
 interface FieldErrors {
   email?: string;
   password?: string;
+}
+
+const GENERIC_LOGIN_ERROR =
+  "Email or password is incorrect, or sign-in is temporarily unavailable.";
+
+/**
+ * Keeps credential failures deliberately generic (no account enumeration) but
+ * tells the user what to do about throttling or an unreachable API instead of
+ * blaming the password for an infrastructure problem.
+ */
+export function loginErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 429 || error.code === "RATE_LIMITED") {
+      const detail = error.details.find((item) => typeof item.retry_after === "number");
+      const seconds = typeof detail?.retry_after === "number" ? Math.ceil(detail.retry_after) : 0;
+      if (seconds > 0) {
+        const wait = seconds < 60 ? `${seconds} seconds` : `${Math.ceil(seconds / 60)} minutes`;
+        return `Too many sign-in attempts. Try again in ${wait}.`;
+      }
+      return "Too many sign-in attempts. Try again in a few minutes.";
+    }
+    if (error.status >= 500) {
+      return "The sign-in service is temporarily unavailable. Try again shortly.";
+    }
+    if (error.status === 403) {
+      return "Your sign-in session expired. Reload the page and try again.";
+    }
+  }
+  if (error instanceof TypeError) {
+    return "We couldn't reach the sign-in service. Check your connection and try again.";
+  }
+  return GENERIC_LOGIN_ERROR;
 }
 
 /**
@@ -62,9 +95,10 @@ export function LoginPage() {
       try {
         await login(email.trim(), password);
         navigate(destination, { replace: true });
-      } catch {
-        // Generic failure only: never reveal whether the account exists.
-        setAuthError("Email or password is incorrect, or sign-in is temporarily unavailable.");
+      } catch (error) {
+        // Never reveal whether the account exists; do explain throttling and
+        // service outages, which are not credential failures.
+        setAuthError(loginErrorMessage(error));
         setPending(false);
       }
     })();

@@ -6,11 +6,11 @@
 
 ## Current implementation
 
-Login, invitation, password reset/change, session revocation and account lifecycle. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
+Login, invitation, password reset/change, session revocation and account lifecycle. Login checks the per-IP failure window before password hashing, records a slot only when the password is wrong or the account does not exist, and leaves successful/inactive-account attempts out of the failure budget. Account-level lockout, generic credential errors, audit events and Django session creation are unchanged.
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 60 passed (including the successful-login budget and locked-account retry-window tests); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
 ## Unresolved issues
 

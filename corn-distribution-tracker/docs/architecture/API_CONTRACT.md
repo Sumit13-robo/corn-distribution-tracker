@@ -4,7 +4,7 @@ Base path: `/api/v1`. Use JSON for normal request/response bodies. Return a cons
 
 ## Authentication (Django session cookies)
 - `GET /auth/csrf` — issues the CSRF cookie and returns `{"csrf_token":"..."}` for browser bootstrap. Login, `GET /auth/me` and this endpoint also ensure the cookie is present.
-- `POST /auth/login` — email/password; rate limited; creates a database-backed server session and sets the HttpOnly `sessionid` cookie. Returns `{"user":{...}}`; no bearer access token or refresh token is issued.
+- `POST /auth/login` — email/password; rate limited; creates a database-backed server session and sets the HttpOnly `sessionid` cookie. Returns `{"user":{...}}`; no bearer access token or refresh token is issued. The limiter counts **failed** attempts only (10 per IP per 5 minutes), so normal sign-ins from a shared/NAT address do not consume the budget. A `429` includes `Retry-After` and `details:[{"retry_after":seconds}]`; credential failures stay a generic `401`.
 - `GET /auth/me` — current sanitized session user; a bare user object. A missing/expired session returns `401`.
 - `POST /auth/logout` — requires the session plus `X-CSRFToken`; deletes the server session and clears the cookie.
 - `POST /auth/change-password` — current password + new password; rotates the session credential.
