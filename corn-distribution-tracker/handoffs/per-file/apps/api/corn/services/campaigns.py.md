@@ -10,8 +10,12 @@ Campaigns, sites and distributor assignment domain rules. It participates in the
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known. Native PostgreSQL + Django + Vite workflow verified.
+
+## Campaign-site update (2026-10-25)
+
+Campaign creation creates the campaign and its optional name-only sites transactionally. Site creation validates one-campaign ownership, case-insensitive name uniqueness within a campaign, optional coordinate pairs and generated unique `site_code` values. Updates allow adding, changing or clearing a location with audit records. Assignment creation rejects a campaign-scoped site from a different campaign and adopts legacy/global sites on first assignment. Verification: `make test-api` → 66 passed (including 4 new campaign-site tests), Ruff/mypy clean.

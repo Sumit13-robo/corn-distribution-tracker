@@ -6,13 +6,19 @@ import { queryKeys } from "../../../lib/query-client";
 import { DataTable } from "../../../components/common/DataTable";
 import { EmptyState } from "../../../components/common/EmptyState";
 import { ErrorState } from "../../../components/common/ErrorState";
+import { MapCanvas } from "../../../components/common/MapCanvas";
 import { StatusBadge } from "../../../components/common/StatusBadge";
 import { ConfirmDialog } from "../../../components/common/ConfirmDialog";
 import { FormField } from "../../../components/common/FormField";
 import { StatCard } from "../../../components/common/StatCard";
 import { useToast } from "../../../app/providers";
-import { distributionFlagSummary } from "../shared/flags";
-import { formatAge, formatBytes, formatDateTime, formatDistance, formatKg, humanizeStatus } from "../../../lib/format";
+import {
+  distributionFlagExplanation,
+  distributionFlagSummary,
+  integrityFlagList,
+} from "../shared/flags";
+import { formatAge, formatBytes, formatDateTime, formatKg, humanizeStatus } from "../../../lib/format";
+import { googleMapsViewerUrl, osmViewerUrl } from "../../../lib/map";
 import type { EvidenceOut } from "../../../types/domain";
 import { newId } from "../../../lib/api-client";
 
@@ -48,6 +54,24 @@ export function EvidenceReviewPage() {
     queryFn: () => api.getDelivery(selectedId as string),
     enabled: selectedId !== null,
   });
+
+  const selectedSiteId = selected.data?.site_id ?? null;
+  const selectedSite = useQuery({
+    queryKey: queryKeys.site(selectedSiteId ?? "none"),
+    queryFn: () => api.getSite(selectedSiteId as string),
+    enabled: selectedSiteId !== null,
+  });
+  const siteData = selectedSite.data;
+  const siteMarker =
+    siteData && siteData.latitude !== null && siteData.longitude !== null
+      ? {
+          id: "site-location",
+          latitude: siteData.latitude,
+          longitude: siteData.longitude,
+          label: `Site ${siteData.site_code}: ${siteData.name}`,
+          color: "var(--color-brand-600)",
+        }
+      : null;
 
   const [action, setAction] = useState<"approve" | "reject" | "cancel" | null>(null);
   const [approveException, setApproveException] = useState("");
@@ -87,6 +111,7 @@ export function EvidenceReviewPage() {
     setRejectReason("");
     void queryClient.invalidateQueries({ queryKey: ["deliveries"] });
     void queryClient.invalidateQueries({ queryKey: ["analytics-overview"] });
+    void queryClient.invalidateQueries({ queryKey: ["analytics-map-deliveries"] });
     void queryClient.invalidateQueries({ queryKey: ["delivery"] });
   }
 
@@ -112,6 +137,7 @@ export function EvidenceReviewPage() {
   }
 
   const record = selected.data ?? null;
+  const flagExplanation = record ? distributionFlagExplanation(record) : null;
 
   return (
     <div>
@@ -177,7 +203,15 @@ export function EvidenceReviewPage() {
                 render: (row) => formatKg(row.quantity_kg),
               },
               { key: "age", header: "Age", sortValue: (row) => row.submitted_at, render: (row) => formatAge(row.submitted_at) },
-              { key: "geo", header: "Location", render: (row) => <StatusBadge status={row.geo_status} /> },
+              {
+                key: "geo",
+                header: "Location",
+                render: (row) => (
+                  <span className="small">
+                    {row.location_latitude != null && row.location_longitude != null ? "Captured" : "Missing"}
+                  </span>
+                ),
+              },
               { key: "flags", header: "Flags", render: (row) => distributionFlagSummary(row) },
               {
                 key: "open",
@@ -207,10 +241,85 @@ export function EvidenceReviewPage() {
 
           <div className="metric-row">
             <StatCard label="Quantity" value={formatKg(record.quantity_kg)} unit="kg" />
-            <StatCard label="Distance to site" value={formatDistance(record.distance_to_site_m)} definition="Server-computed geodesic distance (Vincenty WGS84)." />
-            <StatCard label="Location fix" value={humanizeStatus(record.geo_status)} definition={record.location_accuracy_m ? `Accuracy ${record.location_accuracy_m} m` : "No accuracy reported"} />
+            <StatCard
+              label="Accuracy"
+              value={record.location_accuracy_m ? `±${record.location_accuracy_m} m` : "—"}
+              definition="Reported accuracy of the captured device fix. Location is supporting metadata and does not block approval."
+            />
+            <StatCard
+              label="Location"
+              value={record.location_latitude != null && record.location_longitude != null ? "Captured" : "Missing"}
+              definition={
+                record.location_latitude != null && record.location_longitude != null
+                  ? "A device fix was recorded with this submission. Approval is allowed from any captured place."
+                  : "No device fix was captured. Approval is still allowed."
+              }
+            />
             <StatCard label="Submitted at" value={formatDateTime(record.submitted_at)} definition={`Client created: ${formatDateTime(record.client_created_at)}`} />
           </div>
+
+          {record.location_latitude && record.location_longitude ? (
+            <div style={{ marginTop: "var(--space-3)" }}>
+              <div className="row">
+                <h3 className="grow">Distributor-reported location</h3>
+                <a
+                  href={osmViewerUrl(record.location_latitude, record.location_longitude)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="small"
+                >
+                  OpenStreetMap
+                </a>
+                <a
+                  href={googleMapsViewerUrl(record.location_latitude, record.location_longitude)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="small"
+                >
+                  Google Maps
+                </a>
+              </div>
+              <div className="map-legend" aria-label="Reported location legend">
+                {siteMarker ? (
+                  <span className="legend-item">
+                    <span className="swatch" style={{ background: "var(--color-brand-600)" }} />
+                    Site (current coordinates)
+                  </span>
+                ) : null}
+                <span className="legend-item">
+                  <span className="swatch" style={{ background: "var(--color-pending-text)" }} />
+                  Distributor-reported fix
+                </span>
+              </div>
+              <MapCanvas
+                ariaLabel={`Map of the distributor-reported location for record ${record.id.slice(0, 8)}`}
+                className="map-container is-compact"
+                points={[
+                  ...(siteMarker ? [siteMarker] : []),
+                  {
+                    id: "reported-location",
+                    latitude: record.location_latitude,
+                    longitude: record.location_longitude,
+                    label: `Distributor-reported location: ${record.location_latitude}, ${record.location_longitude}`,
+                    color: "var(--color-pending-text)",
+                    selected: true,
+                  },
+                ]}
+                fallback={
+                  <p className="notice" role="status">
+                    Map unavailable; the reported coordinates are shown in the details below.
+                  </p>
+                }
+              />
+              <p className="small muted" style={{ marginTop: "var(--space-1)" }}>
+                This marker is the device fix captured with the submission. It is supporting metadata, not proof
+                against spoofing.{" "}
+                {siteMarker
+                  ? "The site marker uses the site's current coordinates for context only."
+                  : "This site has no reference location, so only the reported fix is shown."}
+              </p>
+            </div>
+          ) : null}
 
           <div className="row" style={{ alignItems: "flex-start", marginTop: "var(--space-3)" }}>
             <dl className="dl-grid grow">
@@ -247,11 +356,14 @@ export function EvidenceReviewPage() {
               <dd>{record.location_timestamp ? formatDateTime(record.location_timestamp) : "—"}</dd>
               <dt>Notes</dt>
               <dd>{record.notes ?? "—"}</dd>
-              <dt>Flags</dt>
+              <dt>Evidence checks</dt>
               <dd>
-                <div className="flag-chips">
-                  {record.geo_flags.length === 0 ? <StatusBadge status="PASS" /> : record.geo_flags.map((flag) => <StatusBadge key={flag} status={flag} />)}
-                </div>
+                {distributionFlagSummary(record)}
+                {flagExplanation ? (
+                  <p className="small muted" style={{ margin: "var(--space-1) 0 0" }}>
+                    {flagExplanation}
+                  </p>
+                ) : null}
               </dd>
             </dl>
           </div>
@@ -314,8 +426,8 @@ export function EvidenceReviewPage() {
             </FormField>
             <FormField
               id="approve-exception"
-              label="Exception reason (only to override failed validations)"
-              helper="Required when evidence or location checks have failed; recorded in the audit trail."
+              label="Override reason (optional)"
+              helper="Required only when an evidence-integrity check fails or the assignment target is exceeded. Location never requires an override."
             >
               {(ids) => (
                 <input
@@ -407,9 +519,9 @@ function EvidenceTile({ evidence }: { evidence: EvidenceOut }) {
             EXIF position: {evidence.exif_latitude}, {evidence.exif_longitude}
           </span>
         ) : null}
-        {evidence.validation_flags.length > 0 ? (
+        {integrityFlagList(evidence.validation_flags).length > 0 ? (
           <span className="flag-chips">
-            {evidence.validation_flags.map((flag) => (
+            {integrityFlagList(evidence.validation_flags).map((flag) => (
               <StatusBadge key={flag} status={flag} />
             ))}
           </span>

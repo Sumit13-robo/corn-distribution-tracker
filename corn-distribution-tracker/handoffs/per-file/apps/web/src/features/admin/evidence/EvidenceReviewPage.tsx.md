@@ -1,37 +1,29 @@
 # File Handoff: `apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx`
 
-**Status:** IMPLEMENTED
+**Status:** TESTED
 **Primary owner:** Frontend
-**File purpose:** Evidence review UI
+**File purpose:** Evidence review UI with neutral location context and non-location integrity flags
 
 ## Responsibility
-Show pending queue, authorized image preview, geo metadata and flags; approve/reject/exception actions with required reasons and clear stock-posting warning.
 
-## Contract and dependencies
-evidence/delivery APIs
-
-Read the relevant contract in `architecture/` or `design/` before implementing. Preserve the APIs, enum values, permission rules, quantity semantics and state transitions established in those documents. Do not create a parallel implementation of the same domain rule in another layer.
-
-## Implementation requirements
-- Implement the file fully; do not leave placeholder bodies for required behavior.
-- Keep concerns local to this module and expose a narrow, typed interface to dependent modules.
-- Validate untrusted input at the appropriate boundary and return/report useful safe errors.
-- Consider authorization scope, concurrency, duplicate requests, accessibility and recoverable failure states where applicable.
-- Add or update adjacent tests for important success and failure cases.
-- Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
-
-## Acceptance criteria
-- Action errors/retry and private image states tested.
-- The file builds and is integrated with its stated dependencies.
-- The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
-
-## Handoff back to integrator
-When done, report: exported interfaces/endpoints; other files changed; test commands and actual results; environment/config requirements; known limitations; and whether the `file_map.md` status should move to `IMPLEMENTED` or `TESTED`. Only mark `TESTED` when tests were actually run and passed.
+Show the pending queue, authorized private image, site/distributor/quantity/time, captured coordinates/accuracy (or **Missing**), a street/satellite map when a fix exists, exact OpenStreetMap/Google Maps links, image hash/duplicate status, non-location integrity flags and review history. Approve/reject/cancel with clear stock-posting warnings.
 
 ## Implementation summary
 
-Submission review queue with filters, private evidence thumbnails via short-lived URLs, approve/reject/cancel flows, irreversible-movement warnings and exception reason only when required.
+- Location is shown as **Captured** or **Missing**; coordinates and reported accuracy are neutral context.
+- The former distance card, geofence copy and GPS-quality warnings were removed. A name-only site simply has no site marker; no distance/geofence explanation is required.
+- Legacy location flags are filtered from the warning list. Only `DUPLICATE_IMAGE_HASH`, `CAPTURE_TIME_MISMATCH` and `UNEXPECTED_FILE_TYPE` require an override reason. An exceeded assignment target also requires a reason.
+- Approval remains manual and can happen for any recorded place; the server posts the stock movement atomically.
+- Existing map links and the site's current-coordinate marker remain for context; previous/next review navigation is not implemented.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+## Verification
 
-**Unresolved issues:** None known.
+`npm test` → 37 passed across 6 files; `npm run typecheck`, `npm run lint` and `npm run build` pass; `make test-e2e` → 8 passed. Backend tests prove missing/far/stale/inaccurate fixes approve without a location exception.
+
+## Unresolved issues
+
+No committed browser/component test asserts the absence of location warnings on this page. The site marker is the site's current coordinate, not a historical snapshot. Google Maps is a link-out, not an embedded provider.
+
+## Delivery-map invalidation (2026-10-25)
+
+Approve/reject/cancel now also invalidates `analytics-map-deliveries`, so the delivery-only admin map refreshes status colours after review. Verification: `npm test` (39 passed, 7 files), `npm run typecheck` and `npm run lint` pass.

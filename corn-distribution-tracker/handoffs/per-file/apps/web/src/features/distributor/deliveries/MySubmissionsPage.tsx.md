@@ -5,7 +5,7 @@
 **File purpose:** Distributor submission history
 
 ## Responsibility
-List only current distributor submissions with pending/approved/rejected state, quantity, evidence status, review reason and detail link.
+List only current distributor submissions with pending/approved/rejected state, quantity, evidence status, review reason and expandable detail.
 
 ## Contract and dependencies
 delivery API; permissions
@@ -30,8 +30,12 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Submission history with status/date filters, expandable review details and evidence viewing via short-lived URLs.
+Submission history with a status filter, expandable review details and per-evidence viewing via short-lived URLs. There is no date filter or pagination control.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Location-warning removal (2026-10-25)
+
+History shows location as captured/missing without distance, geofence or GPS-quality warnings; legacy location flags are filtered. Status/review reason/evidence behavior is unchanged. Verification: `npm test` → 37 passed; typecheck/lint/build pass.

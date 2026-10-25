@@ -6,7 +6,7 @@ User credentials and sessions; site and distributor records; geotagged photos an
 ## Authentication/session
 - Hash passwords using Argon2id or another currently recommended password hash with reviewed parameters; never encrypt for reversibility or log passwords.
 - Enforce reasonable password policy and breached-password checks if a suitable provider exists; rate-limit login/reset/invitation endpoints and use generic messages for account recovery.
-- Use Django's database-backed server sessions with an HttpOnly, Secure, SameSite cookie in production. Protect cookie-driven mutations with Django's CSRF check (`csrftoken` cookie + `X-CSRFToken`) and validate `Origin` when present. Keep session and CSRF secrets out of localStorage and browser-readable response bodies.
+- Use Django's database-backed server sessions with an HttpOnly, Secure, SameSite cookie in production. Protect authenticated cookie-driven mutations with Django's CSRF check (`csrftoken` cookie + `X-CSRFToken`) and validate `Origin` when present. Keep session cookies and credentials out of localStorage and browser-readable response bodies. The CSRF token is intentionally readable by the SPA, but it is useless without the session cookie.
 - Configure HTTPS at the edge; set Secure cookies in production; set trusted proxy headers correctly; disable permissive wildcard CORS in production.
 - Admin accounts should support/require MFA where feasible before broad production rollout. If MFA is not implemented in the first build, explicitly list it as a launch risk rather than pretending it exists.
 - Create first admin through a controlled CLI/bootstrap process; prevent public role elevation.
@@ -30,12 +30,14 @@ User credentials and sessions; site and distributor records; geotagged photos an
 - Keep originals private and access-controlled. If transformations are performed, keep original evidence immutable under the retention policy and label the transformed preview as derivative.
 - Define configurable retention and deletion/legal-hold policies. Audit access to evidence if required by the operator's policy. Avoid retaining offline image copies longer than necessary.
 - Geolocation values may be inaccurate or spoofed. Store accuracy and validation context; never represent as absolute proof.
+- Browser geolocation requires a secure context. Serve the SPA over HTTPS for real device capture; an HTTP LAN development URL only supports UI testing. When `window.isSecureContext === false`, show explicit HTTPS guidance rather than implying the site permission is wrong.
+- Development HTTPS tunnels are public and temporary. Use synthetic data, keep authentication enabled, add only the exact tunnel origin to `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`, and stop the tunnel when the demo ends. Use a trusted HTTPS reverse proxy for real data.
 
 ## Data integrity and audit
-- Stock movements and audit events are append-only at the application level; restrict DB roles from unnecessary destructive privileges where feasible.
+- Stock movements and audit events are append-only; PostgreSQL triggers reject updates/deletes, and DB roles should still be restricted from unnecessary destructive privileges.
 - Use transactions, row locks/concurrency control, foreign keys, unique constraints, check constraints and idempotency keys.
 - Admin adjustments and evidence exceptions require a reason. Sensitive access and state changes create audit events.
 - Backups must be encrypted, access restricted and restore-tested. Keep application, database and object-store credentials separate and rotate them.
 
 ## Minimum launch review
-Threat-model account takeover, IDOR/BOLA, overposting, double-spend/race conditions, signed-URL leakage, public object ACLs, replayed/duplicate submissions, GPS/EXIF mismatch, upload malware, XSS/CSRF, CSV injection, leaked environment secrets, excessive log retention, and untested restore. Document unresolved issues before go-live.
+Threat-model account takeover, IDOR/BOLA, overposting, double-spend/race conditions, signed-URL leakage, public object ACLs, replayed/duplicate submissions, GPS/EXIF metadata mismatch (recorded for context, never a location gate), upload malware, XSS/CSRF, CSV injection, leaked environment secrets, excessive log retention, and untested restore. Document unresolved issues before go-live.

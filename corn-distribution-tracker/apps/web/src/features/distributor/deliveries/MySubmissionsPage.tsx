@@ -8,7 +8,7 @@ import { EmptyState } from "../../../components/common/EmptyState";
 import { ErrorState } from "../../../components/common/ErrorState";
 import { StatusBadge } from "../../../components/common/StatusBadge";
 import { FormField } from "../../../components/common/FormField";
-import { formatDateTime, formatDistance, formatKg, humanizeStatus } from "../../../lib/format";
+import { formatDateTime, formatKg, humanizeStatus } from "../../../lib/format";
 import type { DistributionOut } from "../../../types/domain";
 
 const STATUS_OPTIONS = ["SUBMITTED", "APPROVED", "REJECTED", "CANCELLED"] as const;
@@ -134,14 +134,32 @@ export function MySubmissionsPage() {
   );
 }
 
-function SubmissionDetail({ record }: { record: DistributionOut }) {
-  const firstEvidence = record.evidence[0];
+function EvidencePreview({ evidence }: { evidence: DistributionOut["evidence"][number] }) {
   const viewUrl = useQuery({
-    queryKey: ["evidence-view-url", firstEvidence?.id ?? "none"],
-    queryFn: () => api.evidenceViewUrl(firstEvidence?.id ?? ""),
-    enabled: Boolean(firstEvidence),
+    queryKey: ["evidence-view-url", evidence.id],
+    queryFn: () => api.evidenceViewUrl(evidence.id),
   });
 
+  return (
+    <figure className="evidence-card" style={{ width: 220, margin: 0 }}>
+      {viewUrl.isError ? (
+        <p className="muted small">Preview unavailable.</p>
+      ) : viewUrl.data ? (
+        <img src={viewUrl.data.url} alt={`Evidence ${evidence.id.slice(0, 8)} (${evidence.content_type})`} />
+      ) : (
+        <div className="skeleton" style={{ height: 120 }} />
+      )}
+      <figcaption className="meta">
+        <span>
+          {evidence.content_type} · capture {evidence.client_captured_at ? formatDateTime(evidence.client_captured_at) : "—"}
+        </span>
+        <StatusBadge status={evidence.lifecycle_status} label={humanizeStatus(evidence.lifecycle_status)} tone="info" />
+      </figcaption>
+    </figure>
+  );
+}
+
+function SubmissionDetail({ record }: { record: DistributionOut }) {
   return (
     <div className="section" style={{ marginTop: "var(--space-3)" }} data-testid="submission-detail">
       <h3>
@@ -170,13 +188,6 @@ function SubmissionDetail({ record }: { record: DistributionOut }) {
             ? `${record.location_latitude}, ${record.location_longitude} · ±${record.location_accuracy_m ?? "?"} m`
             : "not provided"}
         </dd>
-        <dt>Geodesic distance</dt>
-        <dd>{formatDistance(record.distance_to_site_m)}</dd>
-        <dt>Fix quality</dt>
-        <dd>
-          <StatusBadge status={record.geo_status} />
-          {record.geo_flags.length > 0 ? ` · ${record.geo_flags.join(", ").toLowerCase()}` : ""}
-        </dd>
         <dt>Notes</dt>
         <dd>{record.notes ?? "—"}</dd>
         {record.status === "APPROVED" && record.stock_movement_id ? (
@@ -198,19 +209,7 @@ function SubmissionDetail({ record }: { record: DistributionOut }) {
       {record.evidence.length > 0 ? (
         <div className="row" style={{ marginTop: "var(--space-2)" }}>
           {record.evidence.map((evidence) => (
-            <figure key={evidence.id} className="evidence-card" style={{ width: 220, margin: 0 }}>
-              {viewUrl.data && firstEvidence?.id === evidence.id ? (
-                <img src={viewUrl.data.url} alt={`Evidence ${evidence.id.slice(0, 8)} (${evidence.content_type})`} />
-              ) : (
-                <div className="skeleton" style={{ height: 120 }} />
-              )}
-              <figcaption className="meta">
-                <span>
-                  {evidence.content_type} · capture {evidence.client_captured_at ? formatDateTime(evidence.client_captured_at) : "—"}
-                </span>
-                <StatusBadge status={evidence.lifecycle_status} label={humanizeStatus(evidence.lifecycle_status)} tone="info" />
-              </figcaption>
-            </figure>
+            <EvidencePreview key={evidence.id} evidence={evidence} />
           ))}
         </div>
       ) : (

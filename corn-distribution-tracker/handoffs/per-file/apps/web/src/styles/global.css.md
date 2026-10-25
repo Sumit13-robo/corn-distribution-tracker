@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Global reset, layout/utility classes, responsive breakpoints, focus-visible styles and reduced-motion handling. The 600 px breakpoint wraps the sidebar/navigation and top-bar identity so the distributor workspace has no horizontal page overflow at 360 px.
+Global reset, layout/utility classes, responsive breakpoints, focus-visible styles and reduced-motion handling. The 600 px breakpoint wraps the sidebar/navigation and top-bar identity so the distributor workspace has no horizontal page overflow at 360 px. Map styles include compact heights for drawer/evidence maps, Map/Satellite and “My location” overlays, teardrop markers, selected-marker outline, geolocation error messaging and readable provider attribution.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 8 passed including the 360 px viewport check.
+**Verification (2026-10-25):** `npx tsc -b --noEmit`, `npx eslint src --max-warnings=0`, `npm test` → 34 passed (5 files) and `npm run build` passed. Headless Chromium confirmed the map, basemap switch, locate control and attribution render at desktop width; the earlier 360 px E2E viewport gate still applies and was not re-run in this update.
 
 **Unresolved issues:** None known.

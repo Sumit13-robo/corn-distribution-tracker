@@ -1,12 +1,14 @@
 # MASTER PROMPT — Build a Production-Ready Corn Distribution Tracker
 
+> **Implementation note (2026-10-23):** This is the original build brief. The repository was subsequently implemented with **Django 5.2 + Django REST Framework + PostgreSQL** instead of FastAPI/SQLAlchemy/Alembic, without PostGIS, and with native local development instead of Docker. The authoritative current stack and run instructions are in `docs/architecture/STACK_AND_REPO.md` and `README.md`. Product requirements that remain deferred are listed in `docs/product/PRD.md` and the README known limitations.
+
 You are the lead product engineer, UX designer, backend engineer, frontend engineer, QA engineer, and release engineer. Build a real, maintainable web application for accountable corn stock allocation and field distribution. The output must be a working repository, not just mock screens or a written plan.
 
 ## Goal
 
 Create a polished web app with two role-based sign-ins:
 
-1. **Admin** — organization-wide control and visibility: live inventory position, distribution progress, map of assigned/delivered sites, distributor performance, submitted evidence photos, GPS/metadata quality flags, stock ledger, approvals, reports, and settings.
+1. **Admin** — organization-wide control and visibility: live inventory position, distribution progress, map of assigned/delivered sites, distributor performance, submitted evidence photos, location context and non-location evidence-integrity flags, stock ledger, approvals, reports, and settings.
 2. **Distributor** — a focused mobile-first workspace: own assigned sites, allocated stock/remaining stock, site targets, delivery history, and a guided flow to report a delivery/update with quantity, GPS, a fresh camera image, notes, and submission status.
 
 The core promise is traceability: for each site, the system must show its target/allocation, actual submitted quantity, verified/approved quantity, remaining planned quantity, distributor, status, location, and evidence trail. Every stock change must be explainable in an append-only ledger.
@@ -33,7 +35,7 @@ Do not silently contradict those contracts. Where two instructions conflict, sec
 
 ## Required stack and repository
 
-Use the monorepo and stack documented in `architecture/STACK_AND_REPO.md`: React + TypeScript + Vite for the web client; FastAPI + Pydantic + SQLAlchemy 2 for the API; PostgreSQL with PostGIS for spatial queries; Alembic migrations; private S3-compatible object storage for photos; Docker for local development and deployment. Use stable, mutually compatible versions available at implementation time, commit lockfiles, and do not install deprecated packages just to match a sample.
+Use the monorepo and stack documented in `architecture/STACK_AND_REPO.md`: React + TypeScript + Vite for the web client; Django 5.2 + Django REST Framework for the API; PostgreSQL with Django ORM migrations (no PostGIS requirement); private S3-compatible object storage for photos; native PostgreSQL + Django + Vite for local development. Use stable, mutually compatible versions available at implementation time, commit lockfiles, and do not install deprecated packages just to match a sample.
 
 Use a configurable production map-tile provider. Do not depend on a public/free tile endpoint without reviewing that provider's usage policy and production suitability. Keep secrets server-side. Use a generated API client/types from the API contract where practical, but do not let code generation obscure validation or permissions.
 
@@ -57,9 +59,9 @@ Use a configurable production map-tile provider. Do not depend on a public/free 
 ### Geotagged photo evidence
 - Request geolocation only when the distributor starts a check-in/submission flow; explain why it is needed.
 - Capture a fresh camera image where the device/browser allows it, using a mobile-friendly camera flow. If browser/device support prevents camera capture, clearly label the alternate upload path and apply the policy documented in `architecture/GEO_PHOTO_EVIDENCE.md`.
-- Persist latitude/longitude, reported accuracy in metres, client capture time, device-reported location time if available, server receipt time, submitting user, target site coordinates, calculated distance to site, evidence status/flags, cryptographic image hash, storage key, and metadata validation results.
-- Validate coordinate ranges and reject impossible values. Flag low accuracy, location outside configured radius, stale location, a capture/upload time mismatch, missing metadata, duplicate content hash, or EXIF-vs-browser mismatch where signals are available.
-- Do not falsely claim that browser geolocation or EXIF can prove the image is unmanipulated. Display evidence confidence/flags, and let the admin decide. Support an admin reason for accepting an exception.
+- Persist latitude/longitude, reported accuracy in metres, client capture time, device-reported location time if available, server receipt time, submitting user, optional site reference coordinates, informational distance when both points exist, evidence status/flags, cryptographic image hash, storage key, and metadata validation results.
+- Validate coordinate ranges and reject impossible values. Do not flag or block on location quality, missing location, geofence distance or EXIF GPS difference. Generate only non-location evidence-integrity flags such as capture/upload time mismatch, duplicate content hash or unexpected file type.
+- Do not falsely claim that browser geolocation or EXIF can prove the image is unmanipulated. Display evidence confidence and integrity flags, and let the admin decide. Any approval from any recorded place is manual and audited; an exception reason is required only for non-location evidence integrity or an exceeded assignment target.
 - Store originals privately, serve photos only through short-lived signed URLs after authorization, keep auditable evidence records, and avoid logging sensitive image contents or raw credentials.
 
 ### Maps, analytics and usability
@@ -78,7 +80,7 @@ Use a configurable production map-tile provider. Do not depend on a public/free 
 ## Recommended implementation sequence
 
 1. Inspect the existing workspace/repository before modifying anything. Preserve working code and user files.
-2. Create the repository skeleton, environment templates, Docker Compose, health endpoint, database session, models, and first Alembic migration.
+2. Create the repository skeleton, environment templates, health endpoint, Django settings, models, and first Django migration.
 3. Implement domain services and server authorization before frontend data screens.
 4. Implement auth, invitations/bootstrap, campaigns/sites/assignments, stock ledger, distributor submission, evidence storage/geo validation, approval/rejection, audit log, and analytics endpoints.
 5. Add focused backend tests for authorization isolation, stock race conditions, duplicate idempotency, approval/rejection, geo-validation flags, and analytics formulas.
@@ -96,7 +98,7 @@ Use these ownership boundaries when parallelizing:
 - Backend/data agent: `apps/api/**`, migrations, API contract alignment.
 - Frontend agent: `apps/web/**`, UI/design spec alignment, typed API integration.
 - QA agent: `apps/api/tests/**`, frontend tests, acceptance suite, bug reproduction.
-- DevOps/release agent: Docker, environment template, reverse proxy/deployment runbook, CI, monitoring and backup instructions.
+- DevOps/release agent: environment template, reverse proxy/deployment runbook, CI, monitoring and backup instructions.
 - Lead integrator: shared contracts, merge resolution, run full test suite, verify RBAC and ledger behavior end-to-end.
 
 Agents must not independently invent endpoint shapes, quantity formulas, enum values, or role semantics. The contracts in the architecture docs are canonical.
@@ -111,7 +113,7 @@ Do not claim the app is production-ready until:
 - concurrent submissions cannot overspend the same stock balance;
 - approval posts one ledger movement; retrying does not duplicate it; rejection releases reservation;
 - private image URLs require authorized issuance and expire;
-- GPS/accuracy/site-distance/time/hash flags are saved and visible to admins;
+- GPS coordinates/accuracy/time, optional site-distance context, hash and non-location evidence-integrity flags are saved; location never blocks approval;
 - map, dashboard, site pages, photo review, and distributor delivery submission use the real API;
 - critical tests pass and build/lint/type check results are reported honestly;
 - production env, HTTPS, CORS, backup/restore, monitoring, and incident/release procedures are documented.

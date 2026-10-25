@@ -1,13 +1,13 @@
 # File Map and Ownership
 
-Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Each target file has a corresponding handoff note under `handoffs/per-file/`, with its target path repeated in the note.
+Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `REMOVED`. Each target file has a corresponding handoff note under `handoffs/per-file/`, with its target path repeated in the note. Removed files keep their note for history.
 
 ## Backend API
 
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
-| `apps/api/.dockerignore` | Backend | API container build-context exclusions | [`per-file/apps/api/.dockerignore.md`](per-file/apps/api/.dockerignore.md) | IMPLEMENTED |
-| `apps/api/Dockerfile` | Backend | Gunicorn API container definition | [`per-file/apps/api/Dockerfile.md`](per-file/apps/api/Dockerfile.md) | IMPLEMENTED |
+| `apps/api/.dockerignore` | Backend | Container build-context exclusions; retained but outside the supported native workflow | [`per-file/apps/api/.dockerignore.md`](per-file/apps/api/.dockerignore.md) | DEFERRED |
+| `apps/api/Dockerfile` | Backend | Container definition; retained but outside the supported native workflow | [`per-file/apps/api/Dockerfile.md`](per-file/apps/api/Dockerfile.md) | DEFERRED |
 | `apps/api/config/__init__.py` | Backend | Configuration package marker | [`per-file/apps/api/config/__init__.py.md`](per-file/apps/api/config/__init__.py.md) | IMPLEMENTED |
 | `apps/api/config/asgi.py` | Backend | ASGI entrypoint for Django | [`per-file/apps/api/config/asgi.py.md`](per-file/apps/api/config/asgi.py.md) | IMPLEMENTED |
 | `apps/api/config/settings.py` | Backend | Environment-driven Django settings, structured logging and fail-fast production validation | [`per-file/apps/api/config/settings.py.md`](per-file/apps/api/config/settings.py.md) | TESTED |
@@ -19,7 +19,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/api/corn/auth.py` | Backend | DRF session authentication and role permission classes | [`per-file/apps/api/corn/auth.py.md`](per-file/apps/api/corn/auth.py.md) | TESTED |
 | `apps/api/corn/enums.py` | Backend | Canonical TextChoices values shared by models, services and serializers | [`per-file/apps/api/corn/enums.py.md`](per-file/apps/api/corn/enums.py.md) | TESTED |
 | `apps/api/corn/errors.py` | Backend | Application exceptions, uniform JSON error envelope and DRF/Django error handling | [`per-file/apps/api/corn/errors.py.md`](per-file/apps/api/corn/errors.py.md) | TESTED |
-| `apps/api/corn/geo.py` | Backend | Geodesic distance, EXIF extraction and advisory geo-flag calculations | [`per-file/apps/api/corn/geo.py.md`](per-file/apps/api/corn/geo.py.md) | TESTED |
+| `apps/api/corn/geo.py` | Backend | Geodesic distance and captured-location metadata; no location warnings or approval gate | [`per-file/apps/api/corn/geo.py.md`](per-file/apps/api/corn/geo.py.md) | TESTED |
 | `apps/api/corn/management/__init__.py` | Backend | Management command package marker | [`per-file/apps/api/corn/management/__init__.py.md`](per-file/apps/api/corn/management/__init__.py.md) | IMPLEMENTED |
 | `apps/api/corn/management/commands/__init__.py` | Backend | Management command package marker | [`per-file/apps/api/corn/management/commands/__init__.py.md`](per-file/apps/api/corn/management/commands/__init__.py.md) | IMPLEMENTED |
 | `apps/api/corn/management/commands/create_admin.py` | Backend | One-time first-administrator bootstrap command | [`per-file/apps/api/corn/management/commands/create_admin.py.md`](per-file/apps/api/corn/management/commands/create_admin.py.md) | TESTED |
@@ -27,6 +27,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/api/corn/middleware.py` | Backend | Request ID and safe security response middleware | [`per-file/apps/api/corn/middleware.py.md`](per-file/apps/api/corn/middleware.py.md) | TESTED |
 | `apps/api/corn/migrations/0001_initial.py` | Backend | Initial Django schema, constraints and indexes | [`per-file/apps/api/corn/migrations/0001_initial.py.md`](per-file/apps/api/corn/migrations/0001_initial.py.md) | TESTED |
 | `apps/api/corn/migrations/0002_append_only_triggers.py` | Backend | PostgreSQL triggers that make stock movements and audit events append-only | [`per-file/apps/api/corn/migrations/0002_append_only_triggers.py.md`](per-file/apps/api/corn/migrations/0002_append_only_triggers.py.md) | TESTED |
+| `apps/api/corn/migrations/0003_campaign_sites_optional_location.py` | Backend | Adds campaign-scoped sites, nullable coordinates and assignment-based campaign backfill | [`per-file/apps/api/corn/migrations/0003_campaign_sites_optional_location.py.md`](per-file/apps/api/corn/migrations/0003_campaign_sites_optional_location.py.md) | TESTED |
 | `apps/api/corn/migrations/__init__.py` | Backend | Django migrations package marker | [`per-file/apps/api/corn/migrations/__init__.py.md`](per-file/apps/api/corn/migrations/__init__.py.md) | IMPLEMENTED |
 | `apps/api/corn/models.py` | Backend | Django ORM schema, constraints, indexes and append-only table mappings | [`per-file/apps/api/corn/models.py.md`](per-file/apps/api/corn/models.py.md) | TESTED |
 | `apps/api/corn/presenters.py` | Backend | Canonical JSON response shaping, including site/distributor display fields | [`per-file/apps/api/corn/presenters.py.md`](per-file/apps/api/corn/presenters.py.md) | TESTED |
@@ -34,18 +35,18 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/api/corn/security.py` | Backend | Argon2id password handling, token hashing and HMAC signing helpers | [`per-file/apps/api/corn/security.py.md`](per-file/apps/api/corn/security.py.md) | TESTED |
 | `apps/api/corn/serializers.py` | Backend | Strict DRF input serializers for every mutation boundary | [`per-file/apps/api/corn/serializers.py.md`](per-file/apps/api/corn/serializers.py.md) | TESTED |
 | `apps/api/corn/services/__init__.py` | Backend | Service package marker | [`per-file/apps/api/corn/services/__init__.py.md`](per-file/apps/api/corn/services/__init__.py.md) | IMPLEMENTED |
-| `apps/api/corn/services/analytics.py` | Backend | Dashboard, distributor/site analytics, map data and CSV calculations | [`per-file/apps/api/corn/services/analytics.py.md`](per-file/apps/api/corn/services/analytics.py.md) | TESTED |
+| `apps/api/corn/services/analytics.py` | Backend | Dashboard, distributor/site analytics, delivery-point map data, legacy map-site data, non-location integrity flag counts and CSV calculations | [`per-file/apps/api/corn/services/analytics.py.md`](per-file/apps/api/corn/services/analytics.py.md) | TESTED |
 | `apps/api/corn/services/audit.py` | Backend | Append-only audit writer and request-context extraction | [`per-file/apps/api/corn/services/audit.py.md`](per-file/apps/api/corn/services/audit.py.md) | TESTED |
 | `apps/api/corn/services/auth.py` | Backend | Login, invitation, password reset/change, session revocation and account lifecycle | [`per-file/apps/api/corn/services/auth.py.md`](per-file/apps/api/corn/services/auth.py.md) | TESTED |
 | `apps/api/corn/services/campaigns.py` | Backend | Campaigns, sites and distributor assignment domain rules | [`per-file/apps/api/corn/services/campaigns.py.md`](per-file/apps/api/corn/services/campaigns.py.md) | TESTED |
-| `apps/api/corn/services/distribution.py` | Backend | Delivery submission, approval/rejection/cancellation and idempotent record transitions | [`per-file/apps/api/corn/services/distribution.py.md`](per-file/apps/api/corn/services/distribution.py.md) | TESTED |
-| `apps/api/corn/services/evidence.py` | Backend | Upload intents, image validation, evidence persistence and private view authorization | [`per-file/apps/api/corn/services/evidence.py.md`](per-file/apps/api/corn/services/evidence.py.md) | TESTED |
+| `apps/api/corn/services/distribution.py` | Backend | Delivery submission, manual approval from any recorded place, evidence-integrity override and idempotent record transitions | [`per-file/apps/api/corn/services/distribution.py.md`](per-file/apps/api/corn/services/distribution.py.md) | TESTED |
+| `apps/api/corn/services/evidence.py` | Backend | Upload intents, image validation, non-location integrity flags, evidence persistence and private view authorization | [`per-file/apps/api/corn/services/evidence.py.md`](per-file/apps/api/corn/services/evidence.py.md) | TESTED |
 | `apps/api/corn/services/inventory.py` | Backend | Double-entry ledger, postings, reservations, reversals and derived balances | [`per-file/apps/api/corn/services/inventory.py.md`](per-file/apps/api/corn/services/inventory.py.md) | TESTED |
 | `apps/api/corn/services/settings.py` | Backend | Organization settings read/update rules and unit validation | [`per-file/apps/api/corn/services/settings.py.md`](per-file/apps/api/corn/services/settings.py.md) | TESTED |
 | `apps/api/corn/storage.py` | Backend | Private local/S3 evidence storage and short-lived signed URLs | [`per-file/apps/api/corn/storage.py.md`](per-file/apps/api/corn/storage.py.md) | TESTED |
 | `apps/api/corn/units.py` | Backend | Decimal kg conversion and display-unit helpers | [`per-file/apps/api/corn/units.py.md`](per-file/apps/api/corn/units.py.md) | TESTED |
 | `apps/api/corn/views/__init__.py` | Backend | View package marker | [`per-file/apps/api/corn/views/__init__.py.md`](per-file/apps/api/corn/views/__init__.py.md) | IMPLEMENTED |
-| `apps/api/corn/views/analytics.py` | Backend | Analytics endpoints and audited CSV export | [`per-file/apps/api/corn/views/analytics.py.md`](per-file/apps/api/corn/views/analytics.py.md) | TESTED |
+| `apps/api/corn/views/analytics.py` | Backend | Analytics endpoints, delivery-point map and audited CSV export | [`per-file/apps/api/corn/views/analytics.py.md`](per-file/apps/api/corn/views/analytics.py.md) | TESTED |
 | `apps/api/corn/views/assignments.py` | Backend | Distributor assignment endpoints | [`per-file/apps/api/corn/views/assignments.py.md`](per-file/apps/api/corn/views/assignments.py.md) | TESTED |
 | `apps/api/corn/views/auth.py` | Backend | Session login/logout, CSRF bootstrap, invitations and password lifecycle endpoints | [`per-file/apps/api/corn/views/auth.py.md`](per-file/apps/api/corn/views/auth.py.md) | TESTED |
 | `apps/api/corn/views/campaigns.py` | Backend | Campaign endpoints | [`per-file/apps/api/corn/views/campaigns.py.md`](per-file/apps/api/corn/views/campaigns.py.md) | TESTED |
@@ -62,11 +63,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/api/pytest.ini` | Backend | Pytest Django settings configuration | [`per-file/apps/api/pytest.ini.md`](per-file/apps/api/pytest.ini.md) | TESTED |
 | `apps/api/requirements-dev.txt` | Backend | Pinned development/test dependencies | [`per-file/apps/api/requirements-dev.txt.md`](per-file/apps/api/requirements-dev.txt.md) | TESTED |
 | `apps/api/requirements.txt` | Backend | Pinned runtime dependencies | [`per-file/apps/api/requirements.txt.md`](per-file/apps/api/requirements.txt.md) | TESTED |
-| `apps/api/storage-data/evidence/465e13df56a946d385e711c4131c9aca/2a89a4aead4ff7c8` | Backend | Project file: 2a89a4aead4ff7c8 | [`per-file/apps/api/storage-data/evidence/465e13df56a946d385e711c4131c9aca/2a89a4aead4ff7c8.md`](per-file/apps/api/storage-data/evidence/465e13df56a946d385e711c4131c9aca/2a89a4aead4ff7c8.md) | IMPLEMENTED |
-| `apps/api/storage-data/evidence/727c4242c1e94d73817b72ca4a987ab3/e0a723bf21b6fc69` | Backend | Project file: e0a723bf21b6fc69 | [`per-file/apps/api/storage-data/evidence/727c4242c1e94d73817b72ca4a987ab3/e0a723bf21b6fc69.md`](per-file/apps/api/storage-data/evidence/727c4242c1e94d73817b72ca4a987ab3/e0a723bf21b6fc69.md) | IMPLEMENTED |
-| `apps/api/storage-data/evidence/75faa316ad0346f19c94749c5a70a045/a89fc4423ae40830` | Backend | Project file: a89fc4423ae40830 | [`per-file/apps/api/storage-data/evidence/75faa316ad0346f19c94749c5a70a045/a89fc4423ae40830.md`](per-file/apps/api/storage-data/evidence/75faa316ad0346f19c94749c5a70a045/a89fc4423ae40830.md) | IMPLEMENTED |
-| `apps/api/storage-data/evidence/d09ada6d332047359b70678bc83545af/92534e4a3707d16e` | Backend | Project file: 92534e4a3707d16e | [`per-file/apps/api/storage-data/evidence/d09ada6d332047359b70678bc83545af/92534e4a3707d16e.md`](per-file/apps/api/storage-data/evidence/d09ada6d332047359b70678bc83545af/92534e4a3707d16e.md) | IMPLEMENTED |
-| `apps/api/storage-data/evidence/f301e7b7115841d4ad90fb65b5ab281c/621741801ad9e444` | Backend | Project file: 621741801ad9e444 | [`per-file/apps/api/storage-data/evidence/f301e7b7115841d4ad90fb65b5ab281c/621741801ad9e444.md`](per-file/apps/api/storage-data/evidence/f301e7b7115841d4ad90fb65b5ab281c/621741801ad9e444.md) | IMPLEMENTED |
+
 
 ## Backend tests
 
@@ -74,11 +71,12 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 |---|---|---|---|---|
 | `apps/api/tests/__init__.py` | Backend | Backend test package marker | [`per-file/apps/api/tests/__init__.py.md`](per-file/apps/api/tests/__init__.py.md) | IMPLEMENTED |
 | `apps/api/tests/conftest.py` | Backend | Backend fixtures for temporary databases, session/CSRF clients, tenant world and synthetic uploads | [`per-file/apps/api/tests/conftest.py.md`](per-file/apps/api/tests/conftest.py.md) | TESTED |
-| `apps/api/tests/test_analytics_scope.py` | Backend | Analytics scope, denominators and export authorization tests | [`per-file/apps/api/tests/test_analytics_scope.py.md`](per-file/apps/api/tests/test_analytics_scope.py.md) | TESTED |
+| `apps/api/tests/test_analytics_scope.py` | Backend | Analytics scope, denominators, delivery-map coverage and export authorization tests | [`per-file/apps/api/tests/test_analytics_scope.py.md`](per-file/apps/api/tests/test_analytics_scope.py.md) | TESTED |
 | `apps/api/tests/test_auth_permissions.py` | Backend | Session auth, CSRF, RBAC, invitation/reset and ownership tests | [`per-file/apps/api/tests/test_auth_permissions.py.md`](per-file/apps/api/tests/test_auth_permissions.py.md) | TESTED |
+| `apps/api/tests/test_campaign_sites.py` | Backend | Campaign site creation, generated codes, optional/cleared locations, duplicate-name (including rename), cross-campaign assignment and analytics-scoping tests | [`per-file/apps/api/tests/test_campaign_sites.py.md`](per-file/apps/api/tests/test_campaign_sites.py.md) | TESTED |
 | `apps/api/tests/test_config_security.py` | Backend | Production/staging configuration fail-fast tests | [`per-file/apps/api/tests/test_config_security.py.md`](per-file/apps/api/tests/test_config_security.py.md) | TESTED |
-| `apps/api/tests/test_distribution_submission.py` | Backend | Submission, review transitions, idempotency and evidence validation tests | [`per-file/apps/api/tests/test_distribution_submission.py.md`](per-file/apps/api/tests/test_distribution_submission.py.md) | TESTED |
-| `apps/api/tests/test_geotag_validation.py` | Backend | Geo thresholds, record flags and exception-approval tests | [`per-file/apps/api/tests/test_geotag_validation.py.md`](per-file/apps/api/tests/test_geotag_validation.py.md) | TESTED |
+| `apps/api/tests/test_distribution_submission.py` | Backend | Submission, review transitions, location-independent approval, idempotency and evidence validation tests | [`per-file/apps/api/tests/test_distribution_submission.py.md`](per-file/apps/api/tests/test_distribution_submission.py.md) | TESTED |
+| `apps/api/tests/test_geotag_validation.py` | Backend | Location capture, no-warning behavior and non-location evidence-integrity tests | [`per-file/apps/api/tests/test_geotag_validation.py.md`](per-file/apps/api/tests/test_geotag_validation.py.md) | TESTED |
 | `apps/api/tests/test_inventory_ledger.py` | Backend | Ledger postings, reservations, reversals, append-only triggers and concurrency tests | [`per-file/apps/api/tests/test_inventory_ledger.py.md`](per-file/apps/api/tests/test_inventory_ledger.py.md) | TESTED |
 
 ## Frontend application
@@ -93,6 +91,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/web/src/components/common/EmptyState.tsx` | Frontend | Empty state | [`per-file/apps/web/src/components/common/EmptyState.tsx.md`](per-file/apps/web/src/components/common/EmptyState.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/ErrorState.tsx` | Frontend | Error state | [`per-file/apps/web/src/components/common/ErrorState.tsx.md`](per-file/apps/web/src/components/common/ErrorState.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/FormField.tsx` | Frontend | Form field wrapper | [`per-file/apps/web/src/components/common/FormField.tsx.md`](per-file/apps/web/src/components/common/FormField.tsx.md) | IMPLEMENTED |
+| `apps/web/src/components/common/MapCanvas.tsx` | Frontend | Shared MapLibre street/satellite canvas with accessible markers, locate control and fallback | [`per-file/apps/web/src/components/common/MapCanvas.tsx.md`](per-file/apps/web/src/components/common/MapCanvas.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/StatCard.tsx` | Frontend | KPI card | [`per-file/apps/web/src/components/common/StatCard.tsx.md`](per-file/apps/web/src/components/common/StatCard.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/common/StatusBadge.tsx` | Frontend | Status display | [`per-file/apps/web/src/components/common/StatusBadge.tsx.md`](per-file/apps/web/src/components/common/StatusBadge.tsx.md) | IMPLEMENTED |
 | `apps/web/src/components/layout/AppShell.tsx` | Frontend | Role-aware layout | [`per-file/apps/web/src/components/layout/AppShell.tsx.md`](per-file/apps/web/src/components/layout/AppShell.tsx.md) | IMPLEMENTED |
@@ -100,15 +99,16 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/web/src/components/layout/TopBar.tsx` | Frontend | Top bar | [`per-file/apps/web/src/components/layout/TopBar.tsx.md`](per-file/apps/web/src/components/layout/TopBar.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/admin/analytics/AnalyticsPage.tsx` | Frontend | Analytics and exports | [`per-file/apps/web/src/features/admin/analytics/AnalyticsPage.tsx.md`](per-file/apps/web/src/features/admin/analytics/AnalyticsPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/admin/audit/AuditTrailPage.tsx` | Frontend | Audit trail UI | [`per-file/apps/web/src/features/admin/audit/AuditTrailPage.tsx.md`](per-file/apps/web/src/features/admin/audit/AuditTrailPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/campaigns/CampaignsPage.tsx` | Frontend | Campaigns and targets UI | [`per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md`](per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/campaigns/CampaignsPage.test.tsx` | Frontend | Campaign site setup, name-only add and optional-location tests | [`per-file/apps/web/src/features/admin/campaigns/CampaignsPage.test.tsx.md`](per-file/apps/web/src/features/admin/campaigns/CampaignsPage.test.tsx.md) | TESTED |
+| `apps/web/src/features/admin/campaigns/CampaignsPage.tsx` | Frontend | Campaigns, campaign-scoped sites and assignment planner | [`per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md`](per-file/apps/web/src/features/admin/campaigns/CampaignsPage.tsx.md) | TESTED |
 | `apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx` | Frontend | Admin overview | [`per-file/apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx.md`](per-file/apps/web/src/features/admin/dashboard/AdminDashboardPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/admin/distributors/DistributorsPage.tsx` | Frontend | Distributor management | [`per-file/apps/web/src/features/admin/distributors/DistributorsPage.tsx.md`](per-file/apps/web/src/features/admin/distributors/DistributorsPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx` | Frontend | Evidence review UI | [`per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md`](per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx` | Frontend | Evidence review UI with location capture context, non-location integrity flags and street/satellite map links | [`per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md`](per-file/apps/web/src/features/admin/evidence/EvidenceReviewPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/admin/inventory/InventoryPage.tsx` | Frontend | Inventory and ledger UI | [`per-file/apps/web/src/features/admin/inventory/InventoryPage.tsx.md`](per-file/apps/web/src/features/admin/inventory/InventoryPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/map/DistributionMapPage.tsx` | Frontend | Distribution map | [`per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md`](per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/settings/SettingsPage.tsx` | Frontend | Settings and audit UI | [`per-file/apps/web/src/features/admin/settings/SettingsPage.tsx.md`](per-file/apps/web/src/features/admin/settings/SettingsPage.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/shared/flags.tsx` | Frontend | Shared geo flags UI | [`per-file/apps/web/src/features/admin/shared/flags.tsx.md`](per-file/apps/web/src/features/admin/shared/flags.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/admin/sites/SitesPage.tsx` | Frontend | Site management | [`per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md`](per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/map/DistributionMapPage.tsx` | Frontend | Delivery-only admin map with street/satellite, synchronized delivery list and record drawer | [`per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md`](per-file/apps/web/src/features/admin/map/DistributionMapPage.tsx.md) | TESTED |
+| `apps/web/src/features/admin/map/DistributionMapPage.test.tsx` | Frontend | Delivery-only map list, drawer and empty-state tests | [`per-file/apps/web/src/features/admin/map/DistributionMapPage.test.tsx.md`](per-file/apps/web/src/features/admin/map/DistributionMapPage.test.tsx.md) | TESTED |
+| `apps/web/src/features/admin/settings/SettingsPage.tsx` | Frontend | Settings (timezone/unit/bag/capture drift) and audit UI; legacy location thresholds not editable | [`per-file/apps/web/src/features/admin/settings/SettingsPage.tsx.md`](per-file/apps/web/src/features/admin/settings/SettingsPage.tsx.md) | IMPLEMENTED |
+| `apps/web/src/features/admin/shared/flags.tsx` | Frontend | Shared non-location evidence-integrity flag and captured/missing location UI | [`per-file/apps/web/src/features/admin/shared/flags.tsx.md`](per-file/apps/web/src/features/admin/shared/flags.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/auth/AuthLayout.tsx` | Frontend | Shared split layout for public authentication screens. | [`per-file/apps/web/src/features/auth/AuthLayout.tsx.md`](per-file/apps/web/src/features/auth/AuthLayout.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/auth/LoginPage.test.tsx` | Frontend | Login failure-message and rate-limit UX tests | [`per-file/apps/web/src/features/auth/LoginPage.test.tsx.md`](per-file/apps/web/src/features/auth/LoginPage.test.tsx.md) | TESTED |
 | `apps/web/src/features/auth/LoginPage.tsx` | Frontend | Login page with actionable throttle/outage errors | [`per-file/apps/web/src/features/auth/LoginPage.tsx.md`](per-file/apps/web/src/features/auth/LoginPage.tsx.md) | TESTED |
@@ -118,7 +118,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx` | Frontend | Delivery form workflow | [`per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/DeliverySubmissionPage.tsx.md) | TESTED |
 | `apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx` | Frontend | Distributor submission history | [`per-file/apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx.md`](per-file/apps/web/src/features/distributor/deliveries/MySubmissionsPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx` | Frontend | Photo capture UI | [`per-file/apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx.md`](per-file/apps/web/src/features/distributor/evidence/PhotoCapturePanel.tsx.md) | IMPLEMENTED |
-| `apps/web/src/features/distributor/evidence/useDeviceLocation.ts` | Frontend | Geolocation hook | [`per-file/apps/web/src/features/distributor/evidence/useDeviceLocation.ts.md`](per-file/apps/web/src/features/distributor/evidence/useDeviceLocation.ts.md) | IMPLEMENTED |
+| `apps/web/src/features/distributor/evidence/useDeviceLocation.ts` | Frontend | Geolocation hook | [`per-file/apps/web/src/features/distributor/evidence/useDeviceLocation.ts.md`](per-file/apps/web/src/features/distributor/evidence/useDeviceLocation.ts.md) | TESTED |
 | `apps/web/src/features/distributor/offline/DraftsSyncPage.tsx` | Frontend | Distributor drafts and sync queue screen. | [`per-file/apps/web/src/features/distributor/offline/DraftsSyncPage.tsx.md`](per-file/apps/web/src/features/distributor/offline/DraftsSyncPage.tsx.md) | IMPLEMENTED |
 | `apps/web/src/features/distributor/offline/offlineQueue.ts` | Frontend | Offline draft queue | [`per-file/apps/web/src/features/distributor/offline/offlineQueue.ts.md`](per-file/apps/web/src/features/distributor/offline/offlineQueue.ts.md) | TESTED |
 | `apps/web/src/features/distributor/sites/AssignedSitesPage.tsx` | Frontend | Assigned sites list | [`per-file/apps/web/src/features/distributor/sites/AssignedSitesPage.tsx.md`](per-file/apps/web/src/features/distributor/sites/AssignedSitesPage.tsx.md) | IMPLEMENTED |
@@ -126,6 +126,8 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `apps/web/src/lib/api-client.test.ts` | Frontend | API client session/CSRF tests. | [`per-file/apps/web/src/lib/api-client.test.ts.md`](per-file/apps/web/src/lib/api-client.test.ts.md) | TESTED |
 | `apps/web/src/lib/api-client.ts` | Frontend | Typed API client over Django session auth and CSRF. | [`per-file/apps/web/src/lib/api-client.ts.md`](per-file/apps/web/src/lib/api-client.ts.md) | TESTED |
 | `apps/web/src/lib/format.ts` | Frontend | Shared formatting helpers | [`per-file/apps/web/src/lib/format.ts.md`](per-file/apps/web/src/lib/format.ts.md) | IMPLEMENTED |
+| `apps/web/src/lib/map.test.ts` | Frontend | Street/satellite basemap resolution and OSM/Google Maps link tests | [`per-file/apps/web/src/lib/map.test.ts.md`](per-file/apps/web/src/lib/map.test.ts.md) | TESTED |
+| `apps/web/src/lib/map.ts` | Frontend | OpenStreetMap + Esri satellite style, tile/style overrides, OSM/Google Maps links | [`per-file/apps/web/src/lib/map.ts.md`](per-file/apps/web/src/lib/map.ts.md) | TESTED |
 | `apps/web/src/lib/permissions.test.ts` | Frontend | Permission helper tests | [`per-file/apps/web/src/lib/permissions.test.ts.md`](per-file/apps/web/src/lib/permissions.test.ts.md) | TESTED |
 | `apps/web/src/lib/permissions.ts` | Frontend | UI permissions | [`per-file/apps/web/src/lib/permissions.ts.md`](per-file/apps/web/src/lib/permissions.ts.md) | TESTED |
 | `apps/web/src/lib/query-client.ts` | Frontend | Server state cache | [`per-file/apps/web/src/lib/query-client.ts.md`](per-file/apps/web/src/lib/query-client.ts.md) | IMPLEMENTED |
@@ -139,9 +141,9 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
-| `apps/web/.dockerignore` | Frontend/DevOps | Web build context filter | [`per-file/apps/web/.dockerignore.md`](per-file/apps/web/.dockerignore.md) | IMPLEMENTED |
-| `apps/web/Dockerfile` | Frontend/DevOps | Web container | [`per-file/apps/web/Dockerfile.md`](per-file/apps/web/Dockerfile.md) | IMPLEMENTED |
-| `apps/web/e2e/distribution.spec.ts` | QA | Critical distributor/reviewer browser workflow. | [`per-file/apps/web/e2e/distribution.spec.ts.md`](per-file/apps/web/e2e/distribution.spec.ts.md) | TESTED |
+| `apps/web/.dockerignore` | Frontend/DevOps | Container build-context filter; retained but outside the supported native workflow | [`per-file/apps/web/.dockerignore.md`](per-file/apps/web/.dockerignore.md) | DEFERRED |
+| `apps/web/Dockerfile` | Frontend/DevOps | Container definition; retained but outside the supported native workflow | [`per-file/apps/web/Dockerfile.md`](per-file/apps/web/Dockerfile.md) | DEFERRED |
+| `apps/web/e2e/distribution.spec.ts` | QA | Critical distributor/reviewer browser workflow including the delivery-only admin map. | [`per-file/apps/web/e2e/distribution.spec.ts.md`](per-file/apps/web/e2e/distribution.spec.ts.md) | TESTED |
 | `apps/web/e2e/global-setup.ts` | QA | Per-run credentials and first-admin bootstrap for Playwright. | [`per-file/apps/web/e2e/global-setup.ts.md`](per-file/apps/web/e2e/global-setup.ts.md) | TESTED |
 | `apps/web/e2e/setup.spec.ts` | QA | E2E data seeding through public APIs | [`per-file/apps/web/e2e/setup.spec.ts.md`](per-file/apps/web/e2e/setup.spec.ts.md) | TESTED |
 | `apps/web/e2e/support/config.ts` | QA | Shared E2E identifiers and fixture bytes | [`per-file/apps/web/e2e/support/config.ts.md`](per-file/apps/web/e2e/support/config.ts.md) | TESTED |
@@ -166,4 +168,10 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`. Ea
 | `AGENTS.md` | DevOps/Lead | Project file: AGENTS.md | [`per-file/AGENTS.md.md`](per-file/AGENTS.md.md) | IMPLEMENTED |
 | `Makefile` | DevOps/Lead | Developer commands | [`per-file/Makefile.md`](per-file/Makefile.md) | TESTED |
 | `README.md` | DevOps/Lead | Repository run guide | [`per-file/README.md.md`](per-file/README.md.md) | IMPLEMENTED |
-| `docker-compose.yml` | DevOps/Lead | Local PostgreSQL, Django/Gunicorn API and nginx SPA stack. | [`per-file/docker-compose.yml.md`](per-file/docker-compose.yml.md) | IMPLEMENTED |
+| `docker-compose.yml` | DevOps/Lead | Container stack retained but outside the supported native workflow | [`per-file/docker-compose.yml.md`](per-file/docker-compose.yml.md) | DEFERRED |
+
+## Removed files
+
+| Target file | Owner | Responsibility | Handoff note | Status |
+|---|---|---|---|---|
+| `apps/web/src/features/admin/sites/SitesPage.tsx` | Frontend | Removed standalone admin Sites page; site creation and optional location editing now live in `CampaignsPage`. The `/sites` SPA route redirects to `/campaigns`. | [`per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md`](per-file/apps/web/src/features/admin/sites/SitesPage.tsx.md) | REMOVED |

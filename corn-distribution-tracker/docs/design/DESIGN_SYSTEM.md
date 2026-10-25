@@ -23,12 +23,12 @@ Use a highly legible sans-serif system stack or a licensed bundled font. Create 
 - Input/select/textarea: label, optional helper, required marker, error message, disabled state and visible focus.
 - StatusBadge: text + optional icon with semantic status colors.
 - StatCard: label, number, unit, optional delta/trend with truthful comparison period.
-- DataTable: sorting where appropriate, pagination, accessible row action menu and empty/error state.
-- MapMarker/Legend: text or icons and color status mapping.
-- PhotoEvidenceCard: thumbnail, uploader/site/time, status flags, private loading state and retry/error UI.
-- Dialog/Drawer: focus trap, escape behavior, labelled title, focus restoration, mobile fallback.
+- DataTable: accessible sortable headers, responsive card fallback, row actions and empty/error state. Sorting happens within the loaded page; most screens do not yet expose pagination controls.
+- MapMarker/Legend: text or icons plus colour status mapping. The admin delivery map uses MapLibre markers only for distributor-recorded delivery locations, with OpenStreetMap streets plus an Esri satellite switch by default (or a configured style), a Map/Satellite control, and a labelled coordinate board if the map cannot start; site reference points and the admin's current location are not plotted, and there is no clustering.
+- Evidence tile: authorized original image via a short-lived signed URL, content type/capture time and lifecycle status. No thumbnail derivatives are generated.
+- Dialog/Drawer: labelled title, escape/backdrop close, focus restoration and mobile fallback.
 - Toast/inline notice: concise action result; never use toast as the only place where a critical error appears.
-- GeoStatusPanel: location permission, coordinates/accuracy, distance-to-site, validation flags and retry action.
+- Location section: permission rationale, coordinates/accuracy, captured/missing status and retry action in the delivery form. No distance/geofence warning; location never blocks approval. Evidence-integrity flags are shown separately.
 
 ## Rules
 - No emoji as the primary UI icon system.

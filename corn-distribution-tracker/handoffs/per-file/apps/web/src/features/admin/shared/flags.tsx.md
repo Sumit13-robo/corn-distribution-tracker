@@ -1,19 +1,23 @@
 # File Handoff: `apps/web/src/features/admin/shared/flags.tsx`
 
-**Status:** IMPLEMENTED
+**Status:** TESTED
 **Primary owner:** Frontend
-**File purpose:** Shared geo flags UI
+**File purpose:** Shared non-location evidence-integrity and captured/missing location UI
 
 ## Responsibility
-Renders geo indicator statuses/flags consistently across admin tables and cards.
 
-## Contract and dependencies
-See the relevant contract under `docs/` and the ownership table in `handoffs/file_map.md`; this file was added during implementation and integrates with the shared API/session/query layers.
+Provide one place to render evidence-integrity flag labels/tones, filter legacy location flags from admin warnings, and label a device fix **Captured** or **Missing** without implying a warning.
 
 ## Implementation summary
 
-Shared geo-flag/status rendering for admin surfaces, avoiding duplicated label/tone logic.
+- `integrityFlagList` filters `GPS_MISSING`, `GPS_STALE`, `GPS_LOW_ACCURACY`, `OUTSIDE_GEOFENCE`, `EXIF_GPS_MISMATCH` and `LOCATION_EXCEPTION` from warnings; only duplicate hash, capture-time mismatch and unexpected file type remain.
+- `hasIntegrityFlags`, `locationCaptureLabel` and the shared `FlagList`/status helpers are used by evidence review, dashboard, map, site and submission screens.
+- Location accuracy/coordinates are neutral context; a captured fix is never shown as an exception.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+## Verification
 
-**Unresolved issues:** None known.
+`npm test` → 37 passed across 6 files; `npm run typecheck` and `npm run lint` pass; `npm run build` passes. Component/API tests and manual review cover captured/missing and integrity-only warning behavior.
+
+## Unresolved issues
+
+No dedicated component test for the filtering helper; behavior is covered indirectly by page tests and manual smoke.

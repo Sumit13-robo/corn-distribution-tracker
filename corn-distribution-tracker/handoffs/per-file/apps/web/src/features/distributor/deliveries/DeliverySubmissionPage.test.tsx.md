@@ -30,8 +30,16 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Submission workflow tests: draft resume with the same idempotency key, immediate location persistence, offline QUEUED honesty (no fake SUBMITTED), double-click guard, and payload/evidence-intent mapping with a mocked API. 4 tests.
+Submission workflow tests: draft resume with the same idempotency key, immediate location persistence, saved-fix remount/submission without a false missing warning, insecure-origin HTTPS guidance, offline QUEUED honesty (no fake SUBMITTED), double-click guard, and payload/evidence-intent mapping with a mocked API. 6 tests.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; the same flow is exercised against the real API in browser E2E.
+**Verification (2026-10-25):** `cd apps/web && npm test` → 34 passed (5 files); `npx tsc -b --noEmit` and `npx eslint src --max-warnings=0` passed; `npm run build` passed. The same flow is exercised against the real API in browser E2E, and HTTPS geolocation was separately verified through a quick tunnel.
 
 **Unresolved issues:** None known.
+
+## Campaign-site update (2026-10-25)
+
+The synthetic `SiteOut` fixture includes `campaign_id: null` so it matches the updated domain type. Verification: `npm test` → 37 passed across 6 files; `npm run typecheck` and `npm run build` pass.
+
+## Location-warning removal (2026-10-25)
+
+Tests retain draft/idempotency/offline/geolocation behavior and add/confirm that a resumed saved fix is not shown as missing and no location warning blocks submission. Verification: `npm test` → 37 passed across 6 files.

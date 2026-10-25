@@ -10,8 +10,12 @@ Delivery submission, approval/rejection/cancellation and idempotent record trans
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known. Native PostgreSQL + Django + Vite workflow verified.
+
+## Location policy update (2026-10-25)
+
+`approve_delivery` no longer treats any location flag as critical and never adds `LOCATION_EXCEPTION`. A delivery is approvable from any recorded place. Override reasons are required only for `CAPTURE_TIME_MISMATCH`, `DUPLICATE_IMAGE_HASH`, `UNEXPECTED_FILE_TYPE` or an exceeded assignment target. The approval still locks rows, uses the idempotency key and posts exactly one stock movement in a transaction. Verification: `make test-api` → 66 passed, including location-independent approval and retained evidence-integrity tests.

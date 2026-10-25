@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { restoreSession } from "./lib/session";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./styles/global.css";
 
 // Session restore kick-off: ask /auth/me whether the HttpOnly session cookie is

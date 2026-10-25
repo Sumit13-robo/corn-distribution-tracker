@@ -30,8 +30,16 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Shared QueryClient defaults (no retry on 4xx, bounded transient retry) and the centralized query-key factory used by every screen.
+Shared QueryClient defaults (no retry on 4xx, bounded transient retry) and the centralized query-key factory used by every screen. Added a `site` detail key so evidence review can load the selected site's current coordinates for the location map.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-25):** `npx tsc -b --noEmit`, `npx eslint src --max-warnings=0`, `npm test` → 34 passed (5 files) and `npm run build` passed.
 
 **Unresolved issues:** None known.
+
+## Campaign-site update (2026-10-25)
+
+`queryKeys.sites` includes `campaign_id` so switching the selected campaign does not reuse another campaign's site list. Verification: `npm run typecheck`, `npm test` (37 passed) and `npm run build`.
+
+## Delivery-map update (2026-10-25)
+
+Added `queryKeys.mapDeliveries(campaignId, distributorId)`. Evidence review invalidation now clears `analytics-map-deliveries` after approve/reject/cancel so delivery-point status colours refresh. Verification: `npm run typecheck`, `npm test` (39 passed) and `npm run build`.

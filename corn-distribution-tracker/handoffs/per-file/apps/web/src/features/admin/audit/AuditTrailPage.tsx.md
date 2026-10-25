@@ -5,7 +5,7 @@
 **File purpose:** Audit trail UI
 
 ## Responsibility
-Provide admin-only searchable audit history with filters, timestamps and actor/action/target summaries; do not expose hidden metadata or offer destructive edits.
+Provide admin-only audit history filtered by action and UTC date range, with timestamps and actor/target summaries; do not expose hidden metadata or offer destructive edits. Actor/target filters exist in the API but are not exposed in the UI.
 
 ## Contract and dependencies
 audit API
@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Filterable, paginated immutable audit list.
+Action/date-filtered immutable audit list showing the first 25 matching events; no pagination controls.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

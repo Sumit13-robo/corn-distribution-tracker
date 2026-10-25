@@ -16,16 +16,23 @@ const CAMPAIGN_STATUSES = ["DRAFT", "ACTIVE", "PAUSED", "CLOSED"] as const;
 /**
  * Campaigns and targets (SCREEN_SPECS): campaign create/edit plus the
  * assignment planner. Proposed targets are compared against available stock
- * honestly — warnings here are advisory; the server revalidates everything on
- * save and enforces the real policy.
+ * honestly — warnings here are advisory. Assignment creation validates fields
+ * and duplicates but does not reserve stock; allocations and delivery
+ * submissions are where ledger balances are enforced.
  */
 export function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CampaignOut | null>(null);
-  const [form, setForm] = useState({ name: "", reference_code: "", starts_at: "", ends_at: "", status: "DRAFT", timezone: "UTC", notes: "" });
+  const [form, setForm] = useState({ name: "", reference_code: "", starts_at: "", ends_at: "", status: "DRAFT", timezone: "UTC", notes: "", sitesText: "" });
   const [formError, setFormError] = useState<string | null>(null);
+  const [newSiteName, setNewSiteName] = useState("");
+  const [siteFormError, setSiteFormError] = useState<string | null>(null);
+  const [locationSite, setLocationSite] = useState<SiteOut | null>(null);
+  const [locationLat, setLocationLat] = useState("");
+  const [locationLng, setLocationLng] = useState("");
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [assignmentSite, setAssignmentSite] = useState("");
   const [assignmentDistributor, setAssignmentDistributor] = useState("");
   const [assignmentQuantity, setAssignmentQuantity] = useState("");
@@ -39,7 +46,19 @@ export function CampaignsPage() {
     queryFn: () => api.listCampaigns(statusFilter || undefined),
   });
 
-  const sites = useQuery({ queryKey: queryKeys.sites({}), queryFn: () => api.listSites({ active_only: true, limit: 100 }) });
+  const sites = useQuery({
+    queryKey: queryKeys.sites({
+      active_only: true,
+      campaign_id: selectedCampaignId ?? undefined,
+    }),
+    queryFn: () =>
+      api.listSites({
+        active_only: true,
+        campaign_id: selectedCampaignId ?? undefined,
+        limit: 100,
+      }),
+    enabled: selectedCampaignId !== null,
+  });
   const distributors = useQuery({ queryKey: queryKeys.distributors(""), queryFn: () => api.listDistributors() });
   const summary = useQuery({ queryKey: queryKeys.inventorySummary(), queryFn: () => api.inventorySummary() });
 
@@ -74,13 +93,57 @@ export function CampaignsPage() {
         status: form.status as (typeof CAMPAIGN_STATUSES)[number],
         timezone: form.timezone,
         notes: form.notes || null,
+        sites: parseSiteNames(form.sitesText),
       });
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast.notify("success", "Campaign saved.");
       setDialogOpen(false);
       setFormError(null);
+      // Clear the status filter so the saved campaign and its site panel
+      // remain visible even if its status no longer matches the filter.
+      setStatusFilter("");
+      setSelectedCampaignId(saved.id);
+      setAssignmentSite("");
+      setNewSiteName("");
+      setSiteFormError(null);
       void queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      void queryClient.invalidateQueries({ queryKey: ["sites"] });
+    },
+  });
+
+  const addSite = useMutation({
+    mutationFn: () =>
+      api.createSite({
+        name: newSiteName.trim(),
+        campaign_id: selectedCampaignId,
+      }),
+    onSuccess: (site) => {
+      toast.notify("success", "Site added.");
+      setNewSiteName("");
+      setSiteFormError(null);
+      setAssignmentSite(site.id);
+      void queryClient.invalidateQueries({ queryKey: ["sites"] });
+      void queryClient.invalidateQueries({ queryKey: ["analytics-overview"] });
+    },
+  });
+
+  const saveLocation = useMutation({
+    mutationFn: () => {
+      if (!locationSite) throw new Error("Choose a site first.");
+      return api.updateSite(locationSite.id, {
+        latitude: locationLat.trim(),
+        longitude: locationLng.trim(),
+      });
+    },
+    onSuccess: (site) => {
+      toast.notify("success", "Site location saved.");
+      setLocationSite(null);
+      setLocationError(null);
+      void queryClient.invalidateQueries({ queryKey: ["sites"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.site(site.id) });
+      void queryClient.invalidateQueries({ queryKey: ["map-sites"] });
+      void queryClient.invalidateQueries({ queryKey: ["analytics-overview"] });
     },
   });
 
@@ -103,13 +166,15 @@ export function CampaignsPage() {
   });
 
   function openCreate() {
+    saveCampaign.reset();
     setEditing(null);
-    setForm({ name: "", reference_code: "", starts_at: "", ends_at: "", status: "DRAFT", timezone: "UTC", notes: "" });
+    setForm({ name: "", reference_code: "", starts_at: "", ends_at: "", status: "DRAFT", timezone: "UTC", notes: "", sitesText: "" });
     setFormError(null);
     setDialogOpen(true);
   }
 
   function openEdit(campaign: CampaignOut) {
+    saveCampaign.reset();
     setEditing(campaign);
     setForm({
       name: campaign.name,
@@ -119,9 +184,75 @@ export function CampaignsPage() {
       status: campaign.status,
       timezone: campaign.timezone,
       notes: campaign.notes ?? "",
+      sitesText: "",
     });
     setFormError(null);
     setDialogOpen(true);
+  }
+
+  function selectCampaign(campaignId: string | null) {
+    if (!addSite.isPending) addSite.reset();
+    if (!createAssignment.isPending) createAssignment.reset();
+    setSelectedCampaignId(campaignId);
+    setAssignmentSite("");
+    setNewSiteName("");
+    setSiteFormError(null);
+  }
+
+  function openLocation(site: SiteOut) {
+    saveLocation.reset();
+    setLocationSite(site);
+    setLocationLat(site.latitude ?? "");
+    setLocationLng(site.longitude ?? "");
+    setLocationError(null);
+  }
+
+  function closeLocation() {
+    saveLocation.reset();
+    setLocationSite(null);
+    setLocationLat("");
+    setLocationLng("");
+    setLocationError(null);
+  }
+
+  function submitSite(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedCampaignId) return;
+    const name = newSiteName.trim();
+    if (!name) {
+      setSiteFormError("Site name is required.");
+      return;
+    }
+    const duplicate = (sites.data?.items ?? []).some(
+      (site) => site.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+    );
+    if (duplicate) {
+      setSiteFormError("A site with this name already exists in this campaign.");
+      return;
+    }
+    setSiteFormError(null);
+    addSite.mutate();
+  }
+
+  function submitLocation(event: React.FormEvent) {
+    event.preventDefault();
+    if (!locationSite) return;
+    if (!locationLat.trim() || !locationLng.trim()) {
+      setLocationError("Enter both latitude and longitude, or leave both blank.");
+      return;
+    }
+    const latitude = Number(locationLat);
+    const longitude = Number(locationLng);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+      setLocationError("Latitude must be a number between -90 and 90.");
+      return;
+    }
+    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      setLocationError("Longitude must be a number between -180 and 180.");
+      return;
+    }
+    setLocationError(null);
+    saveLocation.mutate();
   }
 
   function submitCampaign(event: React.FormEvent) {
@@ -220,7 +351,7 @@ export function CampaignsPage() {
                       padding: 0,
                       fontWeight: selectedCampaignId === row.id ? "var(--weight-strong)" : undefined,
                     }}
-                    onClick={() => setSelectedCampaignId(row.id === selectedCampaignId ? null : row.id)}
+                    onClick={() => selectCampaign(row.id === selectedCampaignId ? null : row.id)}
                   >
                     {row.name}
                   </button>
@@ -246,13 +377,83 @@ export function CampaignsPage() {
       </div>
 
       {selectedCampaign ? (
-        <div className="section" data-testid="assignment-planner">
-          <div className="row">
-            <h2 className="grow">Assignments for {selectedCampaign.name}</h2>
-            <button type="button" className="btn ghost" onClick={() => setSelectedCampaignId(null)}>
-              Close
-            </button>
+        <>
+          <div className="section" data-testid="campaign-sites">
+            <div className="row">
+              <div className="grow">
+                <h2>Sites for {selectedCampaign.name}</h2>
+                <p className="small muted">
+                  Add place names only. A site location is optional and can be added later; it is used for map context
+                  only and never blocks approval.
+                </p>
+              </div>
+              <button type="button" className="btn ghost" onClick={() => selectCampaign(null)}>
+                Close
+              </button>
+            </div>
+
+            {sites.isError ? (
+              <ErrorState error={sites.error} onRetry={() => void sites.refetch()} />
+            ) : sites.isLoading ? (
+              <div className="skeleton" style={{ height: 80 }} />
+            ) : (sites.data?.items.length ?? 0) === 0 ? (
+              <EmptyState
+                title="No sites in this campaign yet."
+                description="Add a place name below, then plan a distributor assignment."
+              />
+            ) : (
+              <ul className="stack" style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
+                {(sites.data?.items ?? []).map((site) => (
+                  <li
+                    key={site.id}
+                    className="row"
+                    style={{ padding: "var(--space-2) 0", borderBottom: "1px solid var(--color-border)" }}
+                  >
+                    <div className="grow">
+                      <strong>{site.name}</strong>
+                      <div className="small muted">
+                        {site.latitude !== null && site.longitude !== null
+                          ? `Site location ${site.latitude}, ${site.longitude}`
+                          : "Site location not set. A captured device fix is still stored with submissions."}
+                      </div>
+                    </div>
+                    <button type="button" className="btn secondary small" onClick={() => openLocation(site)}>
+                      {site.latitude !== null && site.longitude !== null ? "Edit location" : "Add location (optional)"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <form className="row" onSubmit={submitSite} style={{ alignItems: "flex-end", marginTop: "var(--space-3)" }}>
+              <FormField
+                id="new-site-name"
+                label="Add a site"
+                required
+                className="grow"
+                helper="Place name only; no coordinates required."
+              >
+                {(ids) => (
+                  <input
+                    id="new-site-name"
+                    value={newSiteName}
+                    aria-describedby={ids.describedBy}
+                    onChange={(event) => setNewSiteName(event.target.value)}
+                  />
+                )}
+              </FormField>
+              <button type="submit" className="btn" disabled={addSite.isPending || !selectedCampaignId}>
+                {addSite.isPending ? "Adding…" : "Add site"}
+              </button>
+            </form>
+            {siteFormError ? <ErrorState error={new Error(siteFormError)} title="Check the site name." /> : null}
+            {addSite.error ? <ErrorState error={addSite.error} /> : null}
           </div>
+
+          <div className="section" data-testid="assignment-planner">
+            <div className="row">
+              <h2 className="grow">Assignments for {selectedCampaign.name}</h2>
+            </div>
           {assignments.isError ? (
             <ErrorState error={assignments.error} onRetry={() => void assignments.refetch()} />
           ) : assignments.isLoading ? (
@@ -269,7 +470,9 @@ export function CampaignsPage() {
                 {
                   key: "site",
                   header: "Site",
-                  render: (row) => (sites.data?.items ?? []).find((site) => site.id === row.site_id)?.site_code ?? row.site_id.slice(0, 8) + "…",
+                  render: (row) =>
+                    (sites.data?.items ?? []).find((site) => site.id === row.site_id)?.name ??
+                    row.site_id.slice(0, 8) + "…",
                 },
                 {
                   key: "distributor",
@@ -287,7 +490,7 @@ export function CampaignsPage() {
           {createAssignment.error ? <ErrorState error={createAssignment.error} /> : null}
           {stockWarning ? (
             <div className="notice warning" role="status">
-              Stock warning: {stockWarning} The server enforces real balances when the allocation is saved.
+              Stock warning: {stockWarning} This is advisory; assignments do not reserve stock. Allocate stock separately in Inventory.
             </div>
           ) : null}
           {assignmentUnit !== "KG" ? (
@@ -297,13 +500,29 @@ export function CampaignsPage() {
           ) : null}
           <form className="form-grid" onSubmit={submitAssignment} style={{ maxWidth: 520 }}>
             <div className="row">
-              <FormField id="assign-site" label="Site" required className="grow">
+              <FormField
+                id="assign-site"
+                label="Site"
+                required
+                className="grow"
+                helper={
+                  (sites.data?.items.length ?? 0) === 0
+                    ? "Add a site in this campaign first."
+                    : undefined
+                }
+              >
                 {(ids) => (
-                  <select id="assign-site" aria-describedby={ids.describedBy} value={assignmentSite} onChange={(e) => setAssignmentSite(e.target.value)}>
+                  <select
+                    id="assign-site"
+                    aria-describedby={ids.describedBy}
+                    value={assignmentSite}
+                    onChange={(e) => setAssignmentSite(e.target.value)}
+                    disabled={sites.isLoading}
+                  >
                     <option value="">Choose site…</option>
                     {(sites.data?.items ?? []).map((site: SiteOut) => (
                       <option key={site.id} value={site.id}>
-                        {site.site_code} — {site.name}
+                        {site.name}
                       </option>
                     ))}
                   </select>
@@ -363,7 +582,8 @@ export function CampaignsPage() {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        </>
       ) : null}
 
       {dialogOpen ? (
@@ -415,6 +635,26 @@ export function CampaignsPage() {
               <FormField id="campaign-notes" label="Notes" helper="Optional context for reviewers.">
                 {(ids) => <textarea id="campaign-notes" rows={2} value={form.notes} aria-describedby={ids.describedBy} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}
               </FormField>
+              {!editing ? (
+                <FormField
+                  id="campaign-sites"
+                  label="Sites"
+                  helper="Optional. One place name per line. Coordinates are not required and can be added later."
+                >
+                  {(ids) => (
+                    <textarea
+                      id="campaign-sites"
+                      rows={3}
+                      value={form.sitesText}
+                      placeholder={"For example:\nGandhi Chowk\nRukadi Market"}
+                      aria-describedby={ids.describedBy}
+                      onChange={(e) => setForm({ ...form, sitesText: e.target.value })}
+                    />
+                  )}
+                </FormField>
+              ) : (
+                <p className="small muted">Sites are managed in the campaign panel after saving.</p>
+              )}
               <div className="dialog-actions">
                 <button type="button" className="btn secondary" onClick={() => setDialogOpen(false)}>
                   Cancel
@@ -427,8 +667,78 @@ export function CampaignsPage() {
           </div>
         </div>
       ) : null}
+
+      {locationSite ? (
+        <div
+          className="dialog-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="site-location-dialog-title"
+          onClick={closeLocation}
+        >
+          <div className="dialog" onClick={(event) => event.stopPropagation()} style={{ width: "min(520px, 94vw)" }}>
+            <h2 id="site-location-dialog-title">Site location — {locationSite.name}</h2>
+            <p className="small muted">
+              Optional map reference for this site. Existing submissions and captured locations are not changed.
+            </p>
+            {saveLocation.error ? <ErrorState error={saveLocation.error} /> : null}
+            {locationError ? <ErrorState error={new Error(locationError)} title="Check the location." /> : null}
+            <form className="form-grid" onSubmit={submitLocation}>
+              <div className="row">
+                <FormField id="site-latitude" label="Latitude" required className="grow" helper="Decimal degrees, -90 to 90.">
+                  {(ids) => (
+                    <input
+                      id="site-latitude"
+                      className="num"
+                      inputMode="decimal"
+                      value={locationLat}
+                      aria-describedby={ids.describedBy}
+                      onChange={(event) => setLocationLat(event.target.value)}
+                    />
+                  )}
+                </FormField>
+                <FormField id="site-longitude" label="Longitude" required className="grow" helper="Decimal degrees, -180 to 180.">
+                  {(ids) => (
+                    <input
+                      id="site-longitude"
+                      className="num"
+                      inputMode="decimal"
+                      value={locationLng}
+                      aria-describedby={ids.describedBy}
+                      onChange={(event) => setLocationLng(event.target.value)}
+                    />
+                  )}
+                </FormField>
+              </div>
+              <div className="dialog-actions">
+                <button type="button" className="btn secondary" onClick={closeLocation}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" disabled={saveLocation.isPending}>
+                  {saveLocation.isPending ? "Saving…" : "Save location"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+/** Optional site names are entered one per line during campaign setup. */
+function parseSiteNames(text: string): string[] {
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of text.split(/\r?\n/)) {
+    const name = raw.trim();
+    const key = name.toLocaleLowerCase();
+    if (name && !seen.has(key)) {
+      names.push(name);
+      seen.add(key);
+    }
+  }
+  return names;
 }
 
 /** Advisory preview only; the server converts and validates the canonical kg. */

@@ -1,17 +1,18 @@
-"""Geodesic distance and GPS/EXIF evidence evaluation.
+"""Geodesic distance and captured-location metadata.
 
 Uses Vincenty's inverse method on WGS84 with the documented haversine fallback
-for near-antipodal pairs. GPS/EXIF are indicators, not proof of authenticity.
+for near-antipodal pairs. Location is recorded as supporting metadata only:
+it never blocks approval and emits no quality/geofence warning flags.
 """
 
 from __future__ import annotations
 
 import math
-from datetime import UTC, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from .enums import GeoFlag, GeoStatus
+from .enums import GeoStatus
 from .errors import AppError
 
 EARTH_RADIUS_M = 6_371_008.8
@@ -112,46 +113,35 @@ def geodesic_distance_m(lat1: Decimal, lng1: Decimal, lat2: Decimal, lng2: Decim
     return _WGS84_B * a * (sigma - delta_sigma)
 
 
-def is_stale(location_timestamp: datetime | None, max_age_seconds: int, now: datetime | None = None) -> bool:
-    if location_timestamp is None:
-        return True
-    ts = location_timestamp if location_timestamp.tzinfo else location_timestamp.replace(tzinfo=UTC)
-    now = now or datetime.now(UTC)
-    return (now - ts).total_seconds() > max_age_seconds
-
-
 def evaluate_geo(
     *,
     latitude: Decimal | None,
     longitude: Decimal | None,
-    accuracy_m: Decimal | None,
-    location_timestamp: datetime | None,
-    site_latitude: Decimal,
-    site_longitude: Decimal,
-    geofence_radius_m: int,
-    max_accuracy_m: int,
-    max_age_seconds: int,
+    accuracy_m: Decimal | None = None,
+    location_timestamp: datetime | None = None,
+    site_latitude: Decimal | None,
+    site_longitude: Decimal | None,
+    geofence_radius_m: int | None = None,
+    max_accuracy_m: int | None = None,
+    max_age_seconds: int | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
-    flags: list[str] = []
+    # Accuracy, fix age, geofence radius and maximum accuracy remain accepted
+    # for API compatibility. They are deliberately not evaluated: a delivery
+    # is approvable from any recorded location, and reviewers see the raw
+    # accuracy/timestamps without a location warning.
     distance: float | None = None
     if latitude is None or longitude is None:
-        flags.append(GeoFlag.GPS_MISSING.value)
         geo_status = GeoStatus.UNAVAILABLE
     else:
         validate_coordinates(latitude, longitude)
-        distance = geodesic_distance_m(latitude, longitude, site_latitude, site_longitude)
-        if accuracy_m is None:
-            flags.append(GeoFlag.GPS_MISSING.value)
-        elif float(accuracy_m) > max_accuracy_m:
-            flags.append(GeoFlag.GPS_LOW_ACCURACY.value)
-        if is_stale(location_timestamp, max_age_seconds, now):
-            flags.append(GeoFlag.GPS_STALE.value)
-        if distance > float(geofence_radius_m):
-            flags.append(GeoFlag.OUTSIDE_GEOFENCE.value)
-        geo_status = GeoStatus.WARNING if flags else GeoStatus.PASS
+        if site_latitude is not None and site_longitude is not None:
+            distance = geodesic_distance_m(
+                latitude, longitude, site_latitude, site_longitude
+            )
+        geo_status = GeoStatus.PASS
     return {
         "distance_m": round(distance, 1) if distance is not None else None,
-        "flags": flags,
+        "flags": [],
         "geo_status": geo_status.value,
     }

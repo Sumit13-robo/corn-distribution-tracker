@@ -5,7 +5,7 @@
 **File purpose:** Repository run guide
 
 ## Responsibility
-Explain architecture, prerequisites, setup, env, migration, first admin bootstrap, tests, run commands, evidence storage setup, deployment and known limits. State what is actually implemented.
+Explain architecture, prerequisites, native setup, env, migration, first admin bootstrap, tests, run commands, evidence storage setup, deployment and known limits. State what is actually implemented.
 
 ## Contract and dependencies
 all docs
@@ -30,8 +30,10 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Run guide covering architecture, Docker and local workflows, verified command results, browser E2E instructions (including the destructive isolated database warning), invitation-token delivery caveat, configuration and honest limitations.
+Native run guide covering architecture, PostgreSQL/Django/Vite setup, health checks, first-admin bootstrap, tests, browser E2E, configuration and an honest limitations list. The documented workflow does not require a container runtime. The map section documents OpenStreetMap street + Esri satellite basemaps, Google Maps link-outs and provider-licensing limits.
 
-**Verification (2026-10-22):** Backend 58 tests passed (ruff/mypy clean); web 18 tests passed (lint/build clean); Playwright E2E 8 passed; `npm audit` clean; Docker image build not executed (no daemon); hadolint clean on both Dockerfiles.
+**Verification (2026-10-25):** The map/location update was re-verified with web typecheck, ESLint, 34 Vitest tests (9 map tests), a production build and a headless Chromium smoke (OSM + Esri tiles, satellite switch, mocked New Delhi locate, Google Maps links). Current backend count is 61 tests; E2E 8 and native smoke remain recorded in the dated verification table.
 
-**Unresolved issues:** None known.
+**Unresolved issues:** Public OSM/Esri tiles are not production-scale providers; Google Maps embedding still requires a key and billing.
+
+**Unresolved issues:** None known for the documented native path. Deferred product features are listed in the README.

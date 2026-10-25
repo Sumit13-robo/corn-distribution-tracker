@@ -9,6 +9,7 @@ from decimal import Decimal
 from typing import Any
 
 from django.db.models import Q
+from django.utils.text import slugify
 
 from ..enums import AssignmentStatus, CampaignStatus
 from ..errors import AppError, ConflictError, NotFoundError
@@ -38,6 +39,7 @@ def create_campaign(*, admin: User, data: dict, ctx: RequestContext) -> Campaign
             "A campaign with this reference code already exists.",
             details=[{"field": "reference_code"}],
         )
+    site_names = list(data.get("sites") or [])
     campaign = Campaign.objects.create(
         name=data["name"],
         reference_code=data["reference_code"],
@@ -48,12 +50,23 @@ def create_campaign(*, admin: User, data: dict, ctx: RequestContext) -> Campaign
         notes=data.get("notes"),
         created_by=admin,
     )
+    # Site setup is part of campaign setup. The caller wraps this operation in
+    # a transaction, so a bad site name does not leave a half-created campaign.
+    for site_name in site_names:
+        create_site(
+            admin=admin,
+            data={"name": site_name, "campaign_id": campaign.id},
+            ctx=ctx,
+        )
     record_audit(
         actor=admin,
         action="campaign.created",
         target_type="campaign",
         target_id=campaign.id,
-        details={"reference_code": campaign.reference_code},
+        details={
+            "reference_code": campaign.reference_code,
+            "site_count": len(site_names),
+        },
         ctx=ctx,
     )
     return campaign
@@ -105,13 +118,59 @@ def get_campaign(campaign_id: uuid.UUID) -> Campaign:
 # ---------------------------------------------------------------------------
 # Sites
 # ---------------------------------------------------------------------------
+def _generate_site_code(name: str) -> str:
+    """Generate a human-readable unique code when the admin only enters a name."""
+    base = slugify(name).upper()[:34] or f"SITE-{uuid.uuid4().hex[:6].upper()}"
+    candidate = base
+    suffix = 2
+    while DistributionSite.objects.filter(site_code=candidate).exists():
+        suffix_text = f"-{suffix}"
+        candidate = f"{base[:40 - len(suffix_text)]}{suffix_text}"
+        suffix += 1
+    return candidate
+
+
+def _site_location_values(site: DistributionSite) -> dict[str, str | None]:
+    return {
+        "latitude": str(site.latitude) if site.latitude is not None else None,
+        "longitude": str(site.longitude) if site.longitude is not None else None,
+    }
+
+
 def create_site(*, admin: User, data: dict, ctx: RequestContext) -> DistributionSite:
-    lat, lng = validate_coordinates(Decimal(str(data["latitude"])), Decimal(str(data["longitude"])))
-    if DistributionSite.objects.filter(site_code=data["site_code"]).exists():
+    campaign = None
+    if data.get("campaign_id"):
+        campaign = Campaign.objects.filter(id=data["campaign_id"]).first()
+        if campaign is None:
+            raise NotFoundError("Campaign not found.")
+    name = str(data["name"]).strip()
+    if campaign is not None and DistributionSite.objects.filter(
+        campaign=campaign, name__iexact=name
+    ).exists():
+        raise AppError(
+            "A site with this name already exists in this campaign.",
+            details=[{"field": "name"}],
+        )
+
+    raw_lat = data.get("latitude")
+    raw_lng = data.get("longitude")
+    lat = lng = None
+    if raw_lat is not None and raw_lng is not None:
+        lat, lng = validate_coordinates(Decimal(str(raw_lat)), Decimal(str(raw_lng)))
+    elif raw_lat is not None or raw_lng is not None:
+        raise AppError(
+            "Site location requires both latitude and longitude (or neither).",
+            details=[{"field": "latitude"}],
+        )
+
+    site_code = str(data.get("site_code") or "").strip() or _generate_site_code(name)
+    if DistributionSite.objects.filter(site_code=site_code).exists():
         raise AppError("A site with this code already exists.", details=[{"field": "site_code"}])
+
     site = DistributionSite.objects.create(
-        name=data["name"],
-        site_code=data["site_code"],
+        name=name,
+        site_code=site_code,
+        campaign=campaign,
         address_text=data.get("address_text"),
         region=data.get("region"),
         latitude=lat,
@@ -127,7 +186,11 @@ def create_site(*, admin: User, data: dict, ctx: RequestContext) -> Distribution
         action="site.created",
         target_type="site",
         target_id=site.id,
-        details={"site_code": site.site_code, "latitude": str(lat), "longitude": str(lng)},
+        details={
+            "site_code": site.site_code,
+            "campaign_id": str(campaign.id) if campaign else None,
+            **_site_location_values(site),
+        },
         ctx=ctx,
     )
     return site
@@ -139,8 +202,17 @@ def update_site(
     site = DistributionSite.objects.filter(id=site_id).first()
     if site is None:
         raise NotFoundError("Site not found.")
+    if "name" in data and site.campaign_id is not None:
+        new_name = str(data["name"]).strip()
+        if DistributionSite.objects.filter(
+            campaign_id=site.campaign_id, name__iexact=new_name
+        ).exclude(id=site.id).exists():
+            raise AppError(
+                "A site with this name already exists in this campaign.",
+                details=[{"field": "name"}],
+            )
     location_changed = False
-    before = {"latitude": str(site.latitude), "longitude": str(site.longitude)}
+    before = _site_location_values(site)
     for key in (
         "name",
         "site_code",
@@ -159,13 +231,21 @@ def update_site(
                     )
             setattr(site, key, data[key])
     if "latitude" in data or "longitude" in data:
-        lat = Decimal(str(data.get("latitude", site.latitude)))
-        lng = Decimal(str(data.get("longitude", site.longitude)))
-        site.latitude, site.longitude = validate_coordinates(lat, lng)
-        location_changed = before != {
-            "latitude": str(site.latitude),
-            "longitude": str(site.longitude),
-        }
+        raw_lat = data.get("latitude", site.latitude)
+        raw_lng = data.get("longitude", site.longitude)
+        if raw_lat is None and raw_lng is None:
+            site.latitude = None
+            site.longitude = None
+        elif raw_lat is None or raw_lng is None:
+            raise AppError(
+                "Site location requires both latitude and longitude (or neither).",
+                details=[{"field": "latitude"}],
+            )
+        else:
+            site.latitude, site.longitude = validate_coordinates(
+                Decimal(str(raw_lat)), Decimal(str(raw_lng))
+            )
+        location_changed = before != _site_location_values(site)
     site.save()
     if location_changed or "geofence_radius_m" in data:
         record_audit(
@@ -175,7 +255,7 @@ def update_site(
             target_id=site.id,
             details={
                 "before": before,
-                "after": {"latitude": str(site.latitude), "longitude": str(site.longitude)},
+                "after": _site_location_values(site),
                 "geofence_radius_m": site.geofence_radius_m,
             },
             ctx=ctx,
@@ -217,9 +297,13 @@ def list_sites(
     if search:
         qs = qs.filter(Q(name__icontains=search) | Q(site_code__icontains=search))
     if campaign_id:
-        qs = qs.filter(assignments__campaign_id=campaign_id).distinct()
+        # Direct campaign ownership is authoritative. The assignment fallback
+        # keeps legacy sites visible until the data migration/backfill runs.
+        qs = qs.filter(
+            Q(campaign_id=campaign_id) | Q(assignments__campaign_id=campaign_id)
+        ).distinct()
     total = qs.count()
-    return list(qs.order_by("site_code")[offset : offset + limit]), total
+    return list(qs.order_by("name")[offset : offset + limit]), total
 
 
 def get_site(site_id: uuid.UUID) -> DistributionSite:
@@ -252,6 +336,17 @@ def create_assignment(*, admin: User, data: dict, ctx: RequestContext) -> Distri
         campaign = Campaign.objects.filter(id=data["campaign_id"]).first()
         if campaign is None:
             raise NotFoundError("Campaign not found.")
+    if campaign is not None and site.campaign_id not in (None, campaign.id):
+        raise AppError(
+            "This site belongs to another campaign. Add a site inside this campaign instead.",
+            details=[{"field": "site_id"}],
+        )
+    if campaign is not None and site.campaign_id is None:
+        # Legacy/global sites become campaign-scoped when first assigned.
+        site.campaign = campaign
+        site.save(update_fields=["campaign", "updated_at"])
+    if campaign is None and site.campaign_id is not None:
+        campaign = site.campaign
     settings_row = settings_service_.get_or_create_settings()
     kg = convert_to_kg(
         Decimal(str(data["target_quantity"])), data.get("unit", "KG"), settings_row.kg_per_bag

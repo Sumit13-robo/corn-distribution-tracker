@@ -5,7 +5,7 @@
 **File purpose:** App providers
 
 ## Responsibility
-Configure query client, session provider, theme/accessibility providers and global notification system; avoid caching private API data across user changes.
+Configure the query client, session provider, toast context, online/queue status banner and offline sync manager; avoid caching private API data across user changes. There is no notification feed.
 
 ## Contract and dependencies
 query client; session
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Query client provider, toast context, online/queue status banner, OfflineSyncManager (reconnect, interval, cross-tab storage changes only) and cache/session cleanup on logout. Exports ToastProvider for tests.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

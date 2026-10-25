@@ -124,6 +124,8 @@ export interface CampaignIn {
   status?: CampaignStatus;
   timezone?: string;
   notes?: string | null;
+  /** Name-only sites created together with the campaign in one transaction. */
+  sites?: string[];
 }
 
 export interface CampaignPatchIn {
@@ -139,10 +141,12 @@ export interface SiteOut {
   id: string;
   name: string;
   site_code: string;
+  campaign_id: string | null;
   address_text: string | null;
   region: string | null;
-  latitude: string;
-  longitude: string;
+  /** Null until an admin optionally records the site reference point. */
+  latitude: string | null;
+  longitude: string | null;
   geofence_radius_m: number;
   max_acceptable_accuracy_m: number | null;
   is_active: boolean;
@@ -153,11 +157,12 @@ export interface SiteOut {
 
 export interface SiteIn {
   name: string;
-  site_code: string;
+  site_code?: string;
+  campaign_id?: string | null;
   address_text?: string | null;
   region?: string | null;
-  latitude: string;
-  longitude: string;
+  latitude?: string | null;
+  longitude?: string | null;
   geofence_radius_m?: number;
   max_acceptable_accuracy_m?: number | null;
   notes?: string | null;
@@ -487,6 +492,23 @@ export interface MapSiteOut {
   status: string;
   last_visit_at: string | null;
   has_flagged_evidence: boolean;
+}
+
+export interface MapDeliveryOut {
+  id: string;
+  site_id: string;
+  site_code: string;
+  site_name: string;
+  campaign_id: string | null;
+  distributor_user_id: string;
+  distributor_name: string;
+  quantity_kg: string;
+  status: string;
+  submitted_at: string;
+  location_latitude: string;
+  location_longitude: string;
+  location_accuracy_m: string | null;
+  location_timestamp: string | null;
 }
 
 export interface SettingsOut {

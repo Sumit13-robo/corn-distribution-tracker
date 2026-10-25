@@ -2,16 +2,23 @@
 
 **Status:** TESTED
 **Primary owner:** Backend
-**File purpose:** Geo thresholds, record flags and exception-approval tests
+**File purpose:** Location capture, no-warning behavior and non-location evidence-integrity tests
 
 ## Current implementation
 
-Geo thresholds, record flags and exception-approval tests. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
+Covers direct `evaluate_geo` and submission/review behavior:
+
+- valid coordinates and geodesic distance when both a fix and site reference exist;
+- missing, stale, inaccurate and far-away fixes produce `geo_flags == []`, with `geo_status` `PASS` or `UNAVAILABLE` and no approval exception;
+- name-only sites keep a null distance while still storing the device fix;
+- EXIF GPS difference is stored as metadata without an `EXIF_GPS_MISMATCH` warning;
+- invalid coordinate ranges are still rejected;
+- duplicate image hash, capture-time mismatch and unexpected file type remain evidence-integrity warning tests.
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+`make test-api` → 66 passed; `make lint-api` clean; `make typecheck-api` clean in 50 source files; migration check no changes. `make test-e2e` → 8 passed.
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known.

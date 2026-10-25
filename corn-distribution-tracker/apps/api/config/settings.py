@@ -209,13 +209,18 @@ STORAGE_SECRET_ACCESS_KEY = env("STORAGE_SECRET_ACCESS_KEY")
 STORAGE_SIGNED_URL_TTL_SECONDS = env_int("STORAGE_SIGNED_URL_TTL_SECONDS", 120)
 LOCAL_STORAGE_DIR = env("LOCAL_STORAGE_DIR", "./storage-data")
 MAX_EVIDENCE_UPLOAD_BYTES = env_int("MAX_EVIDENCE_UPLOAD_BYTES", 10 * 1024 * 1024)
+# Django's request.body guard defaults to 2.5 MiB, which is smaller than the
+# evidence cap and made ordinary phone photos fail with a 500 before the
+# service could validate or store them. Keep the raw-body ceiling just above
+# the configured evidence cap; the service still rejects oversize payloads.
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_EVIDENCE_UPLOAD_BYTES + 1024 * 1024
 ALLOWED_EVIDENCE_CONTENT_TYPES = env_list(
     "ALLOWED_EVIDENCE_CONTENT_TYPES", "image/jpeg,image/png,image/webp"
 )
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8000")
 
 # Organization defaults (the database row overrides these after bootstrap).
-ORG_TIMEZONE = env("ORG_TIMEZONE", "Africa/Juba")
+ORG_TIMEZONE = env("ORG_TIMEZONE", "Asia/Kolkata")
 DEFAULT_GEOFENCE_RADIUS_M = env_int("DEFAULT_GEOFENCE_RADIUS_M", 200)
 MAX_ACCEPTABLE_GPS_ACCURACY_M = env_int("MAX_ACCEPTABLE_GPS_ACCURACY_M", 100)
 MAX_LOCATION_AGE_SECONDS = env_int("MAX_LOCATION_AGE_SECONDS", 300)

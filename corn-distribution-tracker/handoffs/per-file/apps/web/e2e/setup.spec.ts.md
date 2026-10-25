@@ -13,6 +13,6 @@ Create the synthetic campaign, site, distributor invitation/account, assignment,
 ## Implementation summary
 Admin login → create active campaign and site at the synthetic Juba coordinates → invite/accept distributor → create 500 kg assignment → receive 2000 kg central stock → allocate 500 kg to the distributor. Every response is checked and failures include status/body. A second setup test proves the generated distributor password works and the role is `DISTRIBUTOR`.
 
-**Verification (2026-10-22):** both setup tests passed repeatedly as part of the 7-test E2E run.
+**Verification (2026-10-23):** both setup tests passed repeatedly as part of the 8-test E2E run.
 
 **Unresolved issues:** None known. All identities/data are synthetic and the database is recreated each run.

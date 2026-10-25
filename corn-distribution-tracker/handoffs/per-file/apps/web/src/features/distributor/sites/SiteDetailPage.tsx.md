@@ -32,6 +32,14 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Site detail with target progress, recent deliveries and a new-delivery CTA.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Name-only site update (2026-10-25)
+
+Expected-location panel handles nullable site coordinates: it shows a clear notice instead of invalid `"null, null"` coordinates and no Google/OSM link is generated. Verification: `npm run typecheck`, `npm run lint`, `npm test` (37 passed, 6 files) and `npm run build` pass.
+
+## Location-warning removal (2026-10-25)
+
+The nullable-coordinate notice remains, but the page no longer describes distance/geofence checks or location warnings. A name-only site simply has no reference point; the distributor's own history shows captured/missing location only. Verification: `npm test` → 37 passed; typecheck/lint/build pass.

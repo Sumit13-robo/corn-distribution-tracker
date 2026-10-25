@@ -51,7 +51,7 @@ def test_geodesic_known_distances():
     )
 
 
-def test_evaluate_geo_flags():
+def test_evaluate_geo_records_distance_without_location_warnings():
     result = evaluate_geo(
         latitude=Decimal("12.5518"),
         longitude=Decimal("15.1"),
@@ -63,22 +63,39 @@ def test_evaluate_geo_flags():
         max_accuracy_m=100,
         max_age_seconds=300,
     )
-    assert "GPS_STALE" in result["flags"]
+    assert result["flags"] == []
+    assert result["geo_status"] == "PASS"
     assert result["distance_m"] is not None and result["distance_m"] < 1
 
     far = evaluate_geo(
         latitude=Decimal("12.7"),
         longitude=Decimal("15.1"),
-        accuracy_m=Decimal("2"),
-        location_timestamp=datetime.now(UTC),
+        accuracy_m=Decimal("500"),
+        location_timestamp=datetime.now(UTC) - timedelta(minutes=30),
         site_latitude=Decimal("12.5518"),
         site_longitude=Decimal("15.1"),
         geofence_radius_m=200,
         max_accuracy_m=100,
         max_age_seconds=300,
     )
-    assert "OUTSIDE_GEOFENCE" in far["flags"]
+    assert far["flags"] == []
+    assert far["geo_status"] == "PASS"
     assert int(far["distance_m"] or 0) > 16_000
+
+    name_only_site = evaluate_geo(
+        latitude=Decimal("12.5518"),
+        longitude=Decimal("15.1"),
+        accuracy_m=Decimal("3"),
+        location_timestamp=datetime.now(UTC),
+        site_latitude=None,
+        site_longitude=None,
+        geofence_radius_m=200,
+        max_accuracy_m=100,
+        max_age_seconds=300,
+    )
+    assert name_only_site["distance_m"] is None
+    assert name_only_site["flags"] == []
+    assert name_only_site["geo_status"] == "PASS"
 
     missing = evaluate_geo(
         latitude=None,
@@ -91,7 +108,7 @@ def test_evaluate_geo_flags():
         max_accuracy_m=100,
         max_age_seconds=300,
     )
-    assert missing["geo_status"] == "UNAVAILABLE" and missing["flags"] == ["GPS_MISSING"]
+    assert missing["geo_status"] == "UNAVAILABLE" and missing["flags"] == []
 
 
 def test_coordinate_range_validation():
@@ -100,7 +117,33 @@ def test_coordinate_range_validation():
             validate_coordinates(Decimal(bad_lat), Decimal("10.0"))
 
 
-def test_exif_gps_mismatch_is_flagged(monkeypatch, org_factory):
+def test_name_only_site_submission_keeps_gps_but_skips_distance(org_factory):
+    org = org_factory()
+    cleared = json_request(
+        org["admin_client"],
+        "patch",
+        f"/api/v1/sites/{org['site']['id']}",
+        {"latitude": None, "longitude": None},
+    )
+    assert cleared.status_code == 200, cleared.content.decode()
+
+    response = submit_delivery(
+        org["dist_client"],
+        assignment_id=org["assignment"]["id"],
+        quantity="10",
+        evidence=upload_png(org["dist_client"]),
+        idempotency_key="name-only-site-1",
+    )
+    assert response.status_code == 201, response.content.decode()
+    record = response.json()
+    assert record["location_latitude"] == "12.551900"
+    assert record["location_longitude"] == "15.100100"
+    assert record["distance_to_site_m"] is None
+    assert record["geo_flags"] == []
+    assert record["geo_status"] == "PASS"
+
+
+def test_exif_gps_difference_is_recorded_without_location_warning(monkeypatch, org_factory):
     org = org_factory()
     monkeypatch.setattr(
         evidence_service,
@@ -116,8 +159,10 @@ def test_exif_gps_mismatch_is_flagged(monkeypatch, org_factory):
         idempotency_key="exif-1",
     )
     assert response.status_code == 201, response.content
-    assert "EXIF_GPS_MISMATCH" in response.json()["evidence"][0]["validation_flags"]
-    assert "EXIF_GPS_MISMATCH" in response.json()["geo_flags"]
+    evidence_body = response.json()["evidence"][0]
+    assert "EXIF_GPS_MISMATCH" not in evidence_body["validation_flags"]
+    assert evidence_body["metadata_check_result"]["exif_vs_reported_m"] > 0
+    assert "EXIF_GPS_MISMATCH" not in response.json()["geo_flags"]
 
 
 def test_duplicate_image_hash_is_flagged(org_factory):
@@ -194,7 +239,7 @@ def test_no_exif_is_informational(org_factory):
     assert response.json()["evidence"][0]["metadata_check_result"]["exif"] == "absent"
 
 
-def test_stale_and_inaccurate_location_are_flagged(org_factory):
+def test_stale_and_inaccurate_location_do_not_emit_warnings(org_factory):
     org = org_factory()
     old = (datetime.now(UTC) - timedelta(minutes=30)).isoformat()
     response = submit_delivery(
@@ -207,12 +252,13 @@ def test_stale_and_inaccurate_location_are_flagged(org_factory):
         timestamp=old,
     )
     assert response.status_code == 201, response.content
-    flags = set(response.json()["geo_flags"])
-    assert "GPS_STALE" in flags
-    assert "GPS_LOW_ACCURACY" in flags
+    body = response.json()
+    assert body["geo_flags"] == []
+    assert body["geo_status"] == "PASS"
+    assert body["location_accuracy_m"] == "500.00"
 
 
-def test_missing_location_is_allowed_but_flagged(org_factory):
+def test_missing_location_is_allowed_without_a_warning(org_factory):
     org = org_factory()
     response = submit_delivery(
         org["dist_client"],
@@ -224,7 +270,7 @@ def test_missing_location_is_allowed_but_flagged(org_factory):
     )
     assert response.status_code == 201, response.content
     assert response.json()["geo_status"] == "UNAVAILABLE"
-    assert "GPS_MISSING" in response.json()["geo_flags"]
+    assert response.json()["geo_flags"] == []
 
 
 def test_capture_time_drift_is_flagged(org_factory):

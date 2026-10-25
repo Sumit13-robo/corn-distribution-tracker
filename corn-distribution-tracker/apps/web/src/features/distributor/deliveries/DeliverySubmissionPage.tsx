@@ -152,18 +152,17 @@ export function DeliverySubmissionPage() {
   }
 
   function persistLocation() {
-    if (!userId || !draftId) return;
-    const locationPatch = location.coordinates
-      ? {
-          latitude: location.coordinates.latitude,
-          longitude: location.coordinates.longitude,
-          accuracy_m: location.coordinates.accuracy_m,
-          timestamp: location.coordinates.timestamp,
-          device_time: location.coordinates.device_time,
-          client_created_at: new Date().toISOString(),
-        }
-      : null;
-    const updated = updateDraft(userId, draftId, { location: locationPatch });
+    if (!userId || !draftId || !location.coordinates) return;
+    const updated = updateDraft(userId, draftId, {
+      location: {
+        latitude: location.coordinates.latitude,
+        longitude: location.coordinates.longitude,
+        accuracy_m: location.coordinates.accuracy_m,
+        timestamp: location.coordinates.timestamp,
+        device_time: location.coordinates.device_time,
+        client_created_at: new Date().toISOString(),
+      },
+    });
     if (updated) setDraft(updated);
   }
 
@@ -221,22 +220,16 @@ export function DeliverySubmissionPage() {
   const quantityValid = quantityInput !== "" && Number.isFinite(quantityNumber) && quantityNumber > 0;
   const previewKg = quantityValid ? quantityNumber * (unit === "BAG" ? (kgPerBag ?? 0) : (UNIT_FACTORS[unit as UnitOption] ?? 1)) : null;
 
+  /* Prefer the fresh in-memory fix, then the fix persisted with this draft.
+   * A resumed draft must not look uncaptured just because the hook restarted. */
+  const savedLocation =
+    draft?.location?.latitude != null && draft.location.longitude != null ? draft.location : null;
+  const capturedLocation = location.coordinates ?? savedLocation;
+
   /* Honest evidence warnings (the server revalidates on sync). */
   const warnings: string[] = [];
   if (photos.length === 0) warnings.push("No photos attached yet — the server requires at least one evidence image.");
   if (bagFactorMissing) warnings.push("BAG unit requires kg-per-bag configured; submit in kg or ask an admin to configure it.");
-  if (location.status === "CAPTURED" && settings.data) {
-    const accuracy = Number(location.coordinates?.accuracy_m ?? "0");
-    if (accuracy > settings.data.max_acceptable_gps_accuracy_m) {
-      warnings.push(
-        `GPS accuracy ${accuracy} m exceeds the ${settings.data.max_acceptable_gps_accuracy_m} m threshold — a reviewer will see this flagged.`,
-      );
-    }
-  }
-  if (location.status !== "CAPTURED") {
-    warnings.push("Location not captured — the submission will be stored without coordinates and reviewed accordingly.");
-  }
-
   const existingDrafts = loadDrafts(userId ?? "").filter((item) => item.id !== draftId);
 
   async function handleSubmit(): Promise<void> {
@@ -315,27 +308,21 @@ export function DeliverySubmissionPage() {
         <h2>Location</h2>
         <p className="muted small">
           Captures your device fix once (accuracy + device clock included). It is supporting metadata, not proof
-          against spoofing; reviewers see accuracy, age and distance-to-site.
+          against spoofing. A delivery can be approved from any recorded location.
         </p>
         <div className="row">
           <button type="button" className="btn secondary" onClick={location.request} disabled={location.status === "LOADING"}>
-            {location.status === "LOADING" ? "Locating…" : draft?.location ? "Re-capture location" : "Capture location"}
+            {location.status === "LOADING" ? "Locating…" : capturedLocation ? "Re-capture location" : "Capture location"}
           </button>
-          {draft?.location ? (
+          {capturedLocation ? (
             <span className="small num">
-              {draft.location.latitude}, {draft.location.longitude} · ±{draft.location.accuracy_m ?? "?"} m
+              {capturedLocation.latitude}, {capturedLocation.longitude} · ±{capturedLocation.accuracy_m ?? "?"} m
             </span>
           ) : (
             <span className="small muted">No fix captured yet.</span>
           )}
         </div>
         {location.message ? <p className="notice warning" role="status">{location.message}</p> : null}
-        {settings.data ? (
-          <p className="small muted">
-            Acceptance thresholds: accuracy ≤ {settings.data.max_acceptable_gps_accuracy_m} m, fix age ≤{" "}
-            {settings.data.max_location_age_seconds} s.
-          </p>
-        ) : null}
       </div>
 
       <div className="section">

@@ -6,12 +6,12 @@
 
 ## Current implementation
 
-Production/staging configuration fail-fast tests. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
+Production/staging configuration fail-fast tests, plus a check that the raw upload memory ceiling is larger than the configured evidence cap.
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. The new `test_raw_upload_limit_covers_configured_evidence_cap` guards the 7 MB phone-photo regression.
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known. Native PostgreSQL + Django + Vite workflow verified.

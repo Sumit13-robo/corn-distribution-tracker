@@ -1211,6 +1211,119 @@ textarea:disabled {
   border: 1px solid var(--color-border);
 }
 
+.map-container.is-compact {
+  height: 300px;
+}
+
+.map-shell {
+  position: relative;
+}
+
+.map-controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 70px);
+}
+
+.map-basemap-toggle {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.map-basemap-toggle button,
+.map-control-button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-meta);
+  cursor: pointer;
+}
+
+.map-basemap-toggle button + button {
+  border-left: 1px solid var(--color-border);
+}
+
+.map-basemap-toggle button[aria-pressed="true"] {
+  background: var(--color-brand-700);
+  color: #ffffff;
+}
+
+.map-basemap-toggle button:hover,
+.map-control-button:hover {
+  background: var(--color-surface-alt);
+}
+
+.map-basemap-toggle button[aria-pressed="true"]:hover {
+  background: var(--color-brand-800);
+}
+
+.map-control-button {
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-pop);
+}
+
+.map-control-message {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  font-size: var(--text-meta);
+}
+
+.map-container .maplibregl-ctrl-attrib {
+  max-width: calc(100% - 12px);
+  font-size: 10px;
+}
+
+.map-pin {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.map-pin:not(button) {
+  cursor: default;
+}
+
+.map-pin-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #ffffff;
+  box-shadow: var(--shadow-pop);
+}
+
+.map-pin.is-selected .map-pin-dot {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+}
+
 .map-fallback {
   height: 460px;
   border-radius: var(--radius-md);
@@ -1950,6 +2063,14 @@ textarea:disabled {
   .metric-row {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .map-container {
+    height: 320px;
+  }
+
+  .map-container.is-compact {
+    height: 260px;
   }
 
   .map-fallback {

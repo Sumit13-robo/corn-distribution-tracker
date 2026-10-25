@@ -35,6 +35,7 @@ export const queryKeys = {
   invitations: () => ["invitations"] as const,
   sites: (filters: { search?: string; active_only?: boolean; campaign_id?: string }) =>
     ["sites", filters.search ?? "", filters.campaign_id ?? "any", filters.active_only === true] as const,
+  site: (id: string) => ["site", id] as const,
   siteProgress: (siteId: string, campaignId: string | null) =>
     ["site-progress", siteId, campaignId ?? "any"] as const,
   assignments: (campaignId: string | null) => ["assignments", campaignId ?? "any"] as const,
@@ -47,6 +48,8 @@ export const queryKeys = {
   distributorPerformance: (campaignId: string | null) =>
     ["analytics-distributors", campaignId ?? "any"] as const,
   sitePerformance: (campaignId: string | null) => ["analytics-sites", campaignId ?? "any"] as const,
+  mapDeliveries: (campaignId: string | null, distributorId: string | null) =>
+    ["analytics-map-deliveries", campaignId ?? "any", distributorId ?? "any"] as const,
   mapSites: (campaignId: string | null, distributorId: string | null) =>
     ["analytics-map-sites", campaignId ?? "any", distributorId ?? "any"] as const,
   auditEvents: (filters: Record<string, string>) => ["audit-events", filters] as const,

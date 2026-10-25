@@ -5,7 +5,7 @@
 **File purpose:** Admin overview
 
 ## Responsibility
-Render real API KPIs and trend/queue summaries for central/distributor/approved/pending/targets/flags; links preserve filter context.
+Render real API KPIs plus delivery progress, review queue, distributor performance and recent audit events for central/distributor/approved/pending/targets/flags. There is no map preview or campaign/date filter on this screen.
 
 ## Contract and dependencies
 analytics APIs; StatCard
@@ -30,8 +30,12 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Overview KPIs, review counts, recent audit events and quick links from the scoped analytics endpoint.
+Overview KPIs, delivery progress, review queue, distributor performance, recent audit events and drill-down links from the scoped analytics endpoint.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Integrity-only flag counts (2026-10-25)
+
+The flagged KPI/review queue uses non-location evidence-integrity flags only; legacy location flags are excluded from copy and severity. Verification: `npm test` → 37 passed; typecheck/lint/build and `make test-e2e` (8 passed) pass.

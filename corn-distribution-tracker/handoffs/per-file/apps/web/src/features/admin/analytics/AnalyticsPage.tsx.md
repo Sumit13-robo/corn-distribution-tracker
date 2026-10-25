@@ -5,7 +5,7 @@
 **File purpose:** Analytics and exports
 
 ## Responsibility
-Show filterable KPI charts/tables for distributor/site performance and CSV export using API formulas; label period vs current balance.
+Show campaign/UTC-date-scoped KPI charts and tables for distributor/site performance and an audited CSV export using API formulas; label period vs current balance. Status/distributor/site filters are not exposed in the UI.
 
 ## Contract and dependencies
 analytics API
@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Scoped KPIs and accessible CSS bar charts plus authenticated CSV export via the shared download helper.
+Campaign/date-scoped KPIs, accessible CSS bar charts and tables, and an audited CSV export via the shared download helper.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

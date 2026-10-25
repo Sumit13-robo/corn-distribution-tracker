@@ -11,7 +11,6 @@ import { PasswordResetPage } from "../features/auth/PasswordResetPage";
 import { AdminDashboardPage } from "../features/admin/dashboard/AdminDashboardPage";
 import { DistributionMapPage } from "../features/admin/map/DistributionMapPage";
 import { DistributorsPage } from "../features/admin/distributors/DistributorsPage";
-import { SitesPage } from "../features/admin/sites/SitesPage";
 import { CampaignsPage } from "../features/admin/campaigns/CampaignsPage";
 import { InventoryPage } from "../features/admin/inventory/InventoryPage";
 import { EvidenceReviewPage } from "../features/admin/evidence/EvidenceReviewPage";
@@ -81,7 +80,7 @@ export const router = createBrowserRouter([
           { path: "map", element: <DistributionMapPage /> },
           { path: "campaigns", element: <CampaignsPage /> },
           { path: "distributors", element: <DistributorsPage /> },
-          { path: "sites", element: <SitesPage /> },
+          { path: "sites", element: <Navigate to="/campaigns" replace /> },
           { path: "inventory", element: <InventoryPage /> },
           { path: "evidence", element: <EvidenceReviewPage /> },
           { path: "analytics", element: <AnalyticsPage /> },

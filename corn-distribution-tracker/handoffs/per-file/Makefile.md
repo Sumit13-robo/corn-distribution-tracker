@@ -5,10 +5,10 @@
 **File purpose:** Developer commands
 
 ## Responsibility
-Provide predictable commands for local startup, install, lint, types, tests, migration, seed synthetic dev data and cleanup. Commands must not reset production data.
+Provide predictable commands for native local startup, install, lint, types, tests, migration and admin bootstrap. Commands must not reset production data.
 
 ## Contract and dependencies
-package/pyproject/compose
+package/pyproject
 
 Read the relevant contract in `architecture/` or `design/` before implementing. Preserve the APIs, enum values, permission rules, quantity semantics and state transitions established in those documents. Do not create a parallel implementation of the same domain rule in another layer.
 
@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Developer targets for venv/install/migrations/admin bootstrap/tests/lint/typecheck/build/run, plus `e2e-install` (Chromium) and `test-e2e` (real API + disposable PostgreSQL). `test-api` disables third-party pytest autoload (ROS plugins on this workstation); commands verified.
+Developer targets for venv/install/migrations/admin bootstrap/tests/lint/typecheck/build/run, plus `e2e-install` (Chromium), `test-e2e` (real API + disposable PostgreSQL) and `health` (live/readiness probes). `test-api` disables third-party pytest autoload (ROS plugins on this workstation). Container-only `db-up`/`dev-up` targets were removed.
 
-**Verification (2026-10-22):** Backend 58 tests passed (ruff/mypy clean); web 18 tests passed (lint/build clean); `make test-e2e` 8 passed; `npm audit` 0 vulnerabilities. Docker image builds were **not executed** because no Docker/Podman daemon was available; both Dockerfiles pass hadolint 2.15.1.
+**Verification (2026-10-23):** Backend 60 tests passed (Ruff/mypy clean); web 23 tests passed (lint/build clean); `make test-e2e` 8 passed; native `make health` returned both probes; `npm audit` 0 vulnerabilities.
 
 **Unresolved issues:** None known.

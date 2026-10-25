@@ -3,7 +3,7 @@
 Schema parity notes:
 - quantities are NUMERIC(14,3) kg and serialized as decimal strings;
 - pending SUBMITTED records are reservations, never postings;
-- stock_movements and audit_events are append-only (DB triggers in migration 0001);
+- stock_movements and audit_events are append-only (DB triggers in migration 0002);
 - evidence objects live in private storage; rows hold only metadata.
 
 The schema is a Django-native replacement for the former Alembic schema. It is
@@ -129,10 +129,21 @@ class DistributionSite(TimeStamped):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=160)
     site_code = models.CharField(max_length=40, unique=True)
+    campaign = models.ForeignKey(
+        Campaign,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="sites",
+    )
     address_text = models.CharField(max_length=500, null=True, blank=True)
     region = models.CharField(max_length=120, null=True, blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=10, decimal_places=6)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    longitude = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
+    )
     geofence_radius_m = models.PositiveIntegerField(default=200)
     max_acceptable_accuracy_m = models.PositiveIntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

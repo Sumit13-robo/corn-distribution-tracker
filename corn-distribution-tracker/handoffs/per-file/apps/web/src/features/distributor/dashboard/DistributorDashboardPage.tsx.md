@@ -32,6 +32,10 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Assigned-site KPIs, pending/approved totals, offline draft count and quick actions.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Location-warning removal (2026-10-25)
+
+Assigned-site cards no longer show distance/geofence or location-warning copy. Location capture remains optional. Verification: `npm test` → 37 passed; typecheck/lint/build pass.

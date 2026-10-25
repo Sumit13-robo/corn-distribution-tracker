@@ -1,6 +1,6 @@
 # File Handoff: `apps/web/src/features/admin/campaigns/CampaignsPage.tsx`
 
-**Status:** IMPLEMENTED
+**Status:** TESTED
 **Primary owner:** Frontend
 **File purpose:** Campaigns and targets UI
 
@@ -30,8 +30,23 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Campaign create/edit/status and target management with date and kg validation plus conversion previews.
+Campaign create/edit with status filter and assignment/target planning in kg, including date validation and advisory stock warnings. Assignments do not reserve stock; allocation and delivery submission are where balances are enforced. There is no campaign search.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+### Campaign-scoped sites (2026-10-25)
 
-**Unresolved issues:** None known.
+The campaign create dialog accepts optional site names, one per line; names are trimmed, case-insensitively de-duplicated and sent as `sites` for transactional campaign creation. After a save the new campaign is selected. The selected campaign shows a **Sites for this campaign** panel with:
+
+- the campaign's active sites, each showing whether a reference location exists;
+- a name-only add form (`name` + `campaign_id`, no coordinates);
+- an optional location dialog that PATCHes latitude/longitude with numeric range checks and explains that coordinates are optional map context only; existing submissions are not recalculated;
+- assignment site options restricted to the selected campaign, showing names only (the generated site code remains internal).
+
+The standalone Sites page and sidebar link were removed; `/sites` redirects to `/campaigns`. The assigned site selector resets when the selected campaign changes. Site mutations invalidate site and overview queries; location changes also invalidate map sites. After a save, the status filter is cleared so the selected campaign/site panel remains visible; campaign and location dialogs reset stale mutation errors when reopened, and switching campaigns clears site/assignment errors.
+
+**Verification (2026-10-25):** `npm test` → 37 passed across 6 files, including three new `CampaignsPage` tests (campaign-dialog names, name-only add, optional location later); `npm run typecheck`, `npm run lint` and `npm run build` pass. `make test-e2e` → 8 passed.
+
+**Unresolved issues:** Clearing a site location is supported by the API but not exposed in this UI. No map picker; coordinates are entered manually.
+
+## Location-warning removal (2026-10-25)
+
+The optional-location dialog no longer promises distance/geofence checks. Coordinates are map context only; a name-only site remains valid and assignable. Verification: `npm test` → 37 passed across 6 files; typecheck/lint/build pass.

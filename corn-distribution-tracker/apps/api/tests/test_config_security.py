@@ -74,6 +74,12 @@ def test_secure_production_config_loads():
     assert "ok" in result.stdout
 
 
+def test_raw_upload_limit_covers_configured_evidence_cap():
+    from django.conf import settings
+
+    assert settings.DATA_UPLOAD_MAX_MEMORY_SIZE > settings.MAX_EVIDENCE_UPLOAD_BYTES
+
+
 def test_development_allows_local_defaults():
     env = os.environ.copy()
     for name in list(env):

@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Mounts the React root in StrictMode with app providers and the data router; imports global styles.
+Mounts the React root in StrictMode with app providers and the data router; imports MapLibre's stylesheet before global styles, then the global stylesheet.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-25):** `npx tsc -b --noEmit`, `npx eslint src --max-warnings=0`, `npm test` → 34 passed (5 files) and `npm run build` passed.
 
 **Unresolved issues:** None known.

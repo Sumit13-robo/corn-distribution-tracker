@@ -5,7 +5,7 @@
 **File purpose:** Reusable accessible table
 
 ## Responsibility
-Support typed columns, pagination, loading/empty/error states, responsive fallback and row actions with accessible names. Do not implement local filtering that bypasses server scope.
+Support typed columns, client-side sorting within the loaded page, loading/empty/error states, responsive card fallback and row actions with accessible names. Do not implement local filtering that bypasses server scope; most screens do not expose pagination controls.
 
 ## Contract and dependencies
 design tokens
@@ -21,7 +21,7 @@ Read the relevant contract in `architecture/` or `design/` before implementing. 
 - Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
 
 ## Acceptance criteria
-- Keyboard, pagination and state tests.
+- Keyboard sorting, responsive fallback and state tests.
 - The file builds and is integrated with its stated dependencies.
 - The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
 
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Accessible sortable table with caption, keyboard sorting, loading/empty handling and an optional row-expansion action column.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

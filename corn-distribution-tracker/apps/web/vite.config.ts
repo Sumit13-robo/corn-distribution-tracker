@@ -9,7 +9,11 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    // Same-origin dev API: keeps the HttpOnly refresh cookie first-party and
+    // Quick tunnels provide the HTTPS origin required by phone browsers for
+    // geolocation. Add other dev hosts explicitly rather than allowing every
+    // Host header.
+    allowedHosts: [".trycloudflare.com"],
+    // Same-origin dev API: keeps the HttpOnly session cookie first-party and
     // matches the relative /api/v1 base used in development.
     proxy: {
       "/api": {

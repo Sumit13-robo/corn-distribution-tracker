@@ -1,9 +1,9 @@
 # Release Checklist
 
 > **Status:** This is the operator checklist for a real staging/production deployment, not a claim that one has
-> happened. Repository-level tests, lint/type checks, build, migrations and a synthetic local restore drill are
-> recorded in the README; Docker runtime verification and all environment/operator items below remain to be completed
-> on the target platform. See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) for the database/evidence procedure.
+> happened. Repository-level tests, lint/type checks, build, migrations, native local smoke and a synthetic local
+> restore drill are recorded in the README; all environment/operator items below remain to be completed on the
+> target platform. See [`BACKUP_RESTORE.md`](BACKUP_RESTORE.md) for the database/evidence procedure.
 
 ## Before deployment
 - [ ] Review PRs and file handoff completion; no critical TODOs or hardcoded credentials.
@@ -11,7 +11,7 @@
 - [ ] Format, lint, type check, backend/frontend tests and production builds pass.
 - [ ] Security/authorization tests include changing IDs and calling restricted endpoints directly.
 - [ ] Ledger concurrency/idempotency tests pass; balances reconcile after sample lifecycle.
-- [ ] Evidence upload, private view URL expiration, invalid MIME/size rejection and geo flags tested.
+- [ ] Evidence upload, private view URL expiration, invalid MIME/size rejection and non-location evidence-integrity flags tested. Location capture must not gate approval.
 - [ ] Responsive and accessibility smoke checks run on desktop/mobile widths.
 - [ ] No test seed/demo data enabled in production.
 

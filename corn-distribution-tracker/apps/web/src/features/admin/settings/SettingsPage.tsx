@@ -12,8 +12,10 @@ const DISPLAY_UNITS = ["KG", "QUINTAL", "TONNE", "BAG"] as const;
 
 /**
  * Organization settings (SCREEN_SPECS): timezone, display unit with explicit
- * kg-per-bag, geolocation thresholds and geofence defaults. Every change is
- * audit-logged by the server; the form only edits allowlisted fields.
+ * kg-per-bag, and capture-time drift for photo integrity. Location quality and
+ * geofence thresholds are no longer editable because they do not gate review.
+ * Every change is audit-logged by the server; the form only edits allowlisted
+ * fields.
  */
 export function SettingsPage() {
   const queryClient = useQueryClient();
@@ -44,15 +46,6 @@ export function SettingsPage() {
         if (form.kg_per_bag !== settings.data?.kg_per_bag) payload.kg_per_bag = form.kg_per_bag;
       } else if (settings.data?.kg_per_bag !== null) {
         payload.kg_per_bag = null;
-      }
-      if (form.default_geofence_radius_m !== settings.data?.default_geofence_radius_m) {
-        payload.default_geofence_radius_m = form.default_geofence_radius_m;
-      }
-      if (form.max_acceptable_gps_accuracy_m !== settings.data?.max_acceptable_gps_accuracy_m) {
-        payload.max_acceptable_gps_accuracy_m = form.max_acceptable_gps_accuracy_m;
-      }
-      if (form.max_location_age_seconds !== settings.data?.max_location_age_seconds) {
-        payload.max_location_age_seconds = form.max_location_age_seconds;
       }
       if (form.max_capture_time_drift_seconds !== settings.data?.max_capture_time_drift_seconds) {
         payload.max_capture_time_drift_seconds = form.max_capture_time_drift_seconds;
@@ -171,67 +164,24 @@ export function SettingsPage() {
           )}
         </FormField>
 
-        <div className="row">
-          <FormField id="settings-geofence" label="Default geofence radius (m)" className="grow" helper="Site-created radius when not overridden (1–100000).">
-            {(ids) => (
-              <input
-                id="settings-geofence"
-                type="number"
-                min={1}
-                max={100000}
-                className="num"
-                value={form.default_geofence_radius_m}
-                aria-describedby={ids.describedBy}
-                onChange={(event) => setForm({ ...form, default_geofence_radius_m: Number(event.target.value) })}
-              />
-            )}
-          </FormField>
-          <FormField id="settings-accuracy" label="Max acceptable GPS accuracy (m)" className="grow" helper="Fixes less accurate than this are flagged (1–5000).">
-            {(ids) => (
-              <input
-                id="settings-accuracy"
-                type="number"
-                min={1}
-                max={5000}
-                className="num"
-                value={form.max_acceptable_gps_accuracy_m}
-                aria-describedby={ids.describedBy}
-                onChange={(event) => setForm({ ...form, max_acceptable_gps_accuracy_m: Number(event.target.value) })}
-              />
-            )}
-          </FormField>
-        </div>
-
-        <div className="row">
-          <FormField id="settings-age" label="Max location age (s)" className="grow" helper="Older fixes flag the record (1–86400).">
-            {(ids) => (
-              <input
-                id="settings-age"
-                type="number"
-                min={1}
-                max={86400}
-                className="num"
-                value={form.max_location_age_seconds}
-                aria-describedby={ids.describedBy}
-                onChange={(event) => setForm({ ...form, max_location_age_seconds: Number(event.target.value) })}
-              />
-            )}
-          </FormField>
-          <FormField id="settings-drift" label="Max capture-time drift (s)" className="grow" helper="EXIF vs. submission time drift tolerance (1–86400).">
-            {(ids) => (
-              <input
-                id="settings-drift"
-                type="number"
-                min={1}
-                max={86400}
-                className="num"
-                value={form.max_capture_time_drift_seconds}
-                aria-describedby={ids.describedBy}
-                onChange={(event) => setForm({ ...form, max_capture_time_drift_seconds: Number(event.target.value) })}
-              />
-            )}
-          </FormField>
-        </div>
+        <FormField
+          id="settings-drift"
+          label="Max capture-time drift (s)"
+          helper="EXIF vs. submission time drift tolerance for evidence-integrity checks (1–86400)."
+        >
+          {(ids) => (
+            <input
+              id="settings-drift"
+              type="number"
+              min={1}
+              max={86400}
+              className="num"
+              value={form.max_capture_time_drift_seconds}
+              aria-describedby={ids.describedBy}
+              onChange={(event) => setForm({ ...form, max_capture_time_drift_seconds: Number(event.target.value) })}
+            />
+          )}
+        </FormField>
 
         <div className="form-actions">
           <button type="submit" className="btn" disabled={save.isPending}>

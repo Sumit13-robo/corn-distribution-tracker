@@ -85,6 +85,56 @@ def test_map_sites_status_and_bbox(org_factory):
     assert bad.status_code == 422
 
 
+def test_map_deliveries_only_returns_captured_delivery_points(org_factory):
+    org = org_factory()
+    located = submit(org, quantity="12", key="mapd-located")
+    submit(org, quantity="13", key="mapd-no-location", include_location=False)
+
+    response = org["admin_client"].get("/api/v1/analytics/map-deliveries")
+    assert response.status_code == 200
+    rows = response.json()
+    assert [row["id"] for row in rows] == [located["id"]]
+    row = rows[0]
+    assert row["site_code"] == "ND-01"
+    assert row["site_name"] == "North Depot"
+    assert row["distributor_name"] == "Field Distributor"
+    assert row["campaign_id"] is None
+    assert row["status"] == "SUBMITTED"
+    assert row["quantity_kg"] == "12.000"
+    assert row["location_latitude"] == "12.551900"
+    assert row["location_longitude"] == "15.100100"
+    assert row["location_accuracy_m"] == "8.00"
+
+    assert org["dist_client"].get("/api/v1/analytics/map-deliveries").status_code == 403
+    empty = org["admin_client"].get("/api/v1/analytics/map-deliveries?bbox=0,0,1,1")
+    assert empty.status_code == 200 and empty.json() == []
+    bad = org["admin_client"].get("/api/v1/analytics/map-deliveries?bbox=1,1,0,0")
+    assert bad.status_code == 422
+
+    approved = json_request(
+        org["admin_client"],
+        "post",
+        f"/api/v1/deliveries/{located['id']}/approve",
+        {},
+        HTTP_IDEMPOTENCY_KEY="mapd-approve",
+    )
+    assert approved.status_code == 200, approved.content
+    rows = org["admin_client"].get("/api/v1/analytics/map-deliveries").json()
+    assert len(rows) == 1 and rows[0]["status"] == "APPROVED"
+
+    rejected = submit(org, quantity="14", key="mapd-rejected")
+    reject_response = json_request(
+        org["admin_client"],
+        "post",
+        f"/api/v1/deliveries/{rejected['id']}/reject",
+        {"reason": "Rejected test claim"},
+        HTTP_IDEMPOTENCY_KEY="mapd-reject",
+    )
+    assert reject_response.status_code == 200, reject_response.content
+    rows = org["admin_client"].get("/api/v1/analytics/map-deliveries").json()
+    assert [row["id"] for row in rows] == [located["id"]]
+
+
 def test_csv_export_formula_escaping_audit_and_offset(org_factory):
     org = org_factory()
     DistributionSite.objects.filter(site_code="ND-01").update(

@@ -63,6 +63,18 @@ def site_analytics(request):
 
 @api_view(["GET"])
 @permission_classes([IsAdminRole])
+def map_deliveries(request):
+    bbox = parse_bbox(request.query_params.get("bbox"))
+    rows = analytics_service.map_deliveries(
+        bbox=bbox,
+        campaign_id=query_uuid(request, "campaign_id"),
+        distributor_user_id=query_uuid(request, "distributor_user_id"),
+    )
+    return json_response(rows)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminRole])
 def map_sites(request):
     bbox = parse_bbox(request.query_params.get("bbox"))
     rows = analytics_service.map_sites(

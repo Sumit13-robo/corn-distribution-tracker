@@ -467,9 +467,6 @@ function friendlyApiError(error: ApiError): string {
       return `The server rejected this draft: ${error.message}`;
     case "INSUFFICIENT_STOCK":
       return "Stock became insufficient on the server since this draft was saved. Review the quantity and resubmit.";
-    case "GEO_VALIDATION":
-    case "LOCATION_EXCEPTION":
-      return "Location validation failed on the server. The draft is kept for retry with review.";
     default:
       return `Server error (${error.code}): ${error.message}`;
   }

@@ -10,8 +10,8 @@ Distributor assignment endpoints. It participates in the Django/DRF request → 
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known. Native PostgreSQL + Django + Vite workflow verified.

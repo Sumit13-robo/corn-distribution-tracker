@@ -178,7 +178,7 @@ def test_distributor_cannot_approve_own_delivery(org_factory):
     assert response.status_code == 403
 
 
-def test_outside_geofence_requires_exception_reason(org_factory):
+def test_any_recorded_location_can_be_approved_without_an_exception(org_factory):
     org = org_factory()
     evidence = upload_png(org["dist_client"])
     submit = submit_delivery(
@@ -192,26 +192,18 @@ def test_outside_geofence_requires_exception_reason(org_factory):
     )
     assert submit.status_code == 201, submit.content
     record = submit.json()
-    assert "OUTSIDE_GEOFENCE" in record["geo_flags"]
-    declined = json_request(
+    assert record["geo_flags"] == []
+    assert record["geo_status"] == "PASS"
+    approved = json_request(
         org["admin_client"],
         "post",
         f"/api/v1/deliveries/{record['id']}/approve",
         {},
         HTTP_IDEMPOTENCY_KEY="outside-review-1",
     )
-    assert declined.status_code == 409
-    assert declined.json()["error"]["code"] == "REASON_REQUIRED"
-    approved = json_request(
-        org["admin_client"],
-        "post",
-        f"/api/v1/deliveries/{record['id']}/approve",
-        {"exception_reason": "Site coordinates verified by district officer."},
-        HTTP_IDEMPOTENCY_KEY="outside-review-2",
-    )
     assert approved.status_code == 200, approved.content
     assert approved.json()["status"] == "APPROVED"
-    assert approved.json()["review_exception_reason"]
+    assert approved.json()["review_exception_reason"] is None
 
 
 def test_approved_record_posts_stock_and_cannot_be_cancelled(org_factory):

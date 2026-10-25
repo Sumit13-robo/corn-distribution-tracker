@@ -36,6 +36,13 @@ export function useDeviceLocation(): UseDeviceLocationResult {
   const [message, setMessage] = useState<string | null>(null);
 
   const request = useCallback(() => {
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
+      setStatus("UNAVAILABLE");
+      setMessage(
+        "Location needs HTTPS. This page is open over insecure HTTP, so the browser blocks location. Open the secure HTTPS link and try again.",
+      );
+      return;
+    }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setStatus("UNAVAILABLE");
       setMessage("This device or browser cannot report a location. Submit with the location marked unavailable.");
@@ -62,7 +69,7 @@ export function useDeviceLocation(): UseDeviceLocationResult {
           case error.PERMISSION_DENIED:
             setStatus("DENIED");
             setMessage(
-              "Location permission was denied. The submission will be stored without coordinates and reviewed accordingly.",
+              "Location permission was denied. You can still submit; coordinates will be omitted.",
             );
             break;
           case error.POSITION_UNAVAILABLE:

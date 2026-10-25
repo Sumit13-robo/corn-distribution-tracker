@@ -1,6 +1,6 @@
 # File Handoff: `apps/web/src/features/distributor/evidence/useDeviceLocation.ts`
 
-**Status:** IMPLEMENTED
+**Status:** TESTED
 **Primary owner:** Frontend
 **File purpose:** Geolocation hook
 
@@ -30,8 +30,12 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Geolocation request capturing coordinates, accuracy and fix timestamp with explicit failure states; returns a snapshot for the submission payload or null. Coordinates are rounded to six decimal places before display/draft persistence to match the API/serializer and PostgreSQL schema (previously seven places caused a server-side 422).
+Geolocation request capturing coordinates, accuracy and fix timestamp with explicit failure states; returns a snapshot for the submission payload or null. Coordinates are rounded to six decimal places before display/draft persistence to match the API/serializer and PostgreSQL schema (previously seven places caused a server-side 422). The hook checks `window.isSecureContext === false` before calling the API and returns a specific HTTPS-required message; this prevents a misleading permission-denied message on HTTP LAN development URLs. Real-browser HTTPS capture was verified with a mocked Delhi fix.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files, including the six-decimal location persistence test); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; browser E2E submitted and approved a 25 kg record with the six-decimal fix.
+**Verification (2026-10-25):** `cd apps/web && npm test` → 34 passed (5 files), including the six-decimal persistence test and the insecure-origin guidance test; `npx tsc -b --noEmit` and `npx eslint src --max-warnings=0` passed; `npm run build` passed. An HTTPS quick-tunnel smoke captured `28.613900, 77.209000 ±12.0 m` with no permission error.
 
-**Unresolved issues:** None known.
+**Unresolved issues:** Browser geolocation still depends on a secure context and OS-level location permission. An HTTP LAN URL is not sufficient, regardless of the site permission setting.
+
+## Location policy update (2026-10-25)
+
+The hook still returns accuracy/timestamp and distinguishes denial, timeout, insecure origin and unsupported states, but no caller treats those states as approval blockers or location warnings. Capture remains optional. Verification: `npm test` → 37 passed; typecheck/lint/build pass.

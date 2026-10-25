@@ -32,7 +32,7 @@ For every transfer, debit/source and credit/destination are represented by one m
 Database stores kg. Conversions: 1 quintal = 100 kg; 1 metric tonne = 1000 kg. Bag conversion = configured `kg_per_bag` value for the selected campaign/organization; display the configured conversion near the field and report. Convert input to kg in a decimal-safe service. Define and test rounding/precision for UI display; never round stored data before ledger posting.
 
 ## Corrections and idempotency
-- Each mutating request accepts an idempotency key; persist it under a unique constraint and return the original result on retry.
+- Each stock-posting mutation (receipt, allocation, adjustment and delivery approval) accepts an idempotency key; persist it under a unique constraint and return the original result on retry. Reject/cancel actions are state transitions, not stock postings, and do not require a key.
 - A posted movement has a unique relationship to its business source (e.g., one movement per approved distribution record).
 - Duplicate approval calls return the current approved record and do not post another movement.
 - If an approved delivery was incorrect, the admin uses a reversal/adjustment flow with reason. The historical delivery/evidence remains visible.

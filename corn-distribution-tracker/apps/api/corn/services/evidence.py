@@ -220,9 +220,9 @@ def attach_intents_to_record(
                     record.location_latitude,
                     record.location_longitude,
                 )
+                # Keep the comparison for audit context, but never emit a
+                # location warning: approval is allowed from any recorded place.
                 metadata_check["exif_vs_reported_m"] = round(distance, 1)
-                if distance > 1000:
-                    flags.append(GeoFlag.EXIF_GPS_MISMATCH.value)
             if exif.get("taken_at") and record.submitted_at:
                 drift = abs((exif["taken_at"] - record.submitted_at).total_seconds())
                 metadata_check["capture_time_drift_s"] = drift

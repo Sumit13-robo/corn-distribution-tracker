@@ -46,7 +46,6 @@ const ADMIN_NAV: NavGroup[] = [
     label: "Plan",
     items: [
       { to: "/campaigns", label: "Campaigns", icon: "campaigns", guard: "campaigns.write" },
-      { to: "/sites", label: "Sites", icon: "sites", guard: "sites.write" },
       { to: "/distributors", label: "Distributors", icon: "distributors", guard: "distributors.read" },
     ],
   },

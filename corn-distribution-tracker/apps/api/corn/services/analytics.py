@@ -20,17 +20,12 @@ from ..models import (
 )
 from .inventory import posted_balance_kg, reserved_kg
 
+# Location metadata is informational; only non-location evidence integrity
+# checks count as flagged.
 _CRITICAL_EVIDENCE_FLAGS = {
     "UNEXPECTED_FILE_TYPE",
     "CAPTURE_TIME_MISMATCH",
-    "EXIF_GPS_MISMATCH",
     "DUPLICATE_IMAGE_HASH",
-}
-_GEO_CRITICAL_FLAGS = {
-    "GPS_MISSING",
-    "GPS_STALE",
-    "GPS_LOW_ACCURACY",
-    "OUTSIDE_GEOFENCE",
 }
 ZERO = Decimal("0")
 
@@ -102,18 +97,17 @@ def overview(
     approved_records = [record for record in records if record.status == RecordStatus.APPROVED]
     approved_ids = [record.id for record in approved_records]
     evidence_counts: dict[uuid.UUID, int] = {}
-    flagged_record_ids: set[uuid.UUID] = set()
+    flagged_record_ids: set[uuid.UUID] = {
+        record.id
+        for record in records
+        if set(record.geo_flags or []) & _CRITICAL_EVIDENCE_FLAGS
+    }
     if approved_ids:
         for evidence in PhotoEvidence.objects.filter(distribution_record_id__in=approved_ids):
             owner_id = evidence.distribution_record_id
             if owner_id is None:
                 continue
             evidence_counts[owner_id] = evidence_counts.get(owner_id, 0) + 1
-            if set(evidence.validation_flags or []) & _CRITICAL_EVIDENCE_FLAGS:
-                flagged_record_ids.add(owner_id)
-    flagged_geo_count = sum(
-        1 for record in records if set(record.geo_flags or []) & _GEO_CRITICAL_FLAGS
-    )
     with_evidence = sum(1 for record in approved_records if evidence_counts.get(record.id, 0) > 0)
 
     return {
@@ -131,7 +125,7 @@ def overview(
             "approved_total": len(approved_records),
             "ratio": (with_evidence / len(approved_records)) if approved_records else None,
         },
-        "flagged_record_count": len(flagged_record_ids) + flagged_geo_count,
+        "flagged_record_count": len(flagged_record_ids),
         "unit": "kg",
     }
 
@@ -192,7 +186,7 @@ def distributor_performance(
             ZERO,
         )
         flagged = sum(
-            1 for record in records if set(record.geo_flags or []) & _GEO_CRITICAL_FLAGS
+            1 for record in records if set(record.geo_flags or []) & _CRITICAL_EVIDENCE_FLAGS
         )
         exceptions = sum(
             1
@@ -229,7 +223,10 @@ def site_performance(
     *, campaign_id: uuid.UUID | None, from_ts: datetime | None, to_ts: datetime | None
 ) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for site in DistributionSite.objects.order_by("site_code"):
+    sites = DistributionSite.objects.order_by("site_code")
+    if campaign_id:
+        sites = sites.filter(campaign_id=campaign_id)
+    for site in sites:
         records = list(
             _records_query(scope_user=None, campaign_id=campaign_id, from_ts=from_ts, to_ts=to_ts).filter(
                 site=site
@@ -285,13 +282,72 @@ def site_performance(
     return out
 
 
+def map_deliveries(
+    *,
+    bbox: tuple[float, float, float, float] | None,
+    campaign_id: uuid.UUID | None,
+    distributor_user_id: uuid.UUID | None,
+) -> list[dict[str, Any]]:
+    """Delivery points with a captured distributor location.
+
+    The admin map intentionally plots where a distributor recorded a delivery,
+    not the site's reference coordinates and not sites that have no delivery.
+    A submitted record is a delivery claim awaiting review; an approved record
+    is verified delivery history. Rejected/cancelled claims are excluded.
+    """
+    records = (
+        DistributionRecord.objects.filter(
+            status__in=[RecordStatus.SUBMITTED, RecordStatus.APPROVED],
+            location_latitude__isnull=False,
+            location_longitude__isnull=False,
+        )
+        .select_related("site", "distributor_user")
+        .order_by("-submitted_at")
+    )
+    if campaign_id:
+        records = records.filter(campaign_id=campaign_id)
+    if distributor_user_id:
+        records = records.filter(distributor_user_id=distributor_user_id)
+    if bbox is not None:
+        min_lng, min_lat, max_lng, max_lat = bbox
+        records = records.filter(
+            location_latitude__gte=Decimal(str(min_lat)),
+            location_latitude__lte=Decimal(str(max_lat)),
+            location_longitude__gte=Decimal(str(min_lng)),
+            location_longitude__lte=Decimal(str(max_lng)),
+        )
+    return [
+        {
+            "id": record.id,
+            "site_id": record.site_id,
+            "site_code": record.site.site_code,
+            "site_name": record.site.name,
+            "campaign_id": record.campaign_id,
+            "distributor_user_id": record.distributor_user_id,
+            "distributor_name": record.distributor_user.display_name,
+            "quantity_kg": record.quantity_kg,
+            "status": record.status,
+            "submitted_at": record.submitted_at,
+            "location_latitude": record.location_latitude,
+            "location_longitude": record.location_longitude,
+            "location_accuracy_m": record.location_accuracy_m,
+            "location_timestamp": record.location_timestamp,
+        }
+        for record in records
+    ]
+
+
 def map_sites(
     *,
     bbox: tuple[float, float, float, float] | None,
     campaign_id: uuid.UUID | None,
     distributor_user_id: uuid.UUID | None,
 ) -> list[dict[str, Any]]:
-    sites = DistributionSite.objects.order_by("site_code")
+    sites = DistributionSite.objects.filter(
+        latitude__isnull=False, longitude__isnull=False
+    ).order_by("site_code")
+    if campaign_id:
+        sites = sites.filter(campaign_id=campaign_id)
     if bbox is not None:
         min_lng, min_lat, max_lng, max_lat = bbox
         sites = sites.filter(
@@ -334,7 +390,9 @@ def map_sites(
         else:
             status = "NO_ACTIVITY"
         last_visit = max((record.submitted_at for record in record_list), default=None)
-        flagged = any(set(record.geo_flags or []) & _GEO_CRITICAL_FLAGS for record in record_list)
+        flagged = any(
+            set(record.geo_flags or []) & _CRITICAL_EVIDENCE_FLAGS for record in record_list
+        )
         out.append(
             {
                 "id": site.id,

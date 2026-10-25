@@ -32,6 +32,10 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 User-scoped localStorage drafts (`corn-tracker:drafts:v1:{userId}`) with persisted idempotency keys, LOCAL_DRAFT→QUEUED→UPLOADING→SUBMITTED transitions, IndexedDB photo store with memory fallback, requeue/retry/remove, submitted cleanup and cross-tab change notifications.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Location-warning removal (2026-10-25)
+
+Obsolete `GEO_VALIDATION`/`LOCATION_EXCEPTION` error mapping was removed; queued drafts no longer surface location-threshold text. Draft/idempotency/photo persistence behavior is unchanged. Verification: `npm test` → 37 passed.

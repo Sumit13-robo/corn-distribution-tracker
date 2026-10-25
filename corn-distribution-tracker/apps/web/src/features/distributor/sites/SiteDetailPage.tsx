@@ -6,7 +6,7 @@ import { EmptyState } from "../../../components/common/EmptyState";
 import { ErrorState } from "../../../components/common/ErrorState";
 import { StatCard } from "../../../components/common/StatCard";
 import { StatusBadge } from "../../../components/common/StatusBadge";
-import { formatDistance, formatDateTime, formatKg } from "../../../lib/format";
+import { formatDateTime, formatKg } from "../../../lib/format";
 
 /**
  * Site detail for the signed-in distributor (SCREEN_SPECS): site address and
@@ -68,7 +68,6 @@ export function SiteDetailPage() {
           <SiteLocationPanel
             latitude={site.data.latitude}
             longitude={site.data.longitude}
-            geofenceRadius={site.data.geofence_radius_m}
           />
         </div>
       ) : site.isLoading ? (
@@ -107,8 +106,11 @@ export function SiteDetailPage() {
               <li key={record.id} className="row">
                 <StatusBadge status={record.status} />
                 <span className="num">{formatKg(record.quantity_kg)} kg</span>
-                <StatusBadge status={record.geo_status} />
-                <span className="muted">{formatDistance(record.distance_to_site_m)} from pin</span>
+                <span className="muted">
+                  {record.location_latitude != null && record.location_longitude != null
+                    ? "location captured"
+                    : "no location"}
+                </span>
                 {record.review_reason ? <span className="muted">review: {record.review_reason}</span> : null}
                 <span className="grow" />
                 <span className="muted small">{formatDateTime(record.submitted_at)}</span>
@@ -125,33 +127,39 @@ export function SiteDetailPage() {
 }
 
 /**
- * Honest expected-pin board: shows the site's canonical coordinates and the
- * server-configured geofence; click only opens the coordinate itself in list
- * form. No tile service is required and none is faked.
+ * Site reference point, when one exists. It is shown for context only; the
+ * captured device fix is stored separately and approval is allowed from any
+ * recorded location. No tile service is required and none is faked.
  */
 function SiteLocationPanel({
   latitude,
   longitude,
-  geofenceRadius,
 }: {
-  latitude: string;
-  longitude: string;
-  geofenceRadius: number;
+  latitude: string | null;
+  longitude: string | null;
 }) {
+  if (latitude === null || longitude === null) {
+    return (
+      <div>
+        <h2>Site location</h2>
+        <p className="notice" role="status">
+          No site reference location has been set. Your device fix is still captured and stored with each submission.
+        </p>
+      </div>
+    );
+  }
   return (
     <div>
-      <h2>Expected location</h2>
+      <h2>Site location</h2>
       <dl className="dl-grid">
         <dt>Coordinates</dt>
         <dd className="num">{latitude}, {longitude}</dd>
-        <dt>Geofence radius</dt>
-        <dd className="num">{formatDistance(geofenceRadius)}</dd>
         <dt>Coordinate reference</dt>
         <dd>WGS 84 decimal degrees (server-stored canonical values)</dd>
       </dl>
       <p className="muted small">
-        Submissions are compared to this pin server-side using geodesic distance; the reported distance and fix quality
-        are recorded, not treated as proof against spoofing.
+        This reference point is for context only. The captured device fix is stored with each submission and is not
+        proof against spoofing.
       </p>
     </div>
   );

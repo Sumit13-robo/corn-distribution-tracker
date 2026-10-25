@@ -10,7 +10,7 @@ Module-level session state (`loading|authenticated|signed-out|error`), login, lo
 
 ## Verification
 
-Web suite 18 passed, Playwright session/reload test passed, 360 px audit clean.
+Web suite 23 passed, Playwright session/reload test passed, 360 px audit clean.
 
 ## Unresolved issues
 

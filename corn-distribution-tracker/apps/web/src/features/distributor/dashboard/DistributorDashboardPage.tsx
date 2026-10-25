@@ -153,8 +153,8 @@ export function DistributorDashboardPage() {
 
       {overview.data && overview.data.flagged_record_count > 0 ? (
         <div className="notice warning" role="status">
-          {overview.data.flagged_record_count} of your records carry validation flags that reviewers are working
-          through. Re-check photo/location guidance before the next submission.
+          {overview.data.flagged_record_count} of your records carry evidence-integrity flags that reviewers are
+          working through. Re-check photo and capture-time guidance before the next submission.
         </div>
       ) : null}
     </div>

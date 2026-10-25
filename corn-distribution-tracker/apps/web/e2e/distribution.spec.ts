@@ -10,8 +10,9 @@ import { credentials } from "./support/credentials";
  *   1. session-cookie restore + role guard,
  *   2. photo/geo delivery submission,
  *   3. reviewer approval that posts the stock movement,
- *   4. distributor sees the approved record,
- *   5. offline draft honestly QUEUED, then synced on reconnect.
+ *   4. admin delivery map shows the approved location (not sites),
+ *   5. distributor sees the approved record,
+ *   6. offline draft honestly QUEUED, then synced on reconnect.
  *
  * Tests are serial because they form one business workflow and share one
  * isolated database.
@@ -146,6 +147,28 @@ test("admin reviews evidence and approves, posting the stock movement", async ({
     "Approved — the stock movement was posted on the server.",
   );
   await expect(page.getByText("Queue is clear.")).toBeVisible();
+});
+
+test("admin map plots the approved delivery location, not a site list", async ({ page }) => {
+  await signIn(page, "admin");
+  await page.goto("/map");
+  await expect(page.getByRole("heading", { name: "Distribution map" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delivery locations" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sites in scope" })).toHaveCount(0);
+
+  const delivery = page.locator('[data-testid^="delivery-list-item-"]').first();
+  await expect(delivery).toContainText("E2E Distributor");
+  await expect(delivery).toContainText("25");
+  await expect(delivery).toContainText("Approved");
+  await expect(page.locator(".map-pin")).toHaveCount(1);
+
+  await delivery.click();
+  const drawer = page.getByTestId("delivery-drawer");
+  await expect(drawer).toContainText("4.851000, 31.582000");
+  await expect(drawer.getByRole("link", { name: "Open evidence review" })).toHaveAttribute(
+    "href",
+    /\/evidence\?record_id=/,
+  );
 });
 
 test("distributor sees the approved record and its ledger movement", async ({ page }) => {

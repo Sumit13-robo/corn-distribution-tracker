@@ -2,16 +2,19 @@
 
 **Status:** TESTED
 **Primary owner:** Backend
-**File purpose:** Geodesic distance, EXIF extraction and advisory geo-flag calculations
+**File purpose:** Geodesic distance and captured-location metadata; no location warnings or approval gate
 
 ## Current implementation
 
-Geodesic distance, EXIF extraction and advisory geo-flag calculations. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
+- `validate_coordinates` rejects latitude/longitude outside WGS84 ranges.
+- `geodesic_distance_m` uses Vincenty inverse on WGS84 with a haversine fallback for non-convergent/antipodal pairs.
+- `evaluate_geo` accepts legacy thresholds but deliberately does not evaluate them. It returns `distance_m` only when both a device fix and a site reference exist, an empty `flags` list and `geo_status` `PASS` (fix) or `UNAVAILABLE` (no fix).
+- No `GPS_MISSING`, `GPS_STALE`, `GPS_LOW_ACCURACY`, `OUTSIDE_GEOFENCE` or `EXIF_GPS_MISMATCH` is generated. Location never blocks approval or requires an exception.
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+`make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. `test_geotag_validation` covers missing, stale, inaccurate and far-away fixes, including direct `evaluate_geo` and submission-level approval without a location exception.
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known. Historical location flags remain readable in stored JSON but are not produced or displayed as warnings.

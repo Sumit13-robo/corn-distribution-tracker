@@ -20,6 +20,11 @@ from ..services import campaigns as site_service
 from .helpers import pagination, require_admin, response_ctx
 
 ZERO = Decimal("0")
+INTEGRITY_FLAGS = {
+    "UNEXPECTED_FILE_TYPE",
+    "CAPTURE_TIME_MISMATCH",
+    "DUPLICATE_IMAGE_HASH",
+}
 
 
 def _parse_bool(raw: str | None, field: str) -> bool | None:
@@ -92,8 +97,6 @@ def _update_site(request, site_id: uuid.UUID):
     for required_field in (
         "name",
         "site_code",
-        "latitude",
-        "longitude",
         "geofence_radius_m",
         "is_active",
     ):
@@ -151,7 +154,7 @@ def _site_progress(request, site_id: uuid.UUID):
         "EVIDENCE_PRESENT" if has_evidence else ("NONE" if not records else "EVIDENCE_MISSING")
     )
     last_visit = max((record.submitted_at for record in records), default=None)
-    flagged = any(set(record.geo_flags or []) - {"LOCATION_EXCEPTION"} for record in records)
+    flagged = any(set(record.geo_flags or []) & INTEGRITY_FLAGS for record in records)
     from .helpers import json_response
 
     return json_response(

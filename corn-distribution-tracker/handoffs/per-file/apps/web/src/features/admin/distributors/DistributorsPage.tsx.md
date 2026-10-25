@@ -5,7 +5,7 @@
 **File purpose:** Distributor management
 
 ## Responsibility
-List/search/filter distributors; support invite/deactivate and account/assignment/stock summaries; safe confirm and clear invitation state.
+List/search distributors; support invite, rename and deactivate, with account/assignment/stock summaries and clear invitation state. The list does not expose pagination controls or re-invite/reset actions.
 
 ## Contract and dependencies
 users/analytics APIs
@@ -21,7 +21,7 @@ Read the relevant contract in `architecture/` or `design/` before implementing. 
 - Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
 
 ## Acceptance criteria
-- Admin-only, pagination and invite states tested.
+- Admin-only search and invite states checked; no pagination controls.
 - The file builds and is integrated with its stated dependencies.
 - The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
 
@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Distributor and invitation management with email/name validation, deactivation confirmation and open-invite indicators. Raw invitation tokens are intentionally never rendered.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

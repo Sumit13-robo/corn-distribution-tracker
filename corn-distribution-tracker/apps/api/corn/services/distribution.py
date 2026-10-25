@@ -88,7 +88,7 @@ def submit_delivery(
     location_timestamp = device_time = None
     geo_result: dict[str, Any] = {
         "distance_m": None,
-        "flags": [GeoFlag.GPS_MISSING.value],
+        "flags": [],
         "geo_status": GeoStatus.UNAVAILABLE.value,
     }
     if location:
@@ -101,10 +101,6 @@ def submit_delivery(
                 raise AppError("Accuracy cannot be negative.", details=[{"field": "location.accuracy_m"}])
             location_timestamp = location.get("timestamp")
             device_time = location.get("device_time")
-            radius = site.geofence_radius_m or settings_row.default_geofence_radius_m
-            max_accuracy = (
-                site.max_acceptable_accuracy_m or settings_row.max_acceptable_gps_accuracy_m
-            )
             geo_result = evaluate_geo(
                 latitude=latitude,
                 longitude=longitude,
@@ -112,9 +108,6 @@ def submit_delivery(
                 location_timestamp=location_timestamp,
                 site_latitude=site.latitude,
                 site_longitude=site.longitude,
-                geofence_radius_m=radius,
-                max_accuracy_m=max_accuracy,
-                max_age_seconds=settings_row.max_location_age_seconds,
             )
 
     record = DistributionRecord.objects.create(
@@ -194,22 +187,20 @@ def approve_delivery(
     site = DistributionSite.objects.filter(id=record.site_id).first()
     assignment = DistributorAssignment.objects.filter(id=record.assignment_id).first()
     assert site is not None and assignment is not None
+    # Location never blocks approval. Only non-location evidence integrity
+    # checks still require an explicit reviewer override.
     critical_flags = {
-        GeoFlag.OUTSIDE_GEOFENCE.value,
-        GeoFlag.GPS_MISSING.value,
-        GeoFlag.GPS_STALE.value,
-        GeoFlag.GPS_LOW_ACCURACY.value,
-        GeoFlag.EXIF_GPS_MISMATCH.value,
         GeoFlag.CAPTURE_TIME_MISMATCH.value,
         GeoFlag.DUPLICATE_IMAGE_HASH.value,
+        GeoFlag.UNEXPECTED_FILE_TYPE.value,
     }
     evidence_rows = PhotoEvidence.objects.filter(distribution_record=record)
-    flagged: set[str] = set(record.geo_flags or [])
+    flagged: set[str] = set()
     for item in evidence_rows:
         flagged.update(item.validation_flags or [])
     if flagged & critical_flags and not exception_reason:
         raise ConflictError(
-            "This submission has location/evidence warnings; "
+            "This submission has evidence integrity warnings; "
             "an explicit exception reason is required to approve.",
             code="REASON_REQUIRED",
             details=[{"flags": sorted(flagged)}],
@@ -275,8 +266,6 @@ def approve_delivery(
     record.review_reason = review_note
     if exception_reason:
         record.review_exception_reason = exception_reason
-        if GeoFlag.LOCATION_EXCEPTION.value not in (record.geo_flags or []):
-            record.geo_flags = list(record.geo_flags or []) + [GeoFlag.LOCATION_EXCEPTION.value]
     record.save()
     record_audit(
         actor=admin,

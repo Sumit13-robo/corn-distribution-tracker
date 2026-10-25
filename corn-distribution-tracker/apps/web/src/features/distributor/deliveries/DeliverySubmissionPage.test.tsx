@@ -68,6 +68,7 @@ const assignment: DistributorAssignmentItemOut = {
     id: "site-1",
     name: "Central School",
     site_code: "SITE-001",
+    campaign_id: null,
     address_text: "1 Example Road",
     region: "North",
     latitude: "12.3456789",
@@ -246,6 +247,71 @@ describe("DeliverySubmissionPage", () => {
       expect(screen.getByText("12.345679, -1.234568", { exact: false })).toBeInTheDocument();
     } finally {
       delete (window.navigator as unknown as Record<string, unknown>).geolocation;
+    }
+  });
+
+  it("resumes a saved draft fix without warning that location is missing and submits it", async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) =>
+      success({
+        coords: {
+          latitude: 12.3456789,
+          longitude: -1.2345678,
+          accuracy: 8,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition),
+    );
+    Object.defineProperty(window.navigator, "geolocation", {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+    try {
+      const first = renderPage();
+      await waitForDraft();
+      fireEvent.click(screen.getByRole("button", { name: "Capture location" }));
+      await waitFor(() => expect(readDrafts()[0]?.location?.accuracy_m).toBe("8.0"));
+      first.unmount();
+
+      vi.mocked(api.submitDelivery).mockResolvedValue(serverRecord);
+      renderPage();
+      await waitForDraft();
+      expect(await screen.findByText("12.345679, -1.234568", { exact: false })).toBeInTheDocument();
+      expect(screen.queryByText(/Location not captured/i)).toBeNull();
+
+      setQuantity("100");
+      await attachPhoto();
+      fireEvent.click(screen.getByTestId("submit-delivery"));
+      await screen.findByText("Submitted — record accepted by the server.");
+
+      const [payload] = vi.mocked(api.submitDelivery).mock.calls[0] ?? [];
+      expect(payload?.location).toMatchObject({
+        latitude: "12.345679",
+        longitude: "-1.234568",
+        accuracy_m: "8.0",
+      });
+    } finally {
+      delete (window.navigator as unknown as Record<string, unknown>).geolocation;
+    }
+  });
+
+  it("explains that location capture needs HTTPS on an insecure origin", async () => {
+    const secureContext = Object.getOwnPropertyDescriptor(window, "isSecureContext");
+    Object.defineProperty(window, "isSecureContext", { configurable: true, value: false });
+    try {
+      renderPage();
+      await waitForDraft();
+      fireEvent.click(screen.getByRole("button", { name: "Capture location" }));
+      expect(await screen.findByText(/Location needs HTTPS/i)).toBeInTheDocument();
+    } finally {
+      if (secureContext) {
+        Object.defineProperty(window, "isSecureContext", secureContext);
+      } else {
+        delete (window as unknown as Record<string, unknown>).isSecureContext;
+      }
     }
   });
 

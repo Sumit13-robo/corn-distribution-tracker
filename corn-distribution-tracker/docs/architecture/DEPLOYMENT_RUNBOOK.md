@@ -15,9 +15,9 @@ Use isolated development, staging and production environments. Each has a separa
 ## Production startup requirements
 Django reads settings from the environment (and optionally a local `.env` in development). With `APP_ENV=production`, startup fails fast when:
 - `SECRET_KEY` is missing, too short, or still the development sample;
-- `ALLOWED_HOSTS` is empty or contains `*`;
+- `ALLOWED_HOSTS` contains `*` (operators must also set the real hostnames);
 - session/CSRF cookies are not `Secure`, or SameSite=None is combined with insecure cookies;
-- CORS uses a wildcard or includes an invalid origin while credentials are enabled;
+- CORS uses a wildcard while credentials are enabled (operators must verify exact origins);
 - `STORAGE_MODE` is not `s3` or required storage fields are missing.
 
 Set `TRUST_X_FORWARDED_PROTO=true` only behind a trusted proxy that overwrites `X-Forwarded-Proto`; never expose that trust directly to clients. See `ops/ENVIRONMENT_VARIABLES.md` and `.env.example`.

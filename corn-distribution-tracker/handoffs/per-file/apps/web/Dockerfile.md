@@ -1,8 +1,8 @@
 # File Handoff: `apps/web/Dockerfile`
 
-**Status:** IMPLEMENTED
+**Status:** DEFERRED
 **Primary owner:** DevOps / Lead Integrator
-**File purpose:** Web container
+**File purpose:** Optional web container (not part of the supported native workflow).
 
 ## Responsibility
 Build production assets with a multi-stage image and serve them using a minimal static server; set correct fallback routing/security headers via deployment config.
@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-Multi-stage Node 22 build → nginx runtime. VITE_* values are build args (public only); nginx serves the SPA and proxies `/api/` to the API. Healthcheck uses exec-form wget; the unused `VITE_APP_NAME` build arg was removed in favor of a literal document title. Not built here (Docker unavailable); hadolint 2.15.1 is clean.
+Multi-stage Node 22 build → nginx runtime, retained as optional packaging. VITE_* values are build args (public only); nginx serves the SPA and proxies `/api/` to the API. Healthcheck uses exec-form wget. The documented local workflow builds and serves the SPA with Vite instead.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; hadolint clean.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
-**Unresolved issues:** Image/compose build was not executed because Docker is unavailable in this environment.
+**Unresolved issues:** Container build/runtime is deferred and outside the supported native workflow. The committed `nginx.conf` now targets a native same-host Django upstream (`127.0.0.1:8000`); if container packaging is revived, adjust its root/upstream for the container network.

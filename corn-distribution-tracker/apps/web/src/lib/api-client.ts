@@ -29,6 +29,7 @@ import type {
   InventorySummaryOut,
   InvitationCreatedOut,
   LoginOut,
+  MapDeliveryOut,
   MapSiteOut,
   OverviewOut,
   Page,
@@ -408,6 +409,8 @@ export const api = {
     get<DistributorPerfOut[]>("/analytics/distributors", filters),
   sitePerformance: (filters: { campaign_id?: string; from?: string; to?: string } = {}) =>
     get<SitePerfOut[]>("/analytics/sites", filters),
+  mapDeliveries: (filters: { bbox?: string; campaign_id?: string; distributor_user_id?: string } = {}) =>
+    get<MapDeliveryOut[]>("/analytics/map-deliveries", filters),
   mapSites: (filters: { bbox?: string; campaign_id?: string; distributor_user_id?: string } = {}) =>
     get<MapSiteOut[]>("/analytics/map-sites", filters),
 

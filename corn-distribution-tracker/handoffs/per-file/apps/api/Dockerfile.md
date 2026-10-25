@@ -1,17 +1,17 @@
 # File Handoff: `apps/api/Dockerfile`
 
-**Status:** IMPLEMENTED
-**Primary owner:** Backend
-**File purpose:** Gunicorn API container definition
+**Status:** DEFERRED
+**Primary owner:** Backend / DevOps
+**File purpose:** Optional API container definition (not part of the supported native workflow).
 
 ## Current implementation
 
-Gunicorn API container definition. It participates in the Django/DRF request → serializer → service → ORM flow and preserves the contracts in `docs/architecture/API_CONTRACT.md` and the security rules in `docs/architecture/SECURITY_AND_PRIVACY.md`.
+Gunicorn API container definition retained in the repository. The documented local workflow runs Django directly against native PostgreSQL; container startup is not exercised or claimed as verified.
 
 ## Verification
 
-Backend: `make test-api` → 58 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Native path verified separately: `make test-api` → 66 passed; Ruff and mypy clean; migration check no changes; Playwright E2E 8 passed.
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+Container build/runtime is deferred and outside the supported native workflow.

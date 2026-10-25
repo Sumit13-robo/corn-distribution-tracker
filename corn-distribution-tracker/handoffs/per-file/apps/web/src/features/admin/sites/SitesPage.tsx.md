@@ -1,37 +1,24 @@
 # File Handoff: `apps/web/src/features/admin/sites/SitesPage.tsx`
 
-**Status:** IMPLEMENTED
+**Status:** REMOVED
 **Primary owner:** Frontend
-**File purpose:** Site management
+**File purpose:** Removed standalone admin Sites page
 
-## Responsibility
-List/create/edit/deactivate sites, coordinates/map pick, geofence settings and site history; audit location changes through API.
+## Removal (2026-10-25)
 
-## Contract and dependencies
-site API; maps
+The file was deleted. Sites are now campaign-scoped and managed inside `apps/web/src/features/admin/campaigns/CampaignsPage.tsx`:
 
-Read the relevant contract in `architecture/` or `design/` before implementing. Preserve the APIs, enum values, permission rules, quantity semantics and state transitions established in those documents. Do not create a parallel implementation of the same domain rule in another layer.
+- campaign creation accepts optional site names in one transaction;
+- the selected campaign shows a **Sites for this campaign** panel for adding more names;
+- an optional latitude/longitude dialog lets an admin set or edit a site location later;
+- the admin sidebar no longer links to `/sites`, and the SPA `/sites` route redirects to `/campaigns`.
 
-## Implementation requirements
-- Implement the file fully; do not leave placeholder bodies for required behavior.
-- Keep concerns local to this module and expose a narrow, typed interface to dependent modules.
-- Validate untrusted input at the appropriate boundary and return/report useful safe errors.
-- Consider authorization scope, concurrency, duplicate requests, accessibility and recoverable failure states where applicable.
-- Add or update adjacent tests for important success and failure cases.
-- Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
+The API resources `GET/POST /sites`, `PATCH /sites/{id}` and `POST /sites/{id}/deactivate` remain; only the standalone admin screen was removed. The distributor site detail page remains.
 
-## Acceptance criteria
-- Coordinate validation and duplicate code feedback.
-- The file builds and is integrated with its stated dependencies.
-- The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
+## Verification
 
-## Handoff back to integrator
-When done, report: exported interfaces/endpoints; other files changed; test commands and actual results; environment/config requirements; known limitations; and whether the `file_map.md` status should move to `IMPLEMENTED` or `TESTED`. Only mark `TESTED` when tests were actually run and passed.
+`cd apps/web && npm run typecheck`, `npm run lint`, `npm test` (37 passed across 6 files) and `npm run build` pass. `make test-e2e` → 8 passed. `rg` confirms no remaining SPA links to `/sites` except the redirect itself.
 
-## Implementation summary
+## Unresolved issues
 
-Site create/edit with coordinate and geofence validation, activation and links to progress history.
-
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
-
-**Unresolved issues:** None known.
+None known.

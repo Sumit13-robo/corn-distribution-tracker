@@ -10,8 +10,8 @@ Thread-safe, process-local sliding-window limits for login, password reset, invi
 
 ## Verification
 
-Backend: `make test-api` → 60 passed (including 13 successful logins in one window and the 10-failure lockout); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 49 source files; migration check → no changes. Browser verification on 2026-10-23 confirmed the `429` `Retry-After` path renders an actionable message.
+Backend: `make test-api` → 66 passed (including 13 successful logins in one window and the 10-failure lockout); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Browser verification on 2026-10-23 confirmed the `429` `Retry-After` path renders an actionable message.
 
 ## Unresolved issues
 
-None known. Docker image build/runtime remains unverified on this host (no Docker daemon).
+None known. Native PostgreSQL + Django + Vite workflow verified.

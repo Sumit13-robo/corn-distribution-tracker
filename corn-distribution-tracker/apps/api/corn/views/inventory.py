@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from ..auth import IsAdminRole
 from ..enums import DisplayUnit
-from ..errors import AppError, NotFoundError
+from ..errors import NotFoundError, UnprocessableEntityError
 from ..models import StockAccount, StockMovement
 from ..presenters import movement_out, page
 from ..serializers import (
@@ -159,17 +159,23 @@ def reverse_movement(request, movement_id: uuid.UUID):
 def display_unit(request):
     raw_quantity = request.query_params.get("quantity_kg")
     if raw_quantity is None:
-        raise AppError("quantity_kg is required.", details=[{"field": "quantity_kg"}])
+        raise UnprocessableEntityError(
+            "quantity_kg is required.", details=[{"field": "quantity_kg"}]
+        )
     try:
         quantity_kg = Decimal(raw_quantity)
     except (InvalidOperation, ValueError):
-        raise AppError("quantity_kg must be a number.", details=[{"field": "quantity_kg"}]) from None
+        raise UnprocessableEntityError(
+            "quantity_kg must be a number.", details=[{"field": "quantity_kg"}]
+        ) from None
     settings_row = settings_service.get_or_create_settings()
     unit_raw = request.query_params.get("unit") or settings_row.default_display_unit
     try:
         unit = DisplayUnit(unit_raw)
     except ValueError:
-        raise AppError("Unsupported display unit.", details=[{"field": "unit"}]) from None
+        raise UnprocessableEntityError(
+            "Unsupported display unit.", details=[{"field": "unit"}]
+        ) from None
     display_value = kg_to_display(quantity_kg, unit, settings_row.kg_per_bag)
     return json_response(
         {

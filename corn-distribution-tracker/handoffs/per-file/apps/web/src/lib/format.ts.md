@@ -14,6 +14,10 @@ See the relevant contract under `docs/` and the ownership table in `handoffs/fil
 
 Shared formatting helpers for kg/numbers, dates/times, relative age, distances, bytes, class names and enum status labels; used across screens and tested indirectly.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Location display update (2026-10-25)
+
+The distance formatter remains available for optional/legacy context but no delivery, site or review screen renders distance as a warning. Location labels use captured/missing. Verification: `npm test` → 37 passed; typecheck/lint/build pass.

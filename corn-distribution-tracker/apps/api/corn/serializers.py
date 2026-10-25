@@ -66,6 +66,25 @@ class CampaignCreateSerializer(StrictSerializer):
     )
     timezone = serializers.CharField(max_length=64, required=False, allow_blank=False, default="UTC")
     notes = serializers.CharField(max_length=2000, required=False, allow_null=True, allow_blank=True)
+    # Name-only sites can be created together with the campaign. Coordinates
+    # and site codes are optional; the service generates a stable code.
+    sites = serializers.ListField(
+        child=serializers.CharField(max_length=160, allow_blank=False),
+        required=False,
+        default=list,
+        max_length=200,
+    )
+
+    def validate_sites(self, value):
+        unique: list[str] = []
+        seen: set[str] = set()
+        for raw in value:
+            name = raw.strip()
+            key = name.casefold()
+            if name and key not in seen:
+                unique.append(name)
+                seen.add(key)
+        return unique
 
 
 class CampaignPatchSerializer(StrictSerializer):
@@ -81,7 +100,10 @@ class CampaignPatchSerializer(StrictSerializer):
 
 class SiteCreateSerializer(StrictSerializer):
     name = serializers.CharField(min_length=1, max_length=160)
-    site_code = serializers.RegexField(r"^[A-Za-z0-9_-]+$", max_length=40)
+    site_code = serializers.RegexField(
+        r"^[A-Za-z0-9_-]+$", max_length=40, required=False, allow_blank=False
+    )
+    campaign_id = serializers.UUIDField(required=False, allow_null=True)
     address_text = serializers.CharField(
         max_length=500, required=False, allow_null=True, allow_blank=True
     )
@@ -91,9 +113,16 @@ class SiteCreateSerializer(StrictSerializer):
         decimal_places=6,
         min_value=Decimal("-90"),
         max_value=Decimal("90"),
+        required=False,
+        allow_null=True,
     )
     longitude = serializers.DecimalField(
-        max_digits=10, decimal_places=6, min_value=Decimal("-180"), max_value=Decimal("180")
+        max_digits=10,
+        decimal_places=6,
+        min_value=Decimal("-180"),
+        max_value=Decimal("180"),
+        required=False,
+        allow_null=True,
     )
     geofence_radius_m = serializers.IntegerField(
         min_value=1, max_value=100_000, required=False, default=200
@@ -102,6 +131,15 @@ class SiteCreateSerializer(StrictSerializer):
         min_value=1, max_value=5000, required=False, allow_null=True
     )
     notes = serializers.CharField(max_length=2000, required=False, allow_null=True, allow_blank=True)
+
+    def validate(self, attrs):
+        has_lat = attrs.get("latitude") is not None
+        has_lng = attrs.get("longitude") is not None
+        if has_lat != has_lng:
+            raise serializers.ValidationError(
+                "Site location requires both latitude and longitude (or neither)."
+            )
+        return attrs
 
 
 class SitePatchSerializer(StrictSerializer):

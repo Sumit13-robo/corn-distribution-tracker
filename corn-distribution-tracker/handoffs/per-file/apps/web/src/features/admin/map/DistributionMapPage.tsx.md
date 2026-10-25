@@ -1,37 +1,29 @@
 # File Handoff: `apps/web/src/features/admin/map/DistributionMapPage.tsx`
 
-**Status:** IMPLEMENTED
+**Status:** TESTED
 **Primary owner:** Frontend
-**File purpose:** Distribution map
+**File purpose:** Delivery-only admin map
 
-## Responsibility
-Render provider-configured map with clusters, legend, server filters, synchronized result list and site detail drawer. Respect map tile terms and never expose evidence URLs in map payload.
+## Current implementation
+
+The admin map renders only distributor-recorded delivery locations returned by `GET /analytics/map-deliveries`. It plots `SUBMITTED` and `APPROVED` delivery records with a captured fix; rejected/cancelled claims are excluded by the API. Site reference coordinates, sites without deliveries and the admin's current position are not plotted, and the page has no “My location” control.
+
+A campaign filter scopes the query. The synchronized list is keyboard-accessible and shows site code/name, distributor, status, quantity and submitted time. Selecting an entry highlights its marker and opens a drawer with site/distributor, quantity, submitted time, captured coordinates/accuracy, exact OpenStreetMap/Google Maps links and a link to `/evidence?record_id=…`. The MapLibre canvas keeps OpenStreetMap streets plus an Esri satellite switch by default (or `VITE_MAP_STYLE_URL` / tile overrides); if initialization fails, a labelled coordinate board positions the delivery points instead. The empty state explains that markers require a delivery with a captured location.
+
+`MapCanvas` remains shared and supports an optional locate control, but this page does not enable it. The map payload never includes evidence URLs, and server authorization remains authoritative.
 
 ## Contract and dependencies
-map API; design spec
 
-Read the relevant contract in `architecture/` or `design/` before implementing. Preserve the APIs, enum values, permission rules, quantity semantics and state transitions established in those documents. Do not create a parallel implementation of the same domain rule in another layer.
+`docs/architecture/API_CONTRACT.md` (`/analytics/map-deliveries`), `docs/design/UX_SPEC.md`, `docs/design/SCREEN_SPECS.md`, `apps/web/src/lib/api-client.ts`, `apps/web/src/lib/query-client.ts`, `apps/web/src/types/domain.ts`, shared `MapCanvas`.
 
-## Implementation requirements
-- Implement the file fully; do not leave placeholder bodies for required behavior.
-- Keep concerns local to this module and expose a narrow, typed interface to dependent modules.
-- Validate untrusted input at the appropriate boundary and return/report useful safe errors.
-- Consider authorization scope, concurrency, duplicate requests, accessibility and recoverable failure states where applicable.
-- Add or update adjacent tests for important success and failure cases.
-- Do not use production personal data, real credentials, real geotagged images or hardcoded demo metrics.
+## Verification
 
-## Acceptance criteria
-- Filter synchronization and point selection test.
-- The file builds and is integrated with its stated dependencies.
-- The behavior matches the source-of-truth docs and is covered by tests where the behavior is non-trivial.
+`DistributionMapPage.test.tsx` (2 tests) proves the delivery list/map label, absence of the old “Sites in scope” list, drawer/link behavior and the no-delivery empty state. `npm run typecheck`, `npm run lint`, `npm test` (39 passed across 7 files), `npm run build` and `make test-e2e` (8 passed) pass.
 
-## Handoff back to integrator
-When done, report: exported interfaces/endpoints; other files changed; test commands and actual results; environment/config requirements; known limitations; and whether the `file_map.md` status should move to `IMPLEMENTED` or `TESTED`. Only mark `TESTED` when tests were actually run and passed.
+## Unresolved issues
 
-## Implementation summary
+No committed browser test navigates to `/map` or verifies map-tile rendering of the retained Kolhapur point. Public OSM/Esri tiles are development/small-scale defaults; production must use permitted providers. Google Maps is a link-out, not an embedded provider.
 
-MapLibre map when `VITE_MAP_STYLE_URL` is configured; otherwise a labelled coordinate-board fallback with real site data, campaign filter, selection and recent submissions.
+## History
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
-
-**Unresolved issues:** None known.
+The earlier site-status map and pending-location drawer were replaced on 2026-10-25 so the page answers only where a distributor recorded a delivery.

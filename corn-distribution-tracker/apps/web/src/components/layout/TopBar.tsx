@@ -10,7 +10,6 @@ const PATH_LABELS: Record<string, string> = {
   "/map": "Distribution map",
   "/campaigns": "Campaigns",
   "/distributors": "Distributors",
-  "/sites": "Sites",
   "/inventory": "Inventory and ledger",
   "/evidence": "Evidence review",
   "/analytics": "Analytics and exports",

@@ -5,7 +5,7 @@ PIP ?= .venv/bin/pip
 ARGS ?=
 
 .PHONY: help venv api-install web-install e2e-install migrate migrate-check create-admin test-api test-web \
-        test-e2e lint-api lint-web typecheck-api typecheck-web build-web run-api run-web dev-up db-up
+        test-e2e lint-api lint-web typecheck-api typecheck-web build-web run-api run-web health
 
 help:
 	@grep -E '^[a-zA-Z_-]+:' Makefile | sort
@@ -62,8 +62,8 @@ run-api:
 run-web:
 	cd apps/web && npm run dev
 
-db-up:
-	docker compose up -d db
-
-dev-up:
-	docker compose up --build
+health:
+	curl -fsS http://127.0.0.1:8000/health/live
+	@echo
+	curl -fsS http://127.0.0.1:8000/health/ready
+	@echo

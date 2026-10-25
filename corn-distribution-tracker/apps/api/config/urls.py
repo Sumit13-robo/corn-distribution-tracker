@@ -96,6 +96,7 @@ urlpatterns = [
     path(f"{API}/analytics/overview", analytics_views.overview),
     path(f"{API}/analytics/distributors", analytics_views.distributor_analytics),
     path(f"{API}/analytics/sites", analytics_views.site_analytics),
+    path(f"{API}/analytics/map-deliveries", analytics_views.map_deliveries),
     path(f"{API}/analytics/map-sites", analytics_views.map_sites),
     path(f"{API}/exports/distributions.csv", analytics_views.export_distributions_csv),
     # Settings and audit

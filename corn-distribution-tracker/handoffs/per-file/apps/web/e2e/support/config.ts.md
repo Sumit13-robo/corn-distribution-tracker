@@ -13,6 +13,6 @@ Playwright config, global setup, setup and workflow specs.
 ## Implementation summary
 Public test-only values (no passwords) with a default local PostgreSQL URL. Contains a small PNG generated with Pillow (valid signature and decodable by the server) used as synthetic evidence; it carries no personal data or geotags.
 
-**Verification (2026-10-22):** consumed by the passing 7-test E2E run.
+**Verification (2026-10-23):** consumed by the passing 8-test E2E run.
 
 **Unresolved issues:** Defaults assume local PostgreSQL on port 5432; use `E2E_DATABASE_URL` otherwise.

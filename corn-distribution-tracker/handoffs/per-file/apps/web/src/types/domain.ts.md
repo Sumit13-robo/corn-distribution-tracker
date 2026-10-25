@@ -32,6 +32,14 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 TypeScript mirrors of API request/response schemas (decimal strings, enum unions, pagination); shared by all screens and compile-checked against usage.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Campaign-site update (2026-10-25)
+
+`SiteOut` now includes `campaign_id` and nullable `latitude`/`longitude`; `CampaignIn` accepts an optional `sites: string[]`; site filters include `campaign_id`. Verification: `npm run typecheck` and `npm test` (37 passed, 6 files) pass.
+
+## Delivery-map update (2026-10-25)
+
+Added `MapDeliveryOut` for one delivery point: record/site/campaign/distributor ids, site code/name, distributor name, quantity, status, submitted time and captured location fields. `MapSiteOut` remains for the legacy endpoint. Verification: `npm run typecheck`, `npm test` (39 passed) and `npm run build` pass.

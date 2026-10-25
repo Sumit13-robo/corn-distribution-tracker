@@ -8,42 +8,41 @@ Monorepo reference implementation of a corn distribution tracker: a **React 19 +
 
 **Authentication and roles**
 - Email/password login with Argon2id hashing and a database-backed Django session.
-- HttpOnly `sessionid` cookie, CSRF double-submit for unsafe requests, and server-side session revocation on logout/deactivation.
+- HttpOnly `sessionid` cookie, CSRF double-submit for authenticated unsafe requests, and server-side session revocation on logout/deactivation.
 - Per-IP sign-in throttling counts failed attempts only; a `429` shows the server's retry window instead of blaming the password.
 - Invitation, password-reset and password-change flows. Invitation links are shown once to the creating admin; password-reset links are issued by an operator because no mail transport ships.
 - Server-authoritative RBAC (`ADMIN`, `DISTRIBUTOR`); UI guards are supplementary only.
 
 **Admin**
-- Dashboard with KPIs, review queue, distributor performance and recent audit events.
-- Distribution map (MapLibre when a style URL is configured, otherwise a labelled coordinate fallback — no fake tiles or pins). List-first on mobile.
-- Campaigns, targets and assignment planning; distributors/invitations; site management with progress history.
+- Dashboard with KPI cards, delivery progress, review queue, distributor performance and recent audit events.
+- Delivery map (MapLibre with OpenStreetMap streets and an Esri satellite toggle by default, or a configured public style URL; labelled coordinate fallback if the map cannot start). It plots only distributor-recorded locations tied to submitted or approved deliveries — never site reference coordinates, sites without deliveries, rejected/cancelled claims or the admin's current position. Campaign filter, synchronized delivery list, and delivery drawer with OpenStreetMap/Google Maps links and an evidence-review link; list-first on mobile.
+- Campaigns, targets and assignment planning; distributor invitations/management; campaign-scoped sites created by name during setup, with optional location added later.
 - Inventory: receipts, allocations, loss/return adjustments (reason + double confirmation), reversal flow, idempotency keys, append-only ledger view.
-- Evidence review: private thumbnails via short-lived URLs, approve (posts the stock movement server-side), reject, cancel, exception approvals.
+- Evidence review: private images through short-lived signed URLs, a street/satellite map of the distributor-reported fix against the site coordinates, OpenStreetMap/Google Maps links, approve (manual, from any recorded place; posts the stock movement server-side), reject, cancel, and exception approvals only for non-location evidence integrity or an exceeded target.
 - Analytics with server-computed scopes, accessible tables + CSS bars, and an audited CSV export.
 - Organization settings (allowlisted PATCH fields) and append-only audit trail.
 
 **Distributor**
-- Assigned sites with targets/approved/pending/remaining and due dates.
+- Assigned sites with targets/approved/pending/remaining and last-visit context.
 - Delivery submission: camera/file photo evidence (JPEG/PNG/WebP, 10 MB cap), device-fix capture with accuracy metadata, unit selection (kg/quintal/tonne/bag), draft auto-save, and duplicate-submit guard.
 - Drafts & sync screen: `LOCAL_DRAFT → QUEUED → UPLOADING → SUBMITTED` with honest labels, persistent idempotency keys, per-draft retry, sync-all, photo counts, and confirmed discard/removal.
-- Submission history with status, review reason, geo flags and evidence status.
+- Submission history with status, review reason, evidence-integrity flags and evidence status.
 
 **Backend invariants**
 - Quantities are decimals stored as kg; API contract exposes them as strings.
 - Stock movements and audit events are append-only; PostgreSQL triggers reject updates/deletes and corrections use compensating reversals.
 - Idempotency keys are unique per operation; concurrent ledger writes use row locks.
 - Evidence is private (local dev storage or S3-compatible), SHA-256 hashed, and viewed through short-lived signed URLs.
-- Geo metadata (accuracy, age, distance) is recorded and flagged as an indicator — explicitly **not** proof against spoofing.
-- Production startup fails fast on insecure secrets, cookies, CORS/CSRF origins or storage configuration.
+- Location context (coordinates, accuracy, timestamp, optional distance) is recorded but never gates approval. Non-location evidence-integrity flags (duplicate hash, capture-time drift, unexpected file type) are advisory indicators — explicitly **not** proof against spoofing.
+- Production startup fails fast on a sample/short secret, insecure cookies, wildcard CORS with credentials or non-S3/missing storage configuration.
 
 ## Repository layout
 
 ```text
-apps/api            Django/DRF app, migrations, management commands, tests (60 tests)
-apps/web            React SPA, Vitest tests (23 tests), Playwright E2E suite (8 tests)
+apps/api            Django/DRF app, migrations, management commands, tests (66 tests)
+apps/web            React SPA, Vitest tests (37 tests), Playwright E2E suite (8 tests)
 docs/               Product/API/design/offline/ops contracts (source of truth)
 handoffs/           File ownership map + per-file implementation notes
-docker-compose.yml  PostgreSQL 17 + Django/Gunicorn API + nginx-served SPA
 Makefile            Developer commands
 .env.example        Configuration template (copy to .env)
 ```
@@ -51,42 +50,21 @@ Makefile            Developer commands
 ## Prerequisites
 
 - Node.js 22+ and npm.
-- Python 3.12+ (this build was validated in a CPython **3.14** virtualenv; the API image uses `python:3.14-slim`).
+- Python 3.12+ (this build was validated in a CPython **3.14** virtualenv).
 - PostgreSQL 13+ (validated on PostgreSQL 17). PostGIS is **not** required.
-- Docker is optional.
+- No container runtime is required for the documented local workflow.
 
-## Option A — Docker Compose
-
-```bash
-cp .env.example .env
-# Review .env: set a real SECRET_KEY for anything beyond local development.
-
-docker compose up --build
-```
-
-- Web UI: <http://localhost:5173> (nginx serves the SPA and proxies `/api/` to the API, keeping the session cookie first-party).
-- API: <http://localhost:8000> · liveness <http://localhost:8000/health/live> · readiness <http://localhost:8000/health/ready>.
-- The API container runs `python manage.py migrate --noinput`, then Gunicorn (`config.wsgi:application`).
-
-Create the first administrator (one-time; refuses if an admin already exists):
-
-```bash
-docker compose exec api python manage.py create_admin --email admin@example.org
-# prompts for the password; it can also come from the env var named by --password-env
-```
-
-> **Honest status:** the Dockerfiles and nginx config are committed and the compose wiring is consistent, but **Docker was not available on the machine where this repo was finished**, so the images were not built or started here. The non-Docker path below was executed end-to-end (tests, lint, typecheck, production build, Django migrations, browser E2E, 360 px audit, backup/restore drill).
-
-## Option B — Local development (verified commands)
+## Local development (verified commands)
 
 ```bash
 # 1. Configuration
 cp .env.example .env
+# Review .env. The template points at postgresql+psycopg://corn:corn@localhost:5432/corn_tracker.
+# Use an existing PostgreSQL role/database or create one, then update DATABASE_URL.
 
 # 2. Backend
 make api-install               # creates .venv and installs runtime + dev requirements
-# Start PostgreSQL matching DATABASE_URL, e.g. `make db-up` (Docker) or your local instance
-make migrate
+make migrate                   # applies Django migrations
 make create-admin ARGS="--email admin@example.org"   # interactive password prompt
 make run-api                   # http://localhost:8000
 
@@ -95,7 +73,18 @@ make web-install               # npm ci
 make run-web                   # http://localhost:5173; Vite proxies /api → http://localhost:8000
 ```
 
-The default `.env` values are local-development-only. Production startup fails fast if required secrets are missing or insecure settings are used; see [`docs/ops/ENVIRONMENT_VARIABLES.md`](docs/ops/ENVIRONMENT_VARIABLES.md).
+Health checks (unauthenticated):
+
+```bash
+make health
+# or
+curl http://localhost:8000/health/live
+curl http://localhost:8000/health/ready
+```
+
+`make run-api` binds to `127.0.0.1:8000`. Vite runs on `5173` with a same-origin proxy to the API, so the HttpOnly session cookie stays first-party in development.
+
+The default `.env` values are local-development-only. Production startup fails fast on a sample/short secret, insecure cookies, wildcard CORS with credentials, or non-S3/missing storage configuration; see [`docs/ops/ENVIRONMENT_VARIABLES.md`](docs/ops/ENVIRONMENT_VARIABLES.md).
 
 ### Invitations and password resets in this build
 
@@ -126,35 +115,76 @@ make test-e2e      # ports 8000 and 5173 must be free
 - Each run generates random admin/distributor passwords in the gitignored `apps/web/e2e/.state/` directory. No credentials or real data are committed.
 - Covered flow: session-cookie restore and role guard; photo/geolocation submission; private evidence rendering; admin approval posting the ledger movement; distributor view of the approved record; offline draft staying `QUEUED` and syncing only after connectivity returns; and a 360 px mobile-viewport overflow check.
 
-## Verification (run on 2026-10-23)
+## Verification (run through 2026-10-25)
 
 | Command | Result |
 |---|---|
-| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **60 passed** |
+| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **67 passed** |
 | `make lint-api` (ruff 0.17.1) | **All checks passed** |
-| `make typecheck-api` (mypy 2.4.0 + django-stubs 5.2.9) | **No issues in 49 source files** |
+| `make typecheck-api` (mypy 2.4.0 + django-stubs 5.2.9) | **No issues in 50 source files** |
 | `python manage.py makemigrations --check --dry-run` | **No changes detected** |
 | `npx tsc -b --noEmit` (web) | **passed** |
-| `npm test -- --run` (Vitest 4.1.12) | **23 passed** across 4 files |
+| `npm test` (Vitest 4.1.12) | **39 passed** across 7 files |
 | `npm run lint` (ESLint 9 + typescript-eslint + react-hooks) | **0 errors, 0 warnings** |
-| `npm run build` | **passed** — `dist` JS 513.50 kB (`gzip 152.53 kB`), CSS 31.10 kB; Vite warns one chunk exceeds 500 kB |
-| `make test:e2e` (Playwright 1.64.1, Chromium, real Django + PostgreSQL) | **8 passed** (2 setup + 6 workflow) |
+| `npm run build` | **passed** — `dist` app JS 518.10 kB (`gzip 155.60 kB`), CSS 104.49 kB; MapLibre chunk 1,094.99 kB (`gzip 298.42 kB`); Vite warns about large chunks |
+| `npm audit --audit-level=high` | **0 vulnerabilities** |
+| `make test-e2e` (Playwright 1.64.1, Chromium, real Django + PostgreSQL) | **9 passed** (2 setup + 7 workflow) |
 | `gunicorn --check-config config.wsgi:application` | **passed** |
 | `python manage.py check` | **No issues identified** |
-| 360 px screenshot audit (20 screens: login + 3 reset modes + 11 admin + 5 distributor) | **scrollWidth 360; heading clear of the top bar; no horizontal overflow, unexpected console errors or 5xx responses** |
-| Browser interaction checks at 360 px | one-time invitation link dialog, audit `auth.login` filter, local draft discard, settings bag-factor round-trip, drawer scroll lock/Escape/focus restore |
-| Settings round-trip in browser | bag factor `50.00` saved; disabling sends `kg_per_bag: null` and persists after reload |
+| Native local smoke (Django `runserver` + Vite) | **passed** — `/health/live`, `/health/ready`, login page and session bootstrap reachable on `localhost:8000` / `localhost:5173` |
+| 360 px screenshot audit (current screens) | **scrollWidth 360; heading clear of the top bar; no horizontal overflow, unexpected console errors or 5xx responses** |
 | Local Django-schema backup/restore drill (synthetic E2E DB) | **passed** — 83,441-byte dump; both corn migrations restored; users 2/2, campaigns 1/1, sites 1/1, assignments 1/1, records 2/2, evidence 2/2, movements 3/3, audit 23/23, accounts 3/3; 0 missing evidence objects |
-| Docker image build + `docker compose up` | **Not executed** — no Docker/Podman daemon on this host |
 
 Environment note: this workstation auto-loads ROS pytest plugins into any pytest invocation, which is why `make test-api` disables plugin autoload. The test suite uses Django's test client against a temporary PostgreSQL database and is synchronous.
 
+### Map/location update (verified 2026-10-25)
+
+| Command | Result |
+|---|---|
+| `npx tsc -b --noEmit` (web) | **passed** |
+| `npx eslint src --max-warnings=0` | **0 errors, 0 warnings** |
+| `npm test` (Vitest 4.1.12) | **34 passed** across 5 files (9 map tests) |
+| `npm run build` | **passed** — worker asset emitted; MapLibre chunk 1,094.99 kB (`gzip 298.42 kB`); existing >500 kB warning still applies |
+| Headless Chromium smoke against dev servers | **passed** (site-map UI, superseded by the delivery-only map below) — 28 OSM street tile requests and 15 Esri satellite tile requests, all `200`; Map/Satellite toggled attribution correctly; “My location” with a mocked New Delhi position recentered the satellite map on Delhi and rendered the location marker; site drawer and evidence review showed exact-coordinate Google Maps links. Only console error was the expected pre-login `/auth/me` `401`. |
+
+### Phone/HTTPS verification (2026-10-25)
+
+| Check | Result |
+|---|---|
+| HTTPS Cloudflare quick tunnel → Django/Vite | **passed** — login as `amina@example.org`, `/my-sites`, and `/deliver/new` all worked through the tunnel. |
+| Distributor geolocation over HTTPS | **passed** — mocked Delhi fix captured as `28.613900, 77.209000 ±12.0 m`; no permission-denied message. |
+| Insecure HTTP origin guard | **passed** — component test shows a specific “Location needs HTTPS” message instead of a misleading permission denial. |
+| Saved-fix reload/submit | **passed** — a captured fix survived a remount, the form stopped showing a false “Location not captured” warning, and the submission payload kept the coordinates. |
+| Admin location display | **passed** — review labels a fix **Captured** or **Missing** without a location warning; only non-location evidence-integrity flags are shown. |
+| Large phone-style upload | **passed** — authenticated 7.0 MB JPEG upload returned `204` after raising the raw-body ceiling; test intent/object cleaned up. |
+| Backend tests | **66 passed**; `make test-api`. |
+
+### Phone / HTTPS development
+
+Phone browsers require a **secure context** for `navigator.geolocation`. Opening the LAN URL (`http://192.168.x.x:5173`) lets the UI and login work, but GPS capture is blocked even when the browser's site permission says “Allow”. Use HTTPS for the distributor phone workflow.
+
+For a short-lived development demo, an HTTPS tunnel (for example Cloudflare Quick Tunnel) is sufficient. Add the tunnel hostname to Django `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`, and use a Vite `server.allowedHosts` entry for the tunnel domain; this repository allows `.trycloudflare.com` in development. Quick tunnels are public and temporary, so use only synthetic/demo data, keep authentication on, and stop the tunnel when finished. For a production or real-data deployment, use a proper HTTPS reverse proxy with a trusted certificate instead.
+
+`DATA_UPLOAD_MAX_MEMORY_SIZE` is derived as `MAX_EVIDENCE_UPLOAD_BYTES + 1 MiB`; the service still enforces the configured evidence cap.
+
+### Campaign-site update (2026-10-25)
+
+Sites are now configured inside a campaign. The admin sidebar no longer has a **Sites** item; `/sites` redirects to `/campaigns`. The campaign create form accepts optional site names (one per line), and selecting a campaign opens a site panel for adding more names and setting or editing an optional latitude/longitude later. A generated `site_code` is used when none is supplied. A name-only site remains assignable; submissions still capture GPS when available, but location quality and distance/geofence never block or warn. The delivery map plots the record's captured fix and does not need site coordinates; evidence review simply omits the site reference marker. Existing submissions are never recalculated when coordinates are added later.
+
+`python manage.py migrate` applied `corn.0003_campaign_sites_optional_location` to the development database. Existing sites were backfilled from their earliest assignment campaign; no coordinates were invented. API tests cover campaign-site creation, generated codes, duplicate names, optional/cleared locations, cross-campaign assignment rejection, campaign-scoped analytics/map filtering and geo evaluation without site coordinates. Web tests cover campaign-dialog site creation, adding a name-only site from the selected campaign, and adding a location later. `make test-api` → 66 passed, `make lint-api` → clean, `make typecheck-api` → clean, `npm run typecheck`/`npm run lint` → clean, `npm test` → 37 passed across 6 files, `npm run build` → passed, and `make test-e2e` → 8 passed.
+
+### Delivery-only map update (verified 2026-10-25)
+
+The admin map now plots **only distributor-recorded delivery locations**. `GET /analytics/map-deliveries` returns one point per delivery with a captured fix and status `SUBMITTED` or `APPROVED`; rejected/cancelled claims are excluded. The page no longer plots site reference coordinates, sites without deliveries or an admin “My location” marker. Its synchronized list shows site, distributor, status, quantity and submitted time; selecting an entry opens captured coordinates/accuracy, OpenStreetMap/Google Maps links and the evidence-review workspace. The retained approved 1 kg Kolhapur record therefore appears even though its site is name-only.
+
+Verification: `make test-api` → **67 passed**; `make test-web` → **39 passed across 7 files**; `make lint-api` / `make typecheck-api` / `make migrate-check` clean; `npm run typecheck` / `npm run lint` / `npm run build` clean; `make test-e2e` → **9 passed** (2 setup + 7 workflow). New tests cover delivery-only filtering, status/bbox/authorization, rejected-claim exclusion, the approved-record point, delivery list/map labels, drawer links, the empty state and a real-browser assertion that the approved E2E delivery appears as a delivery point with no site list. A headless Chromium smoke against the running dev stack rendered the current two approved Kolhapur delivery points as two list entries and two map pins, opened the drawer with coordinates/map/evidence links, showed no “Sites in scope” section, and logged no console errors or non-tile request failures. There is no committed test for the WebGL/tile-fallback rendering path.
+
 ### Manual smoke checklist
 
-1. Sign in as the seeded admin; create a campaign, two sites and a distributor invitation.
+1. Sign in as the admin you created; create a campaign with two site names (no coordinates needed) and invite a distributor.
 2. Record a receipt for central stock, then allocate kg to the distributor.
 3. Sign in as the distributor (separately-created account), open **My sites → New delivery update**.
-4. Attach a photo, capture location (or submit without it and observe the honest warning), enter a quantity, submit.
+4. Attach a photo, optionally capture location (submission works with or without it), enter a quantity, submit.
 5. Back as admin, open **Evidence review**, inspect the private image, then **approve** — the site stock movement is posted and visible in the ledger.
 6. Go offline (devtools) as the distributor, save a draft and submit: the draft stays **Queued to sync**, never “Submitted”. Reconnect and retry.
 7. Open **Settings**, set a bag conversion, save, reload, then disable it and confirm the regression to kg/null.
@@ -162,18 +192,28 @@ Environment note: this workstation auto-loads ROS pytest plugins into any pytest
 ## Configuration notes
 
 - Only `VITE_*` values are shipped to the browser. Never put secrets behind that prefix.
-- `VITE_API_BASE_URL` defaults to `/api/v1` (same-origin, works with the Vite proxy and nginx). For a cross-origin SPA, set it at build time and configure `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` and cookie settings.
-- `VITE_MAP_STYLE_URL` is optional. Empty → the map page renders a coordinate board with real site data; configured → MapLibre loads your public style.
+- `VITE_API_BASE_URL` defaults to `/api/v1` (same-origin, works with the Vite proxy and a reverse proxy). For a cross-origin SPA, set it at build time and configure `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` and cookie settings.
+- `VITE_MAP_STYLE_URL` is optional. Empty → MapLibre renders OpenStreetMap streets plus an Esri satellite toggle by default; configured → MapLibre loads your public vector/raster style and the built-in toggle is hidden. `VITE_MAP_TILE_URL` overrides only the default street raster template, and `VITE_MAP_SATELLITE_TILE_URL` overrides the satellite template. If the map cannot initialize, the labelled coordinate board is used. Exact-coordinate Google Maps links require no key; embedding Google Maps itself would require a Google Maps API key and billing.
 - Evidence storage: `STORAGE_MODE=local` is for development/testing; production requires an S3-compatible bucket (`STORAGE_*`).
 - Signed evidence URLs expire (`STORAGE_SIGNED_URL_TTL_SECONDS`, default 120 s).
 - There is no OpenAPI UI endpoint; [`docs/architecture/API_CONTRACT.md`](docs/architecture/API_CONTRACT.md) is the API source of truth.
 
 ## Known limitations (honest list)
 
-- **Docker images were not built** in this environment (no Docker/Podman daemon; user namespaces are blocked). Dockerfile/Compose runtime validation remains pending on a Docker-capable host.
 - **No mail transport.** Invitations expose a one-time link to the creating admin; password resets require an operator command and a secure delivery channel.
-- **No live map tiles without configuration** — the fallback board is deliberate; nothing is mocked.
-- **GPS/EXIF are advisory.** Accuracy, fix age, clock drift and distance are recorded and flagged; sophisticated spoofing is not detectable by this design.
+- **Public map tiles are development/small-scale defaults.** OpenStreetMap's [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) does not permit high-volume or heavy app traffic, and the public Esri World Imagery service is similarly not a substitute for a licensed production agreement. Point `VITE_MAP_TILE_URL`, `VITE_MAP_SATELLITE_TILE_URL` or `VITE_MAP_STYLE_URL` at your own tile server or a provider that permits your volume before broad rollout. The coordinate board remains the fallback when map initialization fails.
+- **Google Maps is not embedded.** It is generally the most accurate consumer map in India, but its JavaScript/embed APIs require a key and billing. The app therefore offers exact-coordinate Google Maps links and a no-key satellite layer; a Google Maps JS integration is a follow-up if a key is supplied.
+- **Development data is intentionally minimal.** The local database keeps the Kolhapur campaign/site, Amina's active assignment, the approved 1 kg Kolhapur record with its funding ledger chain, organization settings (Asia/Kolkata) and all three user logins. Juba demo data and newer phone submissions were removed after a database/private-storage backup. Create new campaigns/sites for further testing; do not expect old demo rows.
+- **The admin map shows delivery points only.** Submitted and approved delivery records with a captured fix appear; rejected/cancelled claims, site reference coordinates, sites without deliveries and the admin's current position do not. UI filtering is campaign-only; the API also accepts a bounding box and distributor id, but status/date filters and marker clustering are not implemented.
+- **No map preview on the admin overview.** The overview links to the full map page.
+- **Evidence review is a single-record workspace.** Previous/next review navigation is not implemented. The location map compares the reported fix with the site's *current* coordinates, not a historical site snapshot; for a name-only site the site marker is omitted. Location is Captured/Missing only and does not block approval.
+- **No image thumbnails.** The private original is loaded through an authorized signed URL.
+- **No in-app notifications or Profile/Help screen.** Assignment and review state is visible on the relevant screens; there is no notification feed.
+- **No re-invite or password reset from the distributor list.** Invitations are for new accounts; an operator issues reset links.
+- **Inventory forms post kilograms.** The API accepts `KG`, `QUINTAL`, `TONNE` and `BAG` for receipts/allocations/adjustments, but the current admin form does not expose the unit selector.
+- **Admin list filters are limited.** Campaigns expose a status filter; evidence and audit expose the filters shown on each screen. Sites are managed inside the selected campaign and have no separate search page. Several tables load a bounded first page (25 or 100 rows) and sort client-side rather than exposing pagination controls.
+- **Analytics filters are campaign + UTC date range.** Status/distributor/site filters and URL-persisted filter state are not implemented.
+- **GPS/EXIF are advisory.** Coordinates, accuracy, timestamps and optional distance are recorded; location quality is not a warning or gate. Duplicate hash, capture-time drift and unexpected file type are the only evidence-integrity flags. Sophisticated spoofing is not detectable by this design.
 - **Offline photos** live in IndexedDB and survive reloads in real browsers. In environments without IndexedDB (some test shells), the store falls back to memory — drafts persist in `localStorage`, but attached blobs do not survive a reload.
 - **BAG conversions** require an admin-configured `kg_per_bag`; the API rejects bag quantities otherwise.
 - **No MFA yet.** Admin MFA should be required/assessed before broad production rollout; the current build is password + session based.

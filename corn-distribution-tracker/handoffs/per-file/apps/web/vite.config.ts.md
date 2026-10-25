@@ -30,8 +30,8 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 ## Implementation summary
 
-React plugin, dev server on 5173 with a same-origin `/api` proxy to :8000, Vitest jsdom configuration, and an explicit `src/**/*.test.*` include so Playwright specs are never collected by Vitest.
+React plugin, dev server on 5173 with a same-origin `/api` proxy to :8000, Vitest jsdom configuration, and an explicit `src/**/*.test.*` include so Playwright specs are never collected by Vitest. Development `server.allowedHosts` includes `.trycloudflare.com` so a temporary HTTPS quick tunnel can provide the secure context required by phone geolocation; other hostnames still fail the Host check.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded; `npm run test:e2e` → 8 passed.
+**Verification (2026-10-25):** `cd apps/web && npm test` → 34 passed (5 files); `npx tsc -b --noEmit` and `npx eslint src --max-warnings=0` passed; `npm run build` passed. HTTPS quick-tunnel smoke verified login and geolocation through this config.
 
-**Unresolved issues:** None known.
+**Unresolved issues:** A quick tunnel is public and temporary; do not use it for real data. Production should use a trusted HTTPS reverse proxy.

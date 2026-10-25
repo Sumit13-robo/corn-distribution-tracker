@@ -32,6 +32,10 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 `createBrowserRouter` registry with session guard, role-aware home redirects, admin/distributor layouts, all contract routes and a not-found page.
 
-**Verification (2026-10-22):** `cd apps/web && npm test` → 18 passed (3 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## Campaign-site update (2026-10-25)
+
+Removed the `SitesPage` import and route. The admin `/sites` path now renders `<Navigate to="/campaigns" replace />` so old bookmarks keep working. Verification: `npm run typecheck`, `npm run lint`, `npm test` (37 passed, 6 files), `npm run build` and `make test-e2e` (8 passed).

@@ -3,11 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api-client";
 import { queryKeys } from "../../../lib/query-client";
 import { StatCard } from "../../../components/common/StatCard";
-import { StatusBadge } from "../../../components/common/StatusBadge";
 import { DataTable } from "../../../components/common/DataTable";
 import { EmptyState } from "../../../components/common/EmptyState";
 import { ErrorState } from "../../../components/common/ErrorState";
-import { formatAge, formatDistance, formatKg } from "../../../lib/format";
+import { formatAge, formatKg } from "../../../lib/format";
 import { distributionFlagSummary } from "../../../features/admin/shared/flags";
 
 /**
@@ -104,7 +103,7 @@ export function AdminDashboardPage() {
         <StatCard
           label="Flagged records"
           value={data.flagged_record_count}
-          definition="Records carrying validation or location flags."
+          definition="Records carrying non-location evidence-integrity flags."
         />
       </div>
 
@@ -200,11 +199,11 @@ export function AdminDashboardPage() {
               {
                 key: "geo",
                 header: "Location",
-                sortValue: (row) => row.geo_status,
+                sortValue: (row) =>
+                  row.location_latitude != null && row.location_longitude != null ? "Captured" : "Missing",
                 render: (row) => (
-                  <span className="row">
-                    <StatusBadge status={row.geo_status} />
-                    <span className="small muted">{formatDistance(row.distance_to_site_m)}</span>
+                  <span className="small">
+                    {row.location_latitude != null && row.location_longitude != null ? "Captured" : "Missing"}
                   </span>
                 ),
               },
