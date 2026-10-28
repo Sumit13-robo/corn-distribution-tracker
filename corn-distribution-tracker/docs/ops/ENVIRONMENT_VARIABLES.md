@@ -11,7 +11,8 @@ Use `.env.example` with safe placeholders only. Django loads the repository-leve
 - `SECRET_KEY` — high-entropy Django secret (for example `openssl rand -hex 48`). The development sample is rejected in production.
 - `SESSION_TTL_DAYS` — database-backed session/cookie lifetime in days (default 14).
 - `SESSION_COOKIE_NAME` — default `sessionid`; HttpOnly is always enabled.
-- `ALLOWED_HOSTS` — comma-separated hostnames; `*` is rejected in production.
+- `ALLOWED_HOSTS` — comma-separated hostnames; `*` is rejected in production. Railway's `RAILWAY_PUBLIC_DOMAIN` and `RAILWAY_PRIVATE_DOMAIN` are added automatically when present, along with `healthcheck.railway.app` for Railway's health probe.
+- `FRONTEND_ORIGIN` — exact public SPA origin (for example `https://app.vercel.app`). When set, it is appended to both `CORS_ALLOWED_ORIGINS` and `CSRF_TRUSTED_ORIGINS`; production requires `https://`.
 - `CORS_ALLOWED_ORIGINS` — exact SPA origins, comma separated. Never a wildcard when credentials are enabled.
 - `CSRF_TRUSTED_ORIGINS` — exact origins that may send unsafe requests through a proxy. Add the public SPA origin when a reverse proxy terminates TLS or strips a port.
 - `CORS_ALLOW_CREDENTIALS` — must remain `true` for cookie sessions (default).
@@ -19,11 +20,17 @@ Use `.env.example` with safe placeholders only. Django loads the repository-leve
 - `COOKIE_SAMESITE` — `Lax` (default) or `Strict`; `None` requires `COOKIE_SECURE=true`.
 - `COOKIE_DOMAIN` — optional cookie domain; empty means host-only (recommended).
 - `TRUST_X_FORWARDED_PROTO` — enable only behind a trusted proxy that overwrites the header.
+- `TRUST_X_FORWARDED_FOR` — default `false`. Enable only when the API is reachable exclusively through a proxy that overwrites `X-Forwarded-For` with the immediate client address. Enabling it on a directly reachable API lets clients spoof audit/rate-limit source addresses.
 - `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD` — TLS/HSTS behavior behind the ingress.
 - `STORAGE_MODE` — `local` for development/tests or `s3` for production private object storage.
-- `STORAGE_ENDPOINT_URL`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` — private S3-compatible storage.
-- `STORAGE_SIGNED_URL_TTL_SECONDS` — short-lived evidence URL expiry (default 120).
+- `STORAGE_ENDPOINT_URL`, `STORAGE_REGION`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` — private S3-compatible storage. If unset, the provider names `ENDPOINT`, `REGION`, `BUCKET`, `ACCESS_KEY_ID` and `SECRET_ACCESS_KEY` (Railway Buckets auto-injection) are used as fallbacks.
+- `STORAGE_SIGNED_URL_TTL_SECONDS` — short-lived evidence view URL expiry (default 120).
+- `STORAGE_SERVER_SIDE_ENCRYPTION` — server-side encryption algorithm applied to uploads (`AES256` by default, or `aws:kms`); set empty only when the bucket enforces encryption another way. The required `x-amz-server-side-encryption` header is included in the browser upload instructions and is part of the presigned signature. Railway Buckets are encrypted at rest but do not support this S3 request header, so set it empty there.
+- `STORAGE_KMS_KEY_ID` — optional AWS KMS key id used when `STORAGE_SERVER_SIDE_ENCRYPTION=aws:kms`. It is likewise included in the signed headers.
+- `STORAGE_ADDRESSING_STYLE` — `auto` (default), `virtual` or `path`. Railway Buckets require `virtual`; MinIO/other custom endpoints may require `path`. Boto3 defaults to path-style when a custom endpoint is supplied, so set this explicitly.
 - `MAX_EVIDENCE_UPLOAD_BYTES` — configured upload cap (default 10 MiB). The raw-body endpoint's Django `DATA_UPLOAD_MAX_MEMORY_SIZE` is derived as this value plus 1 MiB; the evidence service still enforces the configured cap.
+- `MAX_EVIDENCE_PIXELS` — decoded pixel cap (default 40,000,000) to bound decompression work before an image is accepted.
+- `EVIDENCE_UPLOAD_TTL_SECONDS` — lifetime of an upload intent and its presigned PUT URL (default 900). Direct-to-S3 clients must call `POST /evidence/upload-intents/{id}/complete` before the intent expires; delivery submission also verifies lazily.
 - `ALLOWED_EVIDENCE_CONTENT_TYPES` — comma-separated allowed image MIME types; defaults to JPEG, PNG and WebP.
 - `LOCAL_STORAGE_DIR` — private local evidence directory when `STORAGE_MODE=local`. Relative paths resolve from `apps/api`.
 - `PUBLIC_BASE_URL` — public API origin used where absolute URLs are needed.

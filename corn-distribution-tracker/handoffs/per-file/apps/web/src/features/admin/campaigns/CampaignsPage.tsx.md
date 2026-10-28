@@ -43,10 +43,10 @@ The campaign create dialog accepts optional site names, one per line; names are 
 
 The standalone Sites page and sidebar link were removed; `/sites` redirects to `/campaigns`. The assigned site selector resets when the selected campaign changes. Site mutations invalidate site and overview queries; location changes also invalidate map sites. After a save, the status filter is cleared so the selected campaign/site panel remains visible; campaign and location dialogs reset stale mutation errors when reopened, and switching campaigns clears site/assignment errors.
 
-**Verification (2026-10-25):** `npm test` → 37 passed across 6 files, including three new `CampaignsPage` tests (campaign-dialog names, name-only add, optional location later); `npm run typecheck`, `npm run lint` and `npm run build` pass. `make test-e2e` → 8 passed.
+**Verification (2026-10-25):** `npm test` → 39 passed across 7 files, including three new `CampaignsPage` tests (campaign-dialog names, name-only add, optional location later); `npm run typecheck`, `npm run lint` and `npm run build` pass. `make test-e2e` → 9 passed.
 
 **Unresolved issues:** Clearing a site location is supported by the API but not exposed in this UI. No map picker; coordinates are entered manually.
 
 ## Location-warning removal (2026-10-25)
 
-The optional-location dialog no longer promises distance/geofence checks. Coordinates are map context only; a name-only site remains valid and assignable. Verification: `npm test` → 37 passed across 6 files; typecheck/lint/build pass.
+The optional-location dialog no longer promises distance/geofence checks. Coordinates are map context only; a name-only site remains valid and assignable. Verification: `npm test` → 39 passed across 7 files; typecheck/lint/build pass.

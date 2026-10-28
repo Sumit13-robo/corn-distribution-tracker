@@ -37,3 +37,16 @@ Native run guide covering architecture, PostgreSQL/Django/Vite setup, health che
 **Unresolved issues:** Public OSM/Esri tiles are not production-scale providers; Google Maps embedding still requires a key and billing.
 
 **Unresolved issues:** None known for the documented native path. Deferred product features are listed in the README.
+
+## 2026-10-26 audit remediation
+
+Refreshed verification counts, restore/S3/CI evidence and known limitations. The README now states that local drafts are plaintext, legacy keys fail closed, rate limiting is process-local, and real provider/container/proxy evidence is outstanding.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.
+
+## 2026-10-28 Railway/Vercel deployment
+
+Added the managed deployment guide link and the Vercel build guard. Current
+verification is 98 backend tests, 39 web tests and 9 Playwright E2E tests;
+Ruff, mypy, migration, web lint/typecheck and production build pass. Provider
+deployment evidence remains external.

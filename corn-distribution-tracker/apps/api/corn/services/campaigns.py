@@ -100,16 +100,25 @@ def update_campaign(*, admin: User, campaign_id: uuid.UUID, data: dict, ctx: Req
     return campaign
 
 
-def list_campaigns(*, status: str | None, limit: int, offset: int) -> tuple[list[Campaign], int]:
+def list_campaigns(
+    *, viewer: User, status: str | None, limit: int, offset: int
+) -> tuple[list[Campaign], int]:
     qs = Campaign.objects.all()
+    if viewer.role != "ADMIN":
+        # Distributors can only discover campaigns they are assigned to. This
+        # prevents draft campaign names/notes from leaking across the tenant.
+        qs = qs.filter(assignments__distributor_user=viewer).distinct()
     if status:
         qs = qs.filter(status=status)
     total = qs.count()
     return list(qs.order_by("-created_at")[offset : offset + limit]), total
 
 
-def get_campaign(campaign_id: uuid.UUID) -> Campaign:
-    campaign = Campaign.objects.filter(id=campaign_id).first()
+def get_campaign(*, viewer: User, campaign_id: uuid.UUID) -> Campaign:
+    qs = Campaign.objects.all()
+    if viewer.role != "ADMIN":
+        qs = qs.filter(assignments__distributor_user=viewer).distinct()
+    campaign = qs.filter(id=campaign_id).first()
     if campaign is None:
         raise NotFoundError("Campaign not found.")
     return campaign
@@ -390,7 +399,9 @@ def create_assignment(*, admin: User, data: dict, ctx: RequestContext) -> Distri
 def update_assignment(
     *, admin: User, assignment_id: uuid.UUID, data: dict, ctx: RequestContext
 ) -> DistributorAssignment:
-    assignment = DistributorAssignment.objects.filter(id=assignment_id).first()
+    assignment = (
+        DistributorAssignment.objects.select_for_update().filter(id=assignment_id).first()
+    )
     if assignment is None:
         raise NotFoundError("Assignment not found.")
     new_status = data.get("status", assignment.status)

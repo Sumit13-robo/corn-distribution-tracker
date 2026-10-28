@@ -18,7 +18,7 @@ Vitest, Testing Library, React Query and `ToastProvider`; the API client is mock
 
 ## Verification
 
-`cd apps/web && npm test` → 37 passed across 6 files; `npm run typecheck`, `npm run lint` and `npm run build` pass.
+`cd apps/web && npm test` → 39 passed across 7 files; `npm run typecheck`, `npm run lint` and `npm run build` pass.
 
 ## Unresolved issues
 

@@ -1,17 +1,17 @@
 # File Handoff: `docker-compose.yml`
 
-**Status:** DEFERRED
+**Status:** IMPLEMENTED
 **Primary owner:** DevOps/Lead
-**File purpose:** Optional container stack (not part of the supported native workflow).
+**File purpose:** Optional container stack with database/API/web health dependencies and storage-aware readiness.
 
 ## Current implementation
 
-The file remains in the repository as an optional container definition. It is not used by the documented local setup; local development runs native PostgreSQL, Django and Vite.
+The Compose stack defines PostgreSQL, the Django/Gunicorn API and the nginx-served SPA. The API uses a readiness healthcheck (not only liveness), and nginx uses the `api:8000` upstream. The documented local workflow still runs native PostgreSQL, Django and Vite.
 
 ## Verification
 
-The native path, tests, build and Playwright are verified. Container startup is outside the supported workflow and is not claimed as verified.
+YAML parsed locally; service dependencies and healthchecks asserted; nginx/Dockerfile static checks pass. The native path, 98 API tests, 39 web tests, production build and 9 Playwright tests are verified. Container startup is not exercised in this workspace.
 
 ## Unresolved issues
 
-Container runtime verification is deferred. The committed `apps/web/nginx.conf` now targets a native same-host upstream; adjust it if the compose stack is revived.
+Container runtime verification is deferred because no Docker/Podman/Buildah is available.

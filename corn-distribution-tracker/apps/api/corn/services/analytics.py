@@ -73,26 +73,33 @@ def overview(
     )
     open_review = sum(1 for record in records if record.status == RecordStatus.SUBMITTED)
 
-    assignment_ids = {record.assignment_id for record in records}
+    # Targets are defined by assignments, not by the subset that happens to
+    # have submissions in the selected date window. Completed and unvisited
+    # assignments still contribute to the all-time target, and approved totals
+    # used for target math are intentionally not date-filtered.
+    assignments_qs = DistributorAssignment.objects.all()
+    if scope_user is not None:
+        assignments_qs = assignments_qs.filter(distributor_user_id=scope_user.id)
+    if campaign_id is not None:
+        assignments_qs = assignments_qs.filter(campaign_id=campaign_id)
+    assignments = list(assignments_qs)
+    approved_qs = DistributionRecord.objects.filter(status=RecordStatus.APPROVED)
+    if scope_user is not None:
+        approved_qs = approved_qs.filter(distributor_user_id=scope_user.id)
+    if campaign_id is not None:
+        approved_qs = approved_qs.filter(campaign_id=campaign_id)
+    approved_by_assignment: dict[uuid.UUID, Decimal] = {
+        row["assignment_id"]: Decimal(row["total"] or 0)
+        for row in approved_qs.values("assignment_id").annotate(total=Sum("quantity_kg"))
+    }
     targets = ZERO
     remaining = ZERO
     overage = ZERO
-    if assignment_ids:
-        assignments = {
-            assignment.id: assignment
-            for assignment in DistributorAssignment.objects.filter(id__in=assignment_ids)
-        }
-        approved_by_assignment: dict[uuid.UUID, Decimal] = {}
-        for record in records:
-            if record.status == RecordStatus.APPROVED:
-                approved_by_assignment[record.assignment_id] = approved_by_assignment.get(
-                    record.assignment_id, ZERO
-                ) + Decimal(record.quantity_kg)
-        for assignment_id, assignment in assignments.items():
-            targets += Decimal(assignment.target_quantity_kg)
-            approved_for = approved_by_assignment.get(assignment_id, ZERO)
-            remaining += max(Decimal(assignment.target_quantity_kg) - approved_for, ZERO)
-            overage += max(approved_for - Decimal(assignment.target_quantity_kg), ZERO)
+    for assignment in assignments:
+        targets += Decimal(assignment.target_quantity_kg)
+        approved_for = approved_by_assignment.get(assignment.id, ZERO)
+        remaining += max(Decimal(assignment.target_quantity_kg) - approved_for, ZERO)
+        overage += max(approved_for - Decimal(assignment.target_quantity_kg), ZERO)
 
     approved_records = [record for record in records if record.status == RecordStatus.APPROVED]
     approved_ids = [record.id for record in approved_records]
@@ -136,6 +143,13 @@ def account_stock(*, scope_user: User | None) -> dict[str, Any]:
         "distributor_held_kg": ZERO,
         "site_stock_kg": ZERO,
     }
+    scoped_site_ids: set[uuid.UUID] | None = None
+    if scope_user is not None:
+        scoped_site_ids = set(
+            DistributorAssignment.objects.filter(distributor_user_id=scope_user.id)
+            .values_list("site_id", flat=True)
+            .distinct()
+        )
     reserved_total = ZERO
     for account in StockAccount.objects.all():
         balance = posted_balance_kg(account.id)
@@ -148,7 +162,12 @@ def account_stock(*, scope_user: User | None) -> dict[str, Any]:
                 if account.owner_user_id:
                     reserved_total += reserved_kg(account.owner_user_id)
         elif account.account_type == AccountType.SITE:
-            result["site_stock_kg"] += balance
+            if scope_user is None or (
+                scoped_site_ids is not None
+                and account.site_id is not None
+                and account.site_id in scoped_site_ids
+            ):
+                result["site_stock_kg"] += balance
     result["reserved_pending_kg"] = reserved_total
     return result
 

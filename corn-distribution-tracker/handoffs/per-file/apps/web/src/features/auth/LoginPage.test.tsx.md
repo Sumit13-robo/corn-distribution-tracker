@@ -16,6 +16,6 @@ Vitest, Testing Library, MemoryRouter, mocked `lib/session`, `ApiError` from `li
 - Component case: a rejected `login()` with `429` and `retry_after: 120` renders "Too many sign-in attempts. Try again in 2 minutes." and does not blame the password.
 - `loginMock` is created with `vi.hoisted()` so the hoisted session mock can use it; `cleanup()` and `mockReset()` run after each test.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 39 passed (7 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.

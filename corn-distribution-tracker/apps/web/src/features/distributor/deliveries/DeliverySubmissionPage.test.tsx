@@ -14,7 +14,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { DistributionOut, DistributorAssignmentItemOut, SettingsOut } from "../../../types/domain";
-import type { LocalDraft } from "../offline/offlineQueue";
+import { pruneSubmittedDrafts, type LocalDraft } from "../offline/offlineQueue";
 
 const TEST_USER_ID = "user-test-1";
 const DRAFTS_KEY = `corn-tracker:drafts:v1:${TEST_USER_ID}`;
@@ -45,6 +45,14 @@ vi.mock("../../../lib/api-client", async (importOriginal) => {
       myAssignments: vi.fn(),
       getSettings: vi.fn(),
       createUploadIntent: vi.fn(),
+      completeUploadIntent: vi.fn(async () => ({
+        intent_id: "intent-1",
+        completed: true,
+        newly_verified: true,
+        size_bytes: 3,
+        sha256_hex: "a".repeat(64),
+        content_type: "image/jpeg",
+      })),
       submitDelivery: vi.fn(),
     },
   };
@@ -110,6 +118,9 @@ const serverRecord: DistributionOut = {
   reviewed_by: null,
   review_reason: null,
   review_exception_reason: null,
+  reversed_at: null,
+  reversed_by: null,
+  reversal_reason: null,
   stock_movement_id: null,
   notes: null,
   location_latitude: null,
@@ -370,7 +381,20 @@ describe("DeliverySubmissionPage", () => {
 
     const drafts = readDrafts();
     expect(drafts).toHaveLength(1);
-    expect(drafts[0]).toMatchObject({ state: "SUBMITTED", submittedRecordId: "record-1" });
-    expect(drafts[0]?.idempotencyKey).toBe(idempotencyKey);
+    expect(drafts[0]).toMatchObject({
+      state: "SUBMITTED",
+      submittedRecordId: "record-1",
+      location: null,
+      notes: null,
+      photoIds: [],
+      siteCode: null,
+      siteName: null,
+      idempotencyKey: "",
+    });
+    expect(idempotencyKey).toBeTruthy();
+
+    // Local receipts are convenience copies and can be pruned once retained.
+    pruneSubmittedDrafts(TEST_USER_ID, 0);
+    expect(readDrafts()).toHaveLength(0);
   });
 });

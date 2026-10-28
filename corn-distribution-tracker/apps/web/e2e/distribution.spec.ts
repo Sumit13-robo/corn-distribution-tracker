@@ -22,6 +22,8 @@ test.describe.configure({ mode: "serial" });
 interface StoredDraft {
   state: string;
   idempotencyKey: string;
+  location: unknown;
+  photoIds: string[];
   submittedRecordId: string | null;
 }
 
@@ -35,6 +37,8 @@ async function readDrafts(page: Page): Promise<StoredDraft[]> {
       return JSON.parse(window.localStorage.getItem(key) ?? "[]") as Array<{
         state: string;
         idempotencyKey: string;
+        location: unknown;
+        photoIds: string[];
         submittedRecordId: string | null;
       }>;
     } catch {
@@ -216,7 +220,11 @@ test("offline submission stays QUEUED and syncs honestly when connectivity retur
 
   const synced = (await readDrafts(page))[0];
   expect(synced?.state).toBe("SUBMITTED");
-  expect(synced?.idempotencyKey).toBe(keyBefore);
+  // The server record is authoritative: the local receipt is scrubbed of the
+  // retry key and sensitive payload once it is accepted.
+  expect(synced?.idempotencyKey).toBe("");
+  expect(synced?.location).toBeNull();
+  expect(synced?.photoIds).toEqual([]);
   expect(synced?.submittedRecordId).toBeTruthy();
 
   await page.goto("/deliveries");

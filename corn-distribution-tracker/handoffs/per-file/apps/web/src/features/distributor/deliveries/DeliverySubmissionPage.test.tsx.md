@@ -38,8 +38,14 @@ Submission workflow tests: draft resume with the same idempotency key, immediate
 
 ## Campaign-site update (2026-10-25)
 
-The synthetic `SiteOut` fixture includes `campaign_id: null` so it matches the updated domain type. Verification: `npm test` → 37 passed across 6 files; `npm run typecheck` and `npm run build` pass.
+The synthetic `SiteOut` fixture includes `campaign_id: null` so it matches the updated domain type. Verification: `npm test` → 39 passed across 7 files; `npm run typecheck` and `npm run build` pass.
 
 ## Location-warning removal (2026-10-25)
 
-Tests retain draft/idempotency/offline/geolocation behavior and add/confirm that a resumed saved fix is not shown as missing and no location warning blocks submission. Verification: `npm test` → 37 passed across 6 files.
+Tests retain draft/idempotency/offline/geolocation behavior and add/confirm that a resumed saved fix is not shown as missing and no location warning blocks submission. Verification: `npm test` → 39 passed across 7 files.
+
+## 2026-10-26 audit remediation
+
+Updated draft tests for the scrubbed local receipt payload after successful sync.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

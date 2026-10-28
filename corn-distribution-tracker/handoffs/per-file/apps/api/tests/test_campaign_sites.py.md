@@ -21,7 +21,7 @@ Uses the shared `AuthClient` and `json_request` helpers against real PostgreSQL;
 
 ## Verification
 
-`make test-api` → 66 passed (this file adds 4 tests). `make lint-api` and `make typecheck-api` pass.
+`make test-api` → 98 passed (this file adds 4 tests). `make lint-api` and `make typecheck-api` pass.
 
 ## Unresolved issues
 

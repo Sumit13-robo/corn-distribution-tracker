@@ -89,7 +89,8 @@ export function PhotoCapturePanel({ userId, draftId, photos, offlineMode = false
       </p>
       {offlineMode ? (
         <p className="notice warning" role="status">
-          Offline: photos stay encrypted-at-rest in browser storage on this device and upload when connectivity returns.
+          Offline: photos are stored unencrypted in this browser/device until they sync. Use a trusted device and
+          remove local drafts after syncing.
         </p>
       ) : null}
       <div className="row" style={{ marginTop: "var(--space-2)" }}>

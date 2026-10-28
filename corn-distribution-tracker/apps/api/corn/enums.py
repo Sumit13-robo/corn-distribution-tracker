@@ -45,6 +45,7 @@ class RecordStatus(models.TextChoices):
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
     CANCELLED = "CANCELLED", "Cancelled"
+    REVERSED = "REVERSED", "Reversed"
 
 
 class GeoStatus(models.TextChoices):

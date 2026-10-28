@@ -10,7 +10,7 @@ Root URL map for health, API v1 and JSON error handlers. It participates in the 
 
 ## Verification
 
-Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (9 passed).
 
 ## Unresolved issues
 
@@ -18,4 +18,10 @@ None known. Native PostgreSQL + Django + Vite workflow verified.
 
 ## Delivery-map route (2026-10-25)
 
-Added `GET /api/v1/analytics/map-deliveries` before the legacy map-sites route. Verification: `make test-api` → 67 passed; Ruff/mypy clean.
+Added `GET /api/v1/analytics/map-deliveries` before the legacy map-sites route. Verification: `make test-api` → 98 passed; Ruff/mypy clean.
+
+## 2026-10-26 audit remediation
+
+Kept readiness/liveness and evidence completion routes wired through the canonical URL map.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

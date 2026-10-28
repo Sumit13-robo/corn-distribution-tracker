@@ -20,10 +20,22 @@ class RequestContext:
 
 
 def client_ip(request) -> str | None:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()[:64]
-    return request.META.get("REMOTE_ADDR")
+    """Return the audit/rate-limit source address.
+
+    Forwarded headers are attacker-controlled unless a trusted reverse proxy
+    overwrites them. Only read X-Forwarded-For when explicitly configured.
+    """
+    from django.conf import settings
+
+    remote = request.META.get("REMOTE_ADDR")
+    if settings.TRUST_X_FORWARDED_FOR:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            # The edge proxy must overwrite this header with the immediate
+            # client address. Use the first value for compatibility with
+            # proxies that append, but never trust it without the opt-in.
+            return forwarded.split(",", 1)[0].strip()[:64]
+    return remote[:64] if remote else None
 
 
 def context_from_request(request, *, include_forwarded: bool = True) -> RequestContext:

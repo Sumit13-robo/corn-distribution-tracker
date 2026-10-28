@@ -68,3 +68,17 @@ Deleted: 7 records, 7 evidence rows/files, 3 movements, 2 assignments, 2 Juba si
 Added admin-only `GET /api/v1/analytics/map-deliveries` (`bbox`, `campaign_id`, `distributor_user_id`). The service returns one point per delivery record that has a captured latitude/longitude and status `SUBMITTED` or `APPROVED`; rejected/cancelled claims are excluded. It returns site and distributor display fields, quantity, status, submitted time and location metadata, but no evidence URLs. Site reference coordinates and sites without deliveries are not involved, so the retained approved 1 kg Kolhapur record is visible even though its site is name-only. The older `/analytics/map-sites` endpoint remains for API compatibility but is no longer used by the SPA. Authorization remains `IsAdminRole`, and invalid bbox input returns the existing `422`.
 
 **Verification:** `make test-api` → 67 passed (including delivery-map status/bbox/scope coverage and rejected-claim exclusion); `make lint-api` → clean; `make typecheck-api` → no issues in 50 source files; `make migrate-check` → no changes. No schema change.
+
+## Post-remediation verification (2026-10-26)
+
+The 2026-10 audit W0/W1 backend findings are remediated and regression-covered: scoped/payload-bound idempotency with fail-closed legacy keys, compensating reversals with reservation/overdraw guards, assignment-locked target approval, raced first-site account creation, distributor campaign/site-stock scope, hidden internal notes, direct-S3 completion with size/SHA/bounded-read/tamper checks, trusted-proxy XFF handling, storage-aware readiness and a bounded process-local limiter.
+
+Current verification: `make test-api` → **98 passed**; Ruff and mypy clean in **51 source files**; migration `0004` applies and `makemigrations --check` reports no drift; Playwright E2E **9 passed**. External probes: **12 remediation probes + 1 simulated-S3 probe passed**. Real provider S3/CORS/KMS, production restore/load and the multi-worker shared limiter remain external.
+
+## Railway/Vercel deployment preparation (2026-10-28)
+
+Added Railway host auto-allowlisting, managed Bucket variable fallbacks,
+virtual-host S3 addressing (required by Railway Buckets), a single
+`FRONTEND_ORIGIN` for CORS/CSRF, and the Railway/Docker deployment scripts.
+Current verification: `make test-api` → **98 passed**; Ruff/mypy clean in 51
+source files; migration drift clean. Real provider deployment remains external.

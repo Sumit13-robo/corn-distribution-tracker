@@ -36,7 +36,7 @@ def create_upload_intent(request):
         raise RateLimitedError(retry_after=retry_after)
     data = serializer.validated_data
     with transaction.atomic():
-        intent, upload_url = evidence_service.create_upload_intent(
+        intent, upload_url, upload_headers = evidence_service.create_upload_intent(
             user=request.user,
             content_type=data["content_type"],
             purpose=data["purpose"],
@@ -50,7 +50,7 @@ def create_upload_intent(request):
             "expires_at": intent.expires_at,
             "upload_method": "PUT",
             "upload_url": upload_url,
-            "headers": {"Content-Type": data["content_type"]},
+            "headers": upload_headers,
         },
         status=201,
     )
@@ -77,6 +77,33 @@ def put_object(request, intent_id: uuid.UUID):
             content_type=intent.content_type,
         )
     return Response(status=204)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def complete_upload_intent(request, intent_id: uuid.UUID):
+    """Verify a direct-to-object-storage upload before it can become evidence."""
+    with transaction.atomic():
+        intent = (
+            UploadIntent.objects.select_for_update()
+            .filter(id=intent_id, user_id=request.user.id)
+            .first()
+        )
+        if intent is None:
+            raise NotFoundError("Upload intent not found.")
+        intent, completed = evidence_service.finalize_intent_upload(
+            intent=intent, ctx=response_ctx(request)
+        )
+    return json_response(
+        {
+            "intent_id": intent.id,
+            "completed": True,
+            "newly_verified": completed,
+            "size_bytes": intent.received_bytes,
+            "sha256_hex": intent.received_sha256_hex,
+            "content_type": intent.content_type,
+        }
+    )
 
 
 @api_view(["GET"])

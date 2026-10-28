@@ -18,7 +18,7 @@ A campaign filter scopes the query. The synchronized list is keyboard-accessible
 
 ## Verification
 
-`DistributionMapPage.test.tsx` (2 tests) proves the delivery list/map label, absence of the old “Sites in scope” list, drawer/link behavior and the no-delivery empty state. `npm run typecheck`, `npm run lint`, `npm test` (39 passed across 7 files), `npm run build` and `make test-e2e` (8 passed) pass.
+`DistributionMapPage.test.tsx` (2 tests) proves the delivery list/map label, absence of the old “Sites in scope” list, drawer/link behavior and the no-delivery empty state. `npm run typecheck`, `npm run lint`, `npm test` (39 passed across 7 files), `npm run build` and `make test-e2e` (9 passed) pass.
 
 ## Unresolved issues
 

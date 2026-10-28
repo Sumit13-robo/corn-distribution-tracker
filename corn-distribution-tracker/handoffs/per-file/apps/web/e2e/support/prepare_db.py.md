@@ -10,7 +10,7 @@ Derives a maintenance connection from `E2E_DATABASE_URL`, validates the PostgreS
 
 ## Verification
 
-Exercised on a fresh clean-database run; `npm run test:e2e` → 8 passed. The target is always the isolated `corn_tracker_e2e` database.
+Exercised on a fresh clean-database run; `npm run test:e2e` → 9 passed. The target is always the isolated `corn_tracker_e2e` database.
 
 ## Unresolved issues
 

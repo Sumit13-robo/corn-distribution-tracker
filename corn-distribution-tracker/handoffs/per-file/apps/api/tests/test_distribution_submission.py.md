@@ -10,7 +10,7 @@ Submission, review transitions, idempotency and evidence validation tests. It pa
 
 ## Verification
 
-Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (9 passed).
 
 ## Unresolved issues
 
@@ -18,4 +18,4 @@ None known. Native PostgreSQL + Django + Vite workflow verified.
 
 ## Location-independent approval coverage (2026-10-25)
 
-Tests now assert that a submission with no fix, a stale fix, an inaccurate fix or a far-away fix is approved manually without an exception and posts one movement. Evidence-integrity override tests remain for duplicate hash/capture-time mismatch/unexpected type, and target overruns still require a reason. Verification: `make test-api` → 66 passed.
+Tests now assert that a submission with no fix, a stale fix, an inaccurate fix or a far-away fix is approved manually without an exception and posts one movement. Evidence-integrity override tests remain for duplicate hash/capture-time mismatch/unexpected type, and target overruns still require a reason. Verification: `make test-api` → 98 passed.

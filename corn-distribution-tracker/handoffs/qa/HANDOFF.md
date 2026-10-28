@@ -55,3 +55,18 @@ Backend tests under `apps/api/tests/**`, web component tests, smoke/E2E tests an
 - The retained development approved Kolhapur record(s) have captured fixes and a name-only site, so they appear as delivery points without adding site coordinates. The map intentionally has no admin-location marker and no site-reference markers.
 - A headless Chromium smoke with an authenticated admin session rendered the live `/map` page: two approved Kolhapur records produced two list entries and two map pins, selecting one opened the drawer with coordinates/accuracy, OpenStreetMap/Google Maps links and “Open evidence review”, no “Sites in scope” section appeared, and there were no console errors or non-tile request failures.
 - **Not covered:** the E2E asserts markers/list data, not WebGL tile loading or the coordinate-board fallback; no committed test forces MapLibre initialization failure. That is a rendering-fallback gap, not a data or API gap.
+
+## Post-remediation verification (2026-10-26)
+
+- Backend **98 passed**; web **39 passed / 7 files**; Playwright E2E **9 passed**.
+- External remediation probes **12 passed** plus **1 simulated-S3 HTTP probe** (presigned PUT, CORS preflight, SSE, completion, attach, tamper/oversize rejection) against a local `moto` endpoint. This is not a real provider.
+- Restore drill through migrations `0001`–`0004`: 85,778-byte dump, matching counts, append-only trigger and reversal columns present, zero missing evidence objects.
+- CI/Compose/nginx/Docker/Gunicorn configs statically validated; hosted CI and container/nginx runtime remain unexecuted.
+- `check --deploy` leaves 6 expected local warnings (HSTS, SSL redirect, dev secret, secure cookies, DEBUG). Real ingress/TLS/HSTS, load/soak, production restore and manual accessibility/device testing remain external.
+
+## Railway/Vercel preparation (2026-10-28)
+
+- Backend **98 passed** (two new config-security tests and one virtual-host S3 test); Ruff/mypy clean in 51 source files.
+- Web **39 passed / 7 files**; production build passes; JSON/shell/static deployment config checks pass.
+- Vercel build guard refuses the committed Railway placeholder; the placeholder must be replaced with the real API origin before deployment.
+- No Railway/Vercel provider deployment, real bucket CORS/upload, cookie round-trip or hosted CI run was performed.

@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from ..auth import IsAdminRole
 from ..enums import DisplayUnit
-from ..errors import NotFoundError, UnprocessableEntityError
+from ..errors import AppError, NotFoundError, UnprocessableEntityError
 from ..models import StockAccount, StockMovement
 from ..presenters import movement_out, page
 from ..serializers import (
@@ -31,7 +31,12 @@ ZERO = Decimal("0")
 
 def _idempotency(request, prefix: str) -> str:
     raw = request.headers.get("Idempotency-Key", "").strip()
-    return (raw or f"{prefix}:{uuid.uuid4()}")[:128]
+    if len(raw) > 128:
+        raise AppError(
+            "Idempotency-Key must be 128 characters or fewer.",
+            details=[{"field": "Idempotency-Key"}],
+        )
+    return raw or f"{prefix}:{uuid.uuid4()}"
 
 
 @api_view(["GET"])
@@ -73,7 +78,10 @@ def account_ledger(request, account_id: uuid.UUID):
         Q(source_account_id=account_id) | Q(destination_account_id=account_id)
     )
     total = query.count()
-    rows = query.order_by("-posted_at", "-id")[offset : offset + limit]
+    rows = (
+        query.select_related("reversal_of", "reversal")
+        .order_by("-posted_at", "-id")[offset : offset + limit]
+    )
     return json_response(page([movement_out(row) for row in rows], total, limit, offset))
 
 

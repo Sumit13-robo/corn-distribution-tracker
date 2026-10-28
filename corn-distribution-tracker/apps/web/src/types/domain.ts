@@ -9,7 +9,13 @@ export type Role = "ADMIN" | "DISTRIBUTOR";
 
 export type CampaignStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "CLOSED";
 
-export type RecordStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type RecordStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "REVERSED";
 
 export type GeoStatus = "PASS" | "WARNING" | "EXCEPTION" | "UNAVAILABLE";
 
@@ -251,7 +257,10 @@ export interface AccountOut {
 
 export interface ReconciliationOut {
   received_kg: string;
+  reversed_receipt_kg: string;
   loss_kg: string;
+  reversed_loss_kg: string;
+  net_external_kg: string;
   sum_account_balances_kg: string;
   balanced: boolean;
 }
@@ -275,6 +284,7 @@ export interface StockMovementOut {
   created_by: string | null;
   reason: string | null;
   reversal_of_id: string | null;
+  reversed_by_id: string | null;
   movement_metadata: Record<string, unknown>;
 }
 
@@ -347,6 +357,9 @@ export interface DistributionOut {
   reviewed_by: string | null;
   review_reason: string | null;
   review_exception_reason: string | null;
+  reversed_at: string | null;
+  reversed_by: string | null;
+  reversal_reason: string | null;
   stock_movement_id: string | null;
   notes: string | null;
   location_latitude: string | null;
@@ -408,6 +421,15 @@ export interface UploadIntentOut {
   upload_method: string;
   upload_url: string;
   headers: Record<string, string>;
+}
+
+export interface UploadCompletionOut {
+  intent_id: string;
+  completed: boolean;
+  newly_verified: boolean;
+  size_bytes: number | null;
+  sha256_hex: string | null;
+  content_type: string;
 }
 
 export interface ViewURLOut {

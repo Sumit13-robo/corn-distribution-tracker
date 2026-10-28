@@ -123,17 +123,23 @@ down-migration as a rollback shortcut. Restore the database and evidence set tog
 reconciliation and the audit trail before reopening traffic. The append-only database triggers intentionally
 make ledger/audit deletion fail.
 
-## Tested local drill (2026-10-22, Django schema)
+## Tested local drill (2026-10-26, Django schema through `0004`)
 
 Run against the synthetic `corn_tracker_e2e` database; not production data:
 
-- `pg_dump --format=custom` produced an 83,441-byte dump and checksum.
+- `pg_dump --format=custom` produced an 85,778-byte dump
+  (`sha256 ed5f266a8a2c94870aaabbd4bbd6ed01be41365cb87fb14b39ff5636b1f08c12`).
 - Restored into isolated `corn_tracker_restore_e2e`.
-- Restored Django migrations: `corn.0001_initial`, `corn.0002_append_only_triggers`.
+- Restored Django migrations: `corn.0001_initial`, `corn.0002_append_only_triggers`,
+  `corn.0003_campaign_sites_optional_location`, `corn.0004_scoped_idempotency_and_reversals`.
 - Row counts matched exactly: users 2, campaigns 1, sites 1, assignments 1, distribution records 2,
-  photo evidence 2, stock movements 3, audit events 23, inventory accounts 3.
+  photo evidence 2, stock movements 3, audit events 24, inventory accounts 3.
 - Both referenced evidence objects were present under the synthetic local storage directory.
-- The drill database was dropped after verification.
+- The append-only trigger and the `reversal_of_id`, `idempotency_scope` and `idempotency_fingerprint`
+  columns were present after restore.
+- The drill database and the legacy `corn_tracker_backfill` scratch database were dropped after
+  verification. The transcript is in the external audit workspace at
+  `scratch/restore_drill_final_20261026.txt`.
 
 This proves the local PostgreSQL/evidence dump-restore procedure for the current schema. It does not
 substitute for a restore drill against the production database/storage provider, which requires operator

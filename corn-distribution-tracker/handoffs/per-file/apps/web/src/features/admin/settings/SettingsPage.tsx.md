@@ -14,7 +14,7 @@ The geofence radius, GPS accuracy and location-age inputs were removed because l
 
 ## Verification
 
-`npm test` → 37 passed across 6 files; `npm run typecheck`, `npm run lint` and `npm run build` pass; `make test-e2e` → 8 passed.
+`npm test` → 39 passed across 7 files; `npm run typecheck`, `npm run lint` and `npm run build` pass; `make test-e2e` → 9 passed.
 
 ## Unresolved issues
 

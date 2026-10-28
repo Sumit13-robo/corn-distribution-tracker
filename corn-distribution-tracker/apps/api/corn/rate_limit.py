@@ -9,10 +9,14 @@ from __future__ import annotations
 
 import threading
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 
 _lock = threading.Lock()
-_events: dict[str, deque[float]] = defaultdict(deque)
+_events: OrderedDict[str, deque[float]] = OrderedDict()
+# Bound the process-local store so a stream of unique source addresses cannot
+# grow memory without limit. Multi-worker deployments still need a shared
+# limiter; that operational requirement is documented in the deployment guide.
+MAX_BUCKETS = 10_000
 
 POLICIES: dict[str, tuple[int, int]] = {
     "auth.login": (10, 300),
@@ -28,6 +32,19 @@ def _prune(events: deque[float], now: float, window: int) -> None:
         events.popleft()
 
 
+def _bucket(scope: str, key: str) -> deque[float]:
+    bucket = f"{scope}:{key}"
+    events = _events.get(bucket)
+    if events is None:
+        if len(_events) >= MAX_BUCKETS:
+            _events.popitem(last=False)
+        events = deque()
+        _events[bucket] = events
+    else:
+        _events.move_to_end(bucket)
+    return events
+
+
 def _retry_after(events: deque[float], now: float, window: int) -> int:
     return max(int(window - (now - events[0])) + 1, 1)
 
@@ -38,10 +55,9 @@ def hit(scope: str, key: str) -> tuple[bool, int]:
     if policy is None:
         return True, 0
     limit, window = policy
-    bucket = f"{scope}:{key}"
     now = time.monotonic()
     with _lock:
-        events = _events[bucket]
+        events = _bucket(scope, key)
         _prune(events, now, window)
         if len(events) >= limit:
             return False, _retry_after(events, now, window)
@@ -60,10 +76,9 @@ def check(scope: str, key: str) -> tuple[bool, int]:
     if policy is None:
         return True, 0
     limit, window = policy
-    bucket = f"{scope}:{key}"
     now = time.monotonic()
     with _lock:
-        events = _events[bucket]
+        events = _bucket(scope, key)
         _prune(events, now, window)
         if len(events) >= limit:
             return False, _retry_after(events, now, window)
@@ -76,10 +91,9 @@ def record(scope: str, key: str) -> None:
     if policy is None:
         return
     _, window = policy
-    bucket = f"{scope}:{key}"
     now = time.monotonic()
     with _lock:
-        events = _events[bucket]
+        events = _bucket(scope, key)
         _prune(events, now, window)
         events.append(now)
 

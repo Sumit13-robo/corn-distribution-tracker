@@ -32,10 +32,10 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Overview KPIs, delivery progress, review queue, distributor performance, recent audit events and drill-down links from the scoped analytics endpoint.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 39 passed (7 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
 
 ## Integrity-only flag counts (2026-10-25)
 
-The flagged KPI/review queue uses non-location evidence-integrity flags only; legacy location flags are excluded from copy and severity. Verification: `npm test` → 37 passed; typecheck/lint/build and `make test-e2e` (8 passed) pass.
+The flagged KPI/review queue uses non-location evidence-integrity flags only; legacy location flags are excluded from copy and severity. Verification: `npm test` → 39 passed; typecheck/lint/build and `make test-e2e` (9 passed) pass.

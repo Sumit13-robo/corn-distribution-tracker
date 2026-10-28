@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: corn_tracker_test
+          POSTGRES_USER: corn
+          POSTGRES_PASSWORD: corn
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U corn -d corn_tracker_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://corn:corn@localhost:5432/corn_tracker_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            apps/api/requirements.txt
+            apps/api/requirements-dev.txt
+      - name: Install API dependencies
+        run: pip install -r apps/api/requirements.txt -r apps/api/requirements-dev.txt
+      - name: Lint
+        run: ruff check apps/api/config apps/api/corn apps/api/tests apps/api/manage.py
+      - name: Type check
+        working-directory: apps/api
+        run: mypy config corn
+      - name: Migration drift check
+        working-directory: apps/api
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings_test
+        run: python manage.py makemigrations --check --dry-run
+      - name: Tests
+        working-directory: apps/api
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings_test
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: python -m pytest -p pytest_django.plugin tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install web dependencies
+        run: npm ci
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+      - name: Lint
+        run: npm run lint -- --max-warnings=0
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: corn_tracker_test
+          POSTGRES_USER: corn
+          POSTGRES_PASSWORD: corn
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U corn -d corn_tracker_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      E2E_DATABASE_URL: postgresql+psycopg://corn:corn@localhost:5432/corn_tracker_e2e
+      E2E_PYTHON: python
+      E2E_LOCAL_STORAGE_DIR: /tmp/corn-tracker-e2e-storage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            apps/api/requirements.txt
+            apps/api/requirements-dev.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install API dependencies
+        run: pip install -r apps/api/requirements.txt -r apps/api/requirements-dev.txt
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Install Chromium
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Browser E2E
+        working-directory: apps/web
+        run: npm run test:e2e
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

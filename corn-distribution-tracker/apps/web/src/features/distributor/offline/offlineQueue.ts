@@ -239,6 +239,29 @@ export function clearSubmittedDrafts(userId: string): void {
   );
 }
 
+const SUBMITTED_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Submitted local receipts are convenience copies, not the source of truth.
+ * Drop them after a short retention window so geotagged/local metadata does not
+ * remain on a shared device indefinitely.
+ */
+export function pruneSubmittedDrafts(
+  userId: string,
+  retentionMs: number = SUBMITTED_RETENTION_MS,
+): void {
+  const drafts = readDraftsForUser(userId);
+  const cutoff = Date.now() - retentionMs;
+  const retained = drafts.filter(
+    (draft) => draft.state !== "SUBMITTED" || Date.parse(draft.updatedAt) >= cutoff,
+  );
+  if (retained.length === drafts.length) return;
+  for (const draft of drafts) {
+    if (!retained.includes(draft)) void deleteDraftPhotos(draft.id);
+  }
+  writeDraftsForUser(userId, retained);
+}
+
 /* ------------------------------------------------------------- Photo storage */
 
 let photoDbPromise: Promise<IDBDatabase | null> | null = null;
@@ -416,6 +439,9 @@ async function syncOneDraft(userId: string, draft: LocalDraft): Promise<boolean>
     for (const photo of photos) {
       const intent = await api.createUploadIntent(photo.meta.content_type);
       await uploadBlob(intent, photo.blob);
+      // Direct-to-S3 uploads bypass Django, so the server must verify the
+      // object (size/type/digest) before the intent can be attached.
+      await api.completeUploadIntent(intent.intent_id);
       evidence.push({
         intent_id: intent.intent_id,
         capture_source: photo.meta.capture_source,
@@ -439,6 +465,16 @@ async function syncOneDraft(userId: string, draft: LocalDraft): Promise<boolean>
       submittedAt: record.submitted_at,
       lastError: null,
       updatedAt: new Date().toISOString(),
+      // The server record is authoritative. Keep only a minimal local receipt;
+      // remove location, notes, photo references and site/assignment context.
+      location: null,
+      notes: null,
+      photoIds: [],
+      assignmentId: null,
+      siteId: null,
+      siteCode: null,
+      siteName: null,
+      idempotencyKey: "",
     }));
     await deleteDraftPhotos(draft.id);
     return true;

@@ -18,7 +18,7 @@ Show the pending queue, authorized private image, site/distributor/quantity/time
 
 ## Verification
 
-`npm test` → 37 passed across 6 files; `npm run typecheck`, `npm run lint` and `npm run build` pass; `make test-e2e` → 8 passed. Backend tests prove missing/far/stale/inaccurate fixes approve without a location exception.
+`npm test` → 39 passed across 7 files; `npm run typecheck`, `npm run lint` and `npm run build` pass; `make test-e2e` → 9 passed. Backend tests prove missing/far/stale/inaccurate fixes approve without a location exception.
 
 ## Unresolved issues
 
@@ -27,3 +27,9 @@ No committed browser/component test asserts the absence of location warnings on 
 ## Delivery-map invalidation (2026-10-25)
 
 Approve/reject/cancel now also invalidates `analytics-map-deliveries`, so the delivery-only admin map refreshes status colours after review. Verification: `npm test` (39 passed, 7 files), `npm run typecheck` and `npm run lint` pass.
+
+## 2026-10-26 audit remediation
+
+Evidence review shows reversal context and keeps location quality separate from integrity warnings.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

@@ -44,6 +44,7 @@ export function InventoryPage() {
 
   /* Adjustment form (requires review/confirm + mandatory reason) */
   const [adjustmentAccount, setAdjustmentAccount] = useState("");
+  const [adjustmentDestination, setAdjustmentDestination] = useState("");
   const [adjustmentQuantity, setAdjustmentQuantity] = useState("");
   const [adjustmentType, setAdjustmentType] = useState<"LOSS" | "RETURN">("LOSS");
   const [adjustmentReason, setAdjustmentReason] = useState("");
@@ -99,12 +100,14 @@ export function InventoryPage() {
           unit: "KG",
           movement_type: adjustmentType,
           reason: adjustmentReason.trim(),
+          destination_account_id: adjustmentType === "RETURN" ? adjustmentDestination : null,
         },
         newId(),
       ),
     onSuccess: (movement) => {
       toast.notify("success", `Adjustment posted (${movement.id}).`);
       setAdjustmentQuantity("");
+      setAdjustmentDestination("");
       setAdjustmentReason("");
       invalidateAll();
     },
@@ -161,10 +164,18 @@ export function InventoryPage() {
               <StatCard
                 label="Reconciliation"
                 value={summary.data.reconciliation.balanced ? "Balanced" : "Check"}
-                definition={`received ${formatKg(summary.data.reconciliation.received_kg)} kg · net loss ${formatKg(summary.data.reconciliation.loss_kg)} kg`}
+                definition={`net external ${formatKg(summary.data.reconciliation.net_external_kg)} kg · ledger total ${formatKg(summary.data.reconciliation.sum_account_balances_kg)} kg`}
               />
             ) : null}
           </div>
+          {summary.data.reconciliation ? (
+            <p className="muted small" data-testid="reconciliation-detail">
+              Received {formatKg(summary.data.reconciliation.received_kg)} kg · reversed receipts{" "}
+              {formatKg(summary.data.reconciliation.reversed_receipt_kg)} kg · losses{" "}
+              {formatKg(summary.data.reconciliation.loss_kg)} kg · reversed losses{" "}
+              {formatKg(summary.data.reconciliation.reversed_loss_kg)} kg. Internal transfers net to zero.
+            </p>
+          ) : null}
           <h2 style={{ marginTop: "var(--space-3)" }}>Account balances</h2>
           <DataTable
             caption="Stock account balances"
@@ -315,6 +326,14 @@ export function InventoryPage() {
               toast.notify("warning", "Account, quantity and a reason (min 3 characters) are required.");
               return;
             }
+            if (adjustmentType === "RETURN" && !adjustmentDestination) {
+              toast.notify("warning", "A destination account is required for a return.");
+              return;
+            }
+            if (adjustmentType === "RETURN" && adjustmentDestination === adjustmentAccount) {
+              toast.notify("warning", "Source and destination accounts must differ.");
+              return;
+            }
             setAdjustConfirmOpen(true);
           }}
           style={{ maxWidth: 520 }}
@@ -364,6 +383,27 @@ export function InventoryPage() {
               )}
             </FormField>
           </div>
+          {adjustmentType === "RETURN" ? (
+            <FormField id="adjust-destination" label="Destination account" required helper="The account that receives the returned stock.">
+              {(ids) => (
+                <select
+                  id="adjust-destination"
+                  aria-describedby={ids.describedBy}
+                  value={adjustmentDestination}
+                  onChange={(e) => setAdjustmentDestination(e.target.value)}
+                >
+                  <option value="">Choose destination…</option>
+                  {(summary.data?.accounts ?? [])
+                    .filter((account) => account.id !== adjustmentAccount)
+                    .map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} ({account.account_type})
+                      </option>
+                    ))}
+                </select>
+              )}
+            </FormField>
+          ) : null}
           <FormField id="adjust-reason" label="Reason" required helper="Three characters minimum; stored with the movement.">
             {(ids) => (
               <input
@@ -420,8 +460,8 @@ export function InventoryPage() {
                   render: (row) =>
                     row.movement_type === "REVERSAL" ? (
                       <span className="small muted">reversal of {row.reversal_of_id?.slice(0, 8) ?? "—"}</span>
-                    ) : row.reversal_of_id ? (
-                      <span className="small muted">reversed</span>
+                    ) : row.reversed_by_id ? (
+                      <span className="small muted">reversed · correction {row.reversed_by_id.slice(0, 8)}</span>
                     ) : (
                       <button type="button" className="btn ghost small" onClick={() => setReversalTarget(row)}>
                         Reverse…
@@ -457,8 +497,9 @@ export function InventoryPage() {
         message={
           <div className="stack">
             <p>
-              Reversals mirror the original movement's side-ness on the ledger. Post only under the correct reason; the
-              reversal is itself immutable.
+              The reversal debits the account that received the original movement and credits the original source. It is
+              refused if that would overdraw the receiving account, and a linked delivery becomes <strong>REVERSED</strong>.
+              Post only under the correct reason; the reversal is itself immutable and cannot be reversed.
             </p>
             <FormField id="reversal-reason" label="Reason" required helper="Three characters minimum.">
               {(ids) => (

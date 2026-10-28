@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet, Sum
 from django.utils import timezone
 
@@ -19,6 +20,7 @@ from ..models import (
     DistributorAssignment,
     PhotoEvidence,
     StockAccount,
+    StockMovement,
     User,
 )
 from ..rate_limit import hit
@@ -33,6 +35,60 @@ ZERO = Decimal("0")
 
 def _merge_flags(base: list, extra: list) -> list:
     return list(dict.fromkeys([*base, *extra]))
+
+
+def _check_delivery_idempotency(existing: DistributionRecord, fingerprint: str) -> DistributionRecord:
+    if not existing.idempotency_fingerprint:
+        raise ConflictError(
+            "This idempotency key predates payload verification; retry with a new key.",
+            code="IDEMPOTENCY_CONFLICT",
+            details=[{"legacy": True}],
+        )
+    if existing.idempotency_fingerprint != fingerprint:
+        raise ConflictError(
+            "This idempotency key was already used for a different delivery.",
+            code="IDEMPOTENCY_CONFLICT",
+        )
+    return existing
+
+
+def _delivery_fingerprint(
+    *,
+    user: User,
+    assignment_id: uuid.UUID,
+    quantity: Decimal,
+    unit: str,
+    notes: str | None,
+    evidence_specs: list[dict[str, Any]],
+    location: dict[str, Any] | None,
+) -> str:
+    # Client timestamps are retry metadata, not business identity. Coordinates,
+    # quantity, assignment and evidence intent ids must match on replay.
+    normalized_location = None
+    if location:
+        normalized_location = {
+            "latitude": location.get("latitude"),
+            "longitude": location.get("longitude"),
+            "accuracy_m": location.get("accuracy_m"),
+        }
+    normalized_evidence = [
+        {
+            "intent_id": str(spec.get("intent_id")),
+            "capture_source": spec.get("capture_source"),
+        }
+        for spec in evidence_specs
+    ]
+    return inventory_service.request_fingerprint(
+        {
+            "actor": user.id,
+            "assignment_id": assignment_id,
+            "quantity": str(quantity),
+            "unit": unit,
+            "notes": notes,
+            "evidence": normalized_evidence,
+            "location": normalized_location,
+        }
+    )
 
 
 def submit_delivery(
@@ -56,11 +112,20 @@ def submit_delivery(
             "At least one photo is required for a delivery submission.",
             details=[{"field": "evidence"}],
         )
+    fingerprint = _delivery_fingerprint(
+        user=user,
+        assignment_id=assignment_id,
+        quantity=quantity,
+        unit=unit,
+        notes=notes,
+        evidence_specs=evidence_specs,
+        location=location,
+    )
     existing = DistributionRecord.objects.filter(
         distributor_user_id=user.id, idempotency_key=idempotency_key
     ).first()
     if existing is not None:
-        return existing, True
+        return _check_delivery_idempotency(existing, fingerprint), True
 
     assignment = DistributorAssignment.objects.filter(id=assignment_id).first()
     if assignment is None or assignment.distributor_user_id != user.id:
@@ -76,6 +141,14 @@ def submit_delivery(
 
     account = inventory_service.get_or_create_distributor_account(user)
     inventory_service.lock_accounts(account.id)
+    # The first check ran before the account lock. A concurrent request with the
+    # same key may have committed while this one waited, so replay it here
+    # before calculating availability (its own reservation must not reject it).
+    existing = DistributionRecord.objects.filter(
+        distributor_user_id=user.id, idempotency_key=idempotency_key
+    ).first()
+    if existing is not None:
+        return _check_delivery_idempotency(existing, fingerprint), True
     available = inventory_service.available_kg(account, distributor_user_id=user.id)
     if kg > available:
         raise ConflictError(
@@ -110,28 +183,40 @@ def submit_delivery(
                 site_longitude=site.longitude,
             )
 
-    record = DistributionRecord.objects.create(
-        campaign=assignment.campaign,
-        assignment=assignment,
-        site=site,
-        distributor_user=user,
-        quantity_kg=kg,
-        status=RecordStatus.SUBMITTED,
-        idempotency_key=idempotency_key,
-        client_created_at=location.get("client_created_at") if location else None,
-        submitted_at=timezone.now(),
-        notes=notes,
-        location_latitude=latitude,
-        location_longitude=longitude,
-        location_accuracy_m=accuracy,
-        location_timestamp=location_timestamp,
-        device_reported_location_time=device_time,
-        distance_to_site_m=(
-            Decimal(str(geo_result["distance_m"])) if geo_result["distance_m"] is not None else None
-        ),
-        geo_status=GeoStatus(geo_result["geo_status"]),
-        geo_flags=geo_result["flags"],
-    )
+    try:
+        with transaction.atomic():
+            record = DistributionRecord.objects.create(
+                campaign=assignment.campaign,
+                assignment=assignment,
+                site=site,
+                distributor_user=user,
+                quantity_kg=kg,
+                status=RecordStatus.SUBMITTED,
+                idempotency_key=idempotency_key,
+                idempotency_fingerprint=fingerprint,
+                client_created_at=location.get("client_created_at") if location else None,
+                submitted_at=timezone.now(),
+                notes=notes,
+                location_latitude=latitude,
+                location_longitude=longitude,
+                location_accuracy_m=accuracy,
+                location_timestamp=location_timestamp,
+                device_reported_location_time=device_time,
+                distance_to_site_m=(
+                    Decimal(str(geo_result["distance_m"]))
+                    if geo_result["distance_m"] is not None
+                    else None
+                ),
+                geo_status=GeoStatus(geo_result["geo_status"]),
+                geo_flags=geo_result["flags"],
+            )
+    except IntegrityError:
+        existing = DistributionRecord.objects.filter(
+            distributor_user_id=user.id, idempotency_key=idempotency_key
+        ).first()
+        if existing is None:
+            raise
+        return _check_delivery_idempotency(existing, fingerprint), True
 
     evidence_service.attach_intents_to_record(
         record=record,
@@ -179,14 +264,56 @@ def approve_delivery(
     )
     if record is None:
         raise NotFoundError("Delivery record not found.")
+    approval_fingerprint = inventory_service.request_fingerprint(
+        {
+            "scope": inventory_service.DELIVERY_SCOPE,
+            "actor": admin.id,
+            "record_id": record.id,
+            "exception_reason": exception_reason,
+            "review_note": review_note,
+        }
+    )
     if record.status == RecordStatus.APPROVED:
+        # A retry must not let the same key stand for a different record or a
+        # different review payload just because this record is already final.
+        if idempotency_key:
+            existing = StockMovement.objects.filter(
+                idempotency_scope=inventory_service.DELIVERY_SCOPE,
+                idempotency_key=idempotency_key,
+            ).first()
+            if existing is not None and existing.reference_id != record.id:
+                raise ConflictError(
+                    "This idempotency key was already used for a different delivery.",
+                    code="IDEMPOTENCY_CONFLICT",
+                )
+            if existing is not None and not existing.idempotency_fingerprint:
+                raise ConflictError(
+                    "This idempotency key predates payload verification; retry with a new key.",
+                    code="IDEMPOTENCY_CONFLICT",
+                    details=[{"legacy": True}],
+                )
+            if (
+                existing is not None
+                and existing.idempotency_fingerprint != approval_fingerprint
+            ):
+                raise ConflictError(
+                    "This idempotency key was already used for a different request.",
+                    code="IDEMPOTENCY_CONFLICT",
+                )
         return record, True
     if record.status != RecordStatus.SUBMITTED:
         raise ConflictError("Only submitted records can be approved.", code="ILLEGAL_STATE")
 
     site = DistributionSite.objects.filter(id=record.site_id).first()
-    assignment = DistributorAssignment.objects.filter(id=record.assignment_id).first()
-    assert site is not None and assignment is not None
+    assignment = (
+        DistributorAssignment.objects.select_for_update()
+        .filter(id=record.assignment_id)
+        .first()
+    )
+    if site is None or assignment is None:
+        raise ConflictError(
+            "The delivery assignment or site is missing.", code="ILLEGAL_STATE"
+        )
     # Location never blocks approval. Only non-location evidence integrity
     # checks still require an explicit reviewer override.
     critical_flags = {
@@ -233,7 +360,9 @@ def approve_delivery(
     site_account = inventory_service.get_or_create_site_account(record.site_id)
     inventory_service.lock_accounts(distributor_account.id, site_account.id)
     available = inventory_service.available_kg(
-        distributor_account, distributor_user_id=record.distributor_user_id
+        distributor_account,
+        distributor_user_id=record.distributor_user_id,
+        exclude_record_id=record.id,
     )
     if Decimal(record.quantity_kg) > available:
         raise ConflictError(
@@ -251,7 +380,9 @@ def approve_delivery(
         reference_type="distribution_record",
         reference_id=record.id,
         distribution_reference_id=record.id,
+        idempotency_scope=inventory_service.DELIVERY_SCOPE,
         idempotency_key=idempotency_key,
+        idempotency_fingerprint=approval_fingerprint,
         created_by=admin.id,
         reason=review_note,
         metadata={

@@ -10,7 +10,7 @@ Login, invitation, password reset/change, session revocation and account lifecyc
 
 ## Verification
 
-Backend: `make test-api` → 66 passed (including the successful-login budget and locked-account retry-window tests); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 98 passed (including the successful-login budget and locked-account retry-window tests); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (9 passed).
 
 ## Unresolved issues
 

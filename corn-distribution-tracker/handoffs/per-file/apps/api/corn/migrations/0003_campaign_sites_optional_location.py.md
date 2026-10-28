@@ -17,7 +17,7 @@ Add `DistributionSite.campaign` as a nullable FK (legacy/global rows remain poss
 
 ## Verification
 
-`make migrate` → applied `corn.0003_campaign_sites_optional_location`; existing `GUDELE-02` and `MUNUKI-01` sites are attached to `Juba Central 2026`. `make test-api` → 66 passed, including campaign-site creation, optional/cleared location, duplicate-name and cross-campaign assignment tests. `make lint-api` and `make typecheck-api` pass.
+`make migrate` → applied `corn.0003_campaign_sites_optional_location`; existing `GUDELE-02` and `MUNUKI-01` sites are attached to `Juba Central 2026`. `make test-api` → 98 passed, including campaign-site creation, optional/cleared location, duplicate-name and cross-campaign assignment tests. `make lint-api` and `make typecheck-api` pass.
 
 ## Unresolved issues
 

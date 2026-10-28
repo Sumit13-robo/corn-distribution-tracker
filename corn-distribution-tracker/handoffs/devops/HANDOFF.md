@@ -30,3 +30,19 @@ The delivery-only admin map adds no environment variable or migration. It uses t
 
 ## Report
 Exact startup/test/build commands, assumptions about hosting/object storage/map provider, production env requirements and unresolved launch risks.
+
+## Post-remediation verification (2026-10-26)
+
+Added CI jobs for backend, frontend, Playwright E2E and dependency review, plus `npm audit`, Dependabot and `make check`. The web container now uses `nginx.docker.conf` with an `api:8000` upstream and `/usr/share/nginx/html`; Compose has a readiness healthcheck; readiness probes configured storage; security headers include CSP/COOP/frame/referrer; trusted XFF is opt-in and nginx overwrites it. Gunicorn `--check-config`, YAML parsing, Compose dependencies, nginx/Dockerfile static checks and `npm audit` pass. No Docker/nginx runtime or hosted CI execution was available; real provider S3/CORS/KMS, ingress TLS/HSTS and load evidence remain external.
+
+## Railway/Vercel deployment preparation (2026-10-28)
+
+Added `apps/api/railway.json` (Dockerfile, pre-deploy migration, PORT-aware
+start, `/health/ready` gate), `apps/api/bin/{release,start}.sh`,
+`apps/api/.env.railway.example`, `apps/web/vercel.json` (same-origin `/api`
+rewrite with API caching disabled, SPA fallback and security headers),
+`apps/web/scripts/check-deploy-config.mjs` (fails Vercel builds on the
+placeholder), and `infra/railway-bucket-cors.json`. Backend tests are now 98;
+the web production build passes; JSON/shell syntax checks pass. The Vercel and
+Railway CLIs are unauthenticated here, so no provider deployment, real bucket
+CORS/upload, cookie round-trip, TLS or restore evidence was produced.

@@ -32,6 +32,6 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Email/password login with safe error display, redirect-on-success and a link to the reset flow. `loginErrorMessage()` keeps credential failures generic but reports `429` with the server's retry window, `5xx`/network outages as temporary unavailability, and `403` as an expired sign-in session.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files, including the new login-message tests); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded. Browser check with a live `429` confirmed `Too many sign-in attempts. Try again in 5 minutes.`
+**Verification (2026-10-23):** `cd apps/web && npm test` → 39 passed (7 files, including the new login-message tests); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded. Browser check with a live `429` confirmed `Too many sign-in attempts. Try again in 5 minutes.`
 
 **Unresolved issues:** None known.

@@ -25,3 +25,9 @@ The identity assertion targets the current top-bar structure (`E2E Distributor` 
 ## Unresolved issues
 
 Local-only: needs PostgreSQL with CREATEDB, the repo virtualenv and Chromium. It does not replace real-device or assistive-technology testing, and it does not force/test the WebGL coordinate-board fallback.
+
+## 2026-10-26 audit remediation
+
+E2E assertions cover private evidence rendering, approval, reversal/status behavior, offline sync and the submitted local-receipt scrub. Nine tests pass locally.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

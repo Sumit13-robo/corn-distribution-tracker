@@ -25,10 +25,13 @@ A distributor submits a site report with a photo and, when available, the device
 - These non-location integrity flags may require an explicit override reason before approval; location never does. Approvals remain manual and are always audit logged.
 
 ## Metadata and storage
-- Do not rely only on client-posted fields. Validate image by decoding it, checking actual size/type, calculating hash server-side and optionally reading EXIF server-side with a maintained library.
+- Do not rely only on client-posted fields. Validate image by fully decoding it, checking the real size/type and a bounded pixel count, calculating the hash server-side and optionally reading EXIF server-side with a maintained library.
 - EXIF may be absent because mobile browsers can strip it. Missing EXIF should be recorded as an informational state, not automatic evidence of fraud unless policy explicitly says so.
-- Preserve original in a private bucket, store opaque random object keys, and use signed URLs for authorized viewing. If creating thumbnails, strip location EXIF from the derivative while retaining structured original metadata in access-controlled evidence data.
-- Upload intent should expire, be bound to an authenticated user and expected constraints, and be consumed once. Clean up unassociated uploads by a documented job/process.
+- Preserve the original in a private bucket, store opaque random object keys, and use signed URLs for authorized viewing. If creating thumbnails, strip location EXIF from the derivative while retaining structured original metadata in access-controlled evidence data.
+- Upload intents expire (`EVIDENCE_UPLOAD_TTL_SECONDS`, default 15 minutes), are bound to the authenticated user and expected constraints, and are consumed once. Unassociated objects should be cleaned up by a documented bucket lifecycle rule.
+- Local development uploads pass through Django and are validated before storage. Direct-to-S3 uploads bypass Django, so the client must call the completion endpoint; the server fetches the object with private credentials, validates it, records size/hash/type and refuses attachment if the object changed afterwards. Delivery submission performs the same verification lazily if completion was lost.
+- Object reads are bounded using the intent's configured cap or the evidence row's recorded size. Private blob reads also re-check SHA-256, so a same-size replacement after attachment fails with `EVIDENCE_INTEGRITY_FAILURE` instead of being served as the original.
+- Production bucket CORS must allow the SPA origin, `PUT`, and the exact upload headers returned by the intent, including SSE/KMS headers when configured. A simulated S3-compatible endpoint covers the presigned PUT, CORS preflight, SSE header, completion, tamper and oversize paths in the external audit probes; a real provider bucket still needs operator verification.
 - Store evidence lifecycle, uploader, file metadata, hash, capture metadata, server timestamps, optional site/location context, and review decisions. Keep review/exception history audit logged.
 
 ## Admin review UI

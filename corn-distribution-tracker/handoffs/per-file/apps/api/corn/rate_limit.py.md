@@ -10,8 +10,14 @@ Thread-safe, process-local sliding-window limits for login, password reset, invi
 
 ## Verification
 
-Backend: `make test-api` → 66 passed (including 13 successful logins in one window and the 10-failure lockout); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Browser verification on 2026-10-23 confirmed the `429` `Retry-After` path renders an actionable message.
+Backend: `make test-api` → 98 passed (including 13 successful logins in one window and the 10-failure lockout); `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Browser verification on 2026-10-23 confirmed the `429` `Retry-After` path renders an actionable message.
 
 ## Unresolved issues
 
-None known. Native PostgreSQL + Django + Vite workflow verified.
+Process-local only: multiple Gunicorn workers or replicas each enforce their own counters. Use a shared Redis/cache limiter before horizontal scale-out. The bucket table is bounded to prevent unbounded memory growth.
+
+## 2026-10-26 audit remediation
+
+The process-local bucket table is now bounded and evicts expired/oldest entries. This fixes unbounded memory growth, but multi-worker deployments still need a shared limiter.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

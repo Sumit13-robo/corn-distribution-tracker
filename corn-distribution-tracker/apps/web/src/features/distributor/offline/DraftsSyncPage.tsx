@@ -8,6 +8,7 @@ import { formatDateTime } from "../../../lib/format";
 import { getCurrentUserId } from "../../../lib/session";
 import {
   loadDrafts,
+  pruneSubmittedDrafts,
   queueAndSync,
   removeDraft,
   subscribeToDraftChanges,
@@ -32,6 +33,7 @@ export function DraftsSyncPage() {
 
   useEffect(() => {
     if (!userId) return;
+    pruneSubmittedDrafts(userId);
     const refresh = () => setDrafts(loadDrafts(userId));
     refresh();
     return subscribeToDraftChanges(refresh);
@@ -161,13 +163,19 @@ export function DraftsSyncPage() {
                 <li key={draft.id} className="draft-row" data-testid="draft-row">
                   <div className="draft-main">
                     <div className="draft-title">
-                      <strong>{draft.siteCode ?? draft.siteName ?? "Unassigned draft"}</strong>
+                      <strong>
+                        {draft.state === "SUBMITTED"
+                          ? "Submitted delivery"
+                          : (draft.siteCode ?? draft.siteName ?? "Unassigned draft")}
+                      </strong>
                       <StatusBadge status={draft.state} />
                     </div>
                     <p className="draft-meta">
-                      {draft.siteName && draft.siteName !== draft.siteCode ? `${draft.siteName} · ` : ""}
-                      {draft.quantity ? `${draft.quantity} ${draft.unit}` : "quantity not entered"} ·{" "}
-                      {draft.photoIds.length} photo(s)
+                      {draft.siteName && draft.siteName !== draft.siteCode && draft.state !== "SUBMITTED"
+                        ? `${draft.siteName} · `
+                        : ""}
+                      {draft.quantity ? `${draft.quantity} ${draft.unit}` : "quantity not entered"}
+                      {draft.state !== "SUBMITTED" ? ` · ${draft.photoIds.length} photo(s)` : ""}
                     </p>
                     <p className="draft-meta">
                       Saved {formatDateTime(draft.updatedAt)}
@@ -225,8 +233,9 @@ export function DraftsSyncPage() {
       </div>
 
       <p className="muted small">
-        Photos in unsynced drafts are kept in this browser&rsquo;s private storage. Signing out keeps drafts for this
-        account; clearing browser data removes them permanently.
+        Photos in unsynced drafts are stored unencrypted in this browser&rsquo;s IndexedDB and removed after sync.
+        Submitted local receipts keep only quantity/record id and are pruned after 24 hours. Signing out keeps drafts
+        for this account; clearing browser data removes them permanently.
       </p>
 
       <ConfirmDialog

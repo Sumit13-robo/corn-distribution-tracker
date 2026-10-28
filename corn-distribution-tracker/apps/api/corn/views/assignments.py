@@ -33,7 +33,15 @@ def _list_assignments(request):
     rows, total = assignment_service.list_assignments(
         user=request.user, campaign_id=campaign_id, limit=limit, offset=offset
     )
-    return Response(page([assignment_out(row) for row in rows], total, limit, offset))
+    include_notes = request.user.role == "ADMIN"
+    return Response(
+        page(
+            [assignment_out(row, include_notes=include_notes) for row in rows],
+            total,
+            limit,
+            offset,
+        )
+    )
 
 
 def _create_assignment(request):
@@ -50,7 +58,7 @@ def _get_assignment(request, assignment_id: uuid.UUID):
     assignment = assignment_service.get_assignment_scoped(
         user=request.user, assignment_id=assignment_id
     )
-    return Response(assignment_out(assignment))
+    return Response(assignment_out(assignment, include_notes=request.user.role == "ADMIN"))
 
 
 def _update_assignment(request, assignment_id: uuid.UUID):

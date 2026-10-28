@@ -6,11 +6,15 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
-| `apps/api/.dockerignore` | Backend | Container build-context exclusions; retained but outside the supported native workflow | [`per-file/apps/api/.dockerignore.md`](per-file/apps/api/.dockerignore.md) | DEFERRED |
-| `apps/api/Dockerfile` | Backend | Container definition; retained but outside the supported native workflow | [`per-file/apps/api/Dockerfile.md`](per-file/apps/api/Dockerfile.md) | DEFERRED |
+| `apps/api/.dockerignore` | Backend | Container build-context exclusions, including local secrets and evidence; used by Railway's Docker build | [`per-file/apps/api/.dockerignore.md`](per-file/apps/api/.dockerignore.md) | IMPLEMENTED |
+| `apps/api/.env.railway.example` | DevOps | Safe Railway variable template for Postgres, bucket, proxy, cookies and runtime | [`per-file/apps/api/.env.railway.example.md`](per-file/apps/api/.env.railway.example.md) | IMPLEMENTED |
+| `apps/api/Dockerfile` | Backend | Non-root API image; copies start/release scripts and honors Railway's `PORT` | [`per-file/apps/api/Dockerfile.md`](per-file/apps/api/Dockerfile.md) | IMPLEMENTED |
+| `apps/api/bin/release.sh` | Backend / DevOps | Railway pre-deploy migration command | [`per-file/apps/api/bin/release.sh.md`](per-file/apps/api/bin/release.sh.md) | IMPLEMENTED |
+| `apps/api/bin/start.sh` | Backend / DevOps | PORT-aware Gunicorn startup | [`per-file/apps/api/bin/start.sh.md`](per-file/apps/api/bin/start.sh.md) | IMPLEMENTED |
+| `apps/api/railway.json` | Backend / DevOps | Railway Docker build, pre-deploy migration, start command and readiness healthcheck | [`per-file/apps/api/railway.json.md`](per-file/apps/api/railway.json.md) | IMPLEMENTED |
 | `apps/api/config/__init__.py` | Backend | Configuration package marker | [`per-file/apps/api/config/__init__.py.md`](per-file/apps/api/config/__init__.py.md) | IMPLEMENTED |
 | `apps/api/config/asgi.py` | Backend | ASGI entrypoint for Django | [`per-file/apps/api/config/asgi.py.md`](per-file/apps/api/config/asgi.py.md) | IMPLEMENTED |
-| `apps/api/config/settings.py` | Backend | Environment-driven Django settings, structured logging and fail-fast production validation | [`per-file/apps/api/config/settings.py.md`](per-file/apps/api/config/settings.py.md) | TESTED |
+| `apps/api/config/settings.py` | Backend | Environment-driven Django settings, Railway host/origin handling, structured logging and fail-fast production validation | [`per-file/apps/api/config/settings.py.md`](per-file/apps/api/config/settings.py.md) | TESTED |
 | `apps/api/config/settings_test.py` | Backend | Isolated PostgreSQL test settings used by pytest | [`per-file/apps/api/config/settings_test.py.md`](per-file/apps/api/config/settings_test.py.md) | TESTED |
 | `apps/api/config/urls.py` | Backend | Root URL map for health, API v1 and JSON error handlers | [`per-file/apps/api/config/urls.py.md`](per-file/apps/api/config/urls.py.md) | TESTED |
 | `apps/api/config/wsgi.py` | Backend | WSGI entrypoint used by Gunicorn | [`per-file/apps/api/config/wsgi.py.md`](per-file/apps/api/config/wsgi.py.md) | IMPLEMENTED |
@@ -28,10 +32,11 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 | `apps/api/corn/migrations/0001_initial.py` | Backend | Initial Django schema, constraints and indexes | [`per-file/apps/api/corn/migrations/0001_initial.py.md`](per-file/apps/api/corn/migrations/0001_initial.py.md) | TESTED |
 | `apps/api/corn/migrations/0002_append_only_triggers.py` | Backend | PostgreSQL triggers that make stock movements and audit events append-only | [`per-file/apps/api/corn/migrations/0002_append_only_triggers.py.md`](per-file/apps/api/corn/migrations/0002_append_only_triggers.py.md) | TESTED |
 | `apps/api/corn/migrations/0003_campaign_sites_optional_location.py` | Backend | Adds campaign-scoped sites, nullable coordinates and assignment-based campaign backfill | [`per-file/apps/api/corn/migrations/0003_campaign_sites_optional_location.py.md`](per-file/apps/api/corn/migrations/0003_campaign_sites_optional_location.py.md) | TESTED |
+| `apps/api/corn/migrations/0004_scoped_idempotency_and_reversals.py` | Backend | Scopes legacy idempotency keys, adds reversal/review columns and recreates the append-only trigger transactionally | [`per-file/apps/api/corn/migrations/0004_scoped_idempotency_and_reversals.py.md`](per-file/apps/api/corn/migrations/0004_scoped_idempotency_and_reversals.py.md) | TESTED |
 | `apps/api/corn/migrations/__init__.py` | Backend | Django migrations package marker | [`per-file/apps/api/corn/migrations/__init__.py.md`](per-file/apps/api/corn/migrations/__init__.py.md) | IMPLEMENTED |
 | `apps/api/corn/models.py` | Backend | Django ORM schema, constraints, indexes and append-only table mappings | [`per-file/apps/api/corn/models.py.md`](per-file/apps/api/corn/models.py.md) | TESTED |
 | `apps/api/corn/presenters.py` | Backend | Canonical JSON response shaping, including site/distributor display fields | [`per-file/apps/api/corn/presenters.py.md`](per-file/apps/api/corn/presenters.py.md) | TESTED |
-| `apps/api/corn/rate_limit.py` | Backend | Process-local rate limiting for authentication attempts | [`per-file/apps/api/corn/rate_limit.py.md`](per-file/apps/api/corn/rate_limit.py.md) | TESTED |
+| `apps/api/corn/rate_limit.py` | Backend | Memory-bounded process-local rate limiting for authentication attempts; shared limiter required for multi-worker scale-out | [`per-file/apps/api/corn/rate_limit.py.md`](per-file/apps/api/corn/rate_limit.py.md) | TESTED |
 | `apps/api/corn/security.py` | Backend | Argon2id password handling, token hashing and HMAC signing helpers | [`per-file/apps/api/corn/security.py.md`](per-file/apps/api/corn/security.py.md) | TESTED |
 | `apps/api/corn/serializers.py` | Backend | Strict DRF input serializers for every mutation boundary | [`per-file/apps/api/corn/serializers.py.md`](per-file/apps/api/corn/serializers.py.md) | TESTED |
 | `apps/api/corn/services/__init__.py` | Backend | Service package marker | [`per-file/apps/api/corn/services/__init__.py.md`](per-file/apps/api/corn/services/__init__.py.md) | IMPLEMENTED |
@@ -43,7 +48,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 | `apps/api/corn/services/evidence.py` | Backend | Upload intents, image validation, non-location integrity flags, evidence persistence and private view authorization | [`per-file/apps/api/corn/services/evidence.py.md`](per-file/apps/api/corn/services/evidence.py.md) | TESTED |
 | `apps/api/corn/services/inventory.py` | Backend | Double-entry ledger, postings, reservations, reversals and derived balances | [`per-file/apps/api/corn/services/inventory.py.md`](per-file/apps/api/corn/services/inventory.py.md) | TESTED |
 | `apps/api/corn/services/settings.py` | Backend | Organization settings read/update rules and unit validation | [`per-file/apps/api/corn/services/settings.py.md`](per-file/apps/api/corn/services/settings.py.md) | TESTED |
-| `apps/api/corn/storage.py` | Backend | Private local/S3 evidence storage and short-lived signed URLs | [`per-file/apps/api/corn/storage.py.md`](per-file/apps/api/corn/storage.py.md) | TESTED |
+| `apps/api/corn/storage.py` | Backend | Private local/S3 evidence storage, virtual-host addressing, short-lived signed URLs and health probes | [`per-file/apps/api/corn/storage.py.md`](per-file/apps/api/corn/storage.py.md) | TESTED |
 | `apps/api/corn/units.py` | Backend | Decimal kg conversion and display-unit helpers | [`per-file/apps/api/corn/units.py.md`](per-file/apps/api/corn/units.py.md) | TESTED |
 | `apps/api/corn/views/__init__.py` | Backend | View package marker | [`per-file/apps/api/corn/views/__init__.py.md`](per-file/apps/api/corn/views/__init__.py.md) | IMPLEMENTED |
 | `apps/api/corn/views/analytics.py` | Backend | Analytics endpoints, delivery-point map and audited CSV export | [`per-file/apps/api/corn/views/analytics.py.md`](per-file/apps/api/corn/views/analytics.py.md) | TESTED |
@@ -78,6 +83,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 | `apps/api/tests/test_distribution_submission.py` | Backend | Submission, review transitions, location-independent approval, idempotency and evidence validation tests | [`per-file/apps/api/tests/test_distribution_submission.py.md`](per-file/apps/api/tests/test_distribution_submission.py.md) | TESTED |
 | `apps/api/tests/test_geotag_validation.py` | Backend | Location capture, no-warning behavior and non-location evidence-integrity tests | [`per-file/apps/api/tests/test_geotag_validation.py.md`](per-file/apps/api/tests/test_geotag_validation.py.md) | TESTED |
 | `apps/api/tests/test_inventory_ledger.py` | Backend | Ledger postings, reservations, reversals, append-only triggers and concurrency tests | [`per-file/apps/api/tests/test_inventory_ledger.py.md`](per-file/apps/api/tests/test_inventory_ledger.py.md) | TESTED |
+| `apps/api/tests/test_remediation_regressions.py` | Backend | Audit regressions: scoped/legacy idempotency, reservations, reversal integrity, target locking, scope leaks, evidence tamper/oversize, proxy trust and limiter bounds | [`per-file/apps/api/tests/test_remediation_regressions.py.md`](per-file/apps/api/tests/test_remediation_regressions.py.md) | TESTED |
 
 ## Frontend application
 
@@ -142,7 +148,7 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
 | `apps/web/.dockerignore` | Frontend/DevOps | Container build-context filter; retained but outside the supported native workflow | [`per-file/apps/web/.dockerignore.md`](per-file/apps/web/.dockerignore.md) | DEFERRED |
-| `apps/web/Dockerfile` | Frontend/DevOps | Container definition; retained but outside the supported native workflow | [`per-file/apps/web/Dockerfile.md`](per-file/apps/web/Dockerfile.md) | DEFERRED |
+| `apps/web/Dockerfile` | Frontend/DevOps | Multi-stage web container; statically validated, runtime build deferred | [`per-file/apps/web/Dockerfile.md`](per-file/apps/web/Dockerfile.md) | IMPLEMENTED |
 | `apps/web/e2e/distribution.spec.ts` | QA | Critical distributor/reviewer browser workflow including the delivery-only admin map. | [`per-file/apps/web/e2e/distribution.spec.ts.md`](per-file/apps/web/e2e/distribution.spec.ts.md) | TESTED |
 | `apps/web/e2e/global-setup.ts` | QA | Per-run credentials and first-admin bootstrap for Playwright. | [`per-file/apps/web/e2e/global-setup.ts.md`](per-file/apps/web/e2e/global-setup.ts.md) | TESTED |
 | `apps/web/e2e/setup.spec.ts` | QA | E2E data seeding through public APIs | [`per-file/apps/web/e2e/setup.spec.ts.md`](per-file/apps/web/e2e/setup.spec.ts.md) | TESTED |
@@ -152,11 +158,14 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 | `apps/web/e2e/support/run-e2e.mjs` | QA | Prepare the disposable Django E2E database before Playwright starts web servers. | [`per-file/apps/web/e2e/support/run-e2e.mjs.md`](per-file/apps/web/e2e/support/run-e2e.mjs.md) | TESTED |
 | `apps/web/eslint.config.js` | Frontend/DevOps | ESLint flat config | [`per-file/apps/web/eslint.config.js.md`](per-file/apps/web/eslint.config.js.md) | TESTED |
 | `apps/web/index.html` | Frontend/DevOps | Web HTML shell | [`per-file/apps/web/index.html.md`](per-file/apps/web/index.html.md) | IMPLEMENTED |
-| `apps/web/nginx.conf` | Frontend/DevOps | SPA server with same-origin API proxy. | [`per-file/apps/web/nginx.conf.md`](per-file/apps/web/nginx.conf.md) | IMPLEMENTED |
+| `apps/web/nginx.conf` | Frontend/DevOps | SPA server with same-origin API proxy, CSP/COOP/frame headers and overwritten forwarding headers. | [`per-file/apps/web/nginx.conf.md`](per-file/apps/web/nginx.conf.md) | IMPLEMENTED |
+| `apps/web/nginx.docker.conf` | Frontend/DevOps | Container nginx config using the Compose `api` upstream and static SPA root; statically validated, runtime test deferred. | [`per-file/apps/web/nginx.docker.conf.md`](per-file/apps/web/nginx.docker.conf.md) | IMPLEMENTED |
 | `apps/web/package-lock.json` | Frontend/DevOps | Reproducible npm dependency lockfile | [`per-file/apps/web/package-lock.json.md`](per-file/apps/web/package-lock.json.md) | TESTED |
 | `apps/web/package.json` | Frontend/DevOps | Web scripts/dependencies | [`per-file/apps/web/package.json.md`](per-file/apps/web/package.json.md) | TESTED |
 | `apps/web/playwright.config.ts` | QA | Browser E2E orchestration. | [`per-file/apps/web/playwright.config.ts.md`](per-file/apps/web/playwright.config.ts.md) | TESTED |
 | `apps/web/tsconfig.json` | Frontend/DevOps | TypeScript config | [`per-file/apps/web/tsconfig.json.md`](per-file/apps/web/tsconfig.json.md) | TESTED |
+| `apps/web/scripts/check-deploy-config.mjs` | Frontend/DevOps | Fail Vercel builds while the Railway proxy placeholder remains | [`per-file/apps/web/scripts/check-deploy-config.mjs.md`](per-file/apps/web/scripts/check-deploy-config.mjs.md) | IMPLEMENTED |
+| `apps/web/vercel.json` | Frontend/DevOps | Vercel Vite build, same-origin `/api` rewrite, uncached API responses, SPA fallback and security headers | [`per-file/apps/web/vercel.json.md`](per-file/apps/web/vercel.json.md) | IMPLEMENTED |
 | `apps/web/vite.config.ts` | Frontend/DevOps | Vite config | [`per-file/apps/web/vite.config.ts.md`](per-file/apps/web/vite.config.ts.md) | TESTED |
 | `apps/web/vitest.setup.ts` | Frontend/DevOps | Vitest setup | [`per-file/apps/web/vitest.setup.ts.md`](per-file/apps/web/vitest.setup.ts.md) | TESTED |
 
@@ -164,11 +173,15 @@ Status values: `PLANNED`, `IN_PROGRESS`, `IMPLEMENTED`, `TESTED`, `DEFERRED`, `R
 
 | Target file | Owner | Responsibility | Handoff note | Status |
 |---|---|---|---|---|
-| `.env.example` | DevOps/Lead | Configuration template | [`per-file/.env.example.md`](per-file/.env.example.md) | IMPLEMENTED |
+| `.env.example` | DevOps/Lead | Configuration template including Railway/Vercel production placeholders | [`per-file/.env.example.md`](per-file/.env.example.md) | IMPLEMENTED |
+| `.github/dependabot.yml` | DevOps/Lead | Weekly dependency updates for pip/npm and monthly GitHub Actions updates | [`per-file/.github/dependabot.yml.md`](per-file/.github/dependabot.yml.md) | IMPLEMENTED |
+| `.github/workflows/ci.yml` | DevOps/Lead | Backend, frontend, Playwright E2E and dependency-review CI jobs; YAML-validated, not yet executed on GitHub | [`per-file/.github/workflows/ci.yml.md`](per-file/.github/workflows/ci.yml.md) | IMPLEMENTED |
 | `AGENTS.md` | DevOps/Lead | Project file: AGENTS.md | [`per-file/AGENTS.md.md`](per-file/AGENTS.md.md) | IMPLEMENTED |
-| `Makefile` | DevOps/Lead | Developer commands | [`per-file/Makefile.md`](per-file/Makefile.md) | TESTED |
-| `README.md` | DevOps/Lead | Repository run guide | [`per-file/README.md.md`](per-file/README.md.md) | IMPLEMENTED |
-| `docker-compose.yml` | DevOps/Lead | Container stack retained but outside the supported native workflow | [`per-file/docker-compose.yml.md`](per-file/docker-compose.yml.md) | DEFERRED |
+| `Makefile` | DevOps/Lead | Developer commands including the aggregate `make check` gate | [`per-file/Makefile.md`](per-file/Makefile.md) | TESTED |
+| `README.md` | DevOps/Lead | Repository run and deployment guide | [`per-file/README.md.md`](per-file/README.md.md) | IMPLEMENTED |
+| `docs/ops/RAILWAY_VERCEL_DEPLOYMENT.md` | DevOps/Lead | Managed Railway API/Postgres/Bucket and Vercel SPA deployment guide | [`per-file/docs/ops/RAILWAY_VERCEL_DEPLOYMENT.md.md`](per-file/docs/ops/RAILWAY_VERCEL_DEPLOYMENT.md.md) | IMPLEMENTED |
+| `infra/railway-bucket-cors.json` | DevOps | S3 CORS policy for browser presigned evidence uploads | [`per-file/infra/railway-bucket-cors.json.md`](per-file/infra/railway-bucket-cors.json.md) | IMPLEMENTED |
+| `docker-compose.yml` | DevOps/Lead | Container stack with nginx upstream, readiness healthcheck and service dependencies; statically validated, runtime build deferred | [`per-file/docker-compose.yml.md`](per-file/docker-compose.yml.md) | IMPLEMENTED |
 
 ## Removed files
 

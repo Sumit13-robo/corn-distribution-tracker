@@ -10,8 +10,27 @@ Environment-driven Django settings, structured logging and fail-fast production 
 
 ## Verification
 
-Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. A 7.0 MB JPEG upload through the authenticated HTTPS endpoint returned `204`, and a settings test asserts the raw-body ceiling remains above the evidence cap.
+Backend: `make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. A 7.0 MB JPEG upload through the authenticated HTTPS endpoint returned `204`, and a settings test asserts the raw-body ceiling remains above the evidence cap.
 
 ## Unresolved issues
 
 None known. Production still needs a trusted HTTPS origin for real phone geolocation and appropriate reverse-proxy body limits.
+
+## 2026-10-26 audit remediation
+
+Added Django XFrameOptionsMiddleware alongside the custom security headers, explicit trusted-proxy handling for X-Forwarded-For, storage-aware readiness configuration and production fail-fast settings. HSTS/TLS policy still belongs to the ingress owner.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.
+
+## 2026-10-28 Railway/Vercel deployment
+
+Added Railway public/private hostname auto-allowlisting (plus
+`healthcheck.railway.app` for Railway's probe), a single `FRONTEND_ORIGIN`
+input that is appended to CORS and CSRF, Railway Bucket variable fallbacks
+(`ENDPOINT`, `REGION`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`), and
+validated `STORAGE_ADDRESSING_STYLE` (`auto|path|virtual`). Production rejects a
+non-HTTPS `FRONTEND_ORIGIN`. `TRUST_X_FORWARDED_FOR` remains opt-in.
+
+Verification: `make test-api` → 98 passed (including Railway host/bucket
+fallback and virtual-host storage tests); Ruff and mypy clean. Real provider
+configuration remains external.

@@ -10,7 +10,7 @@ Runs `prepare_db.py` and `manage.py migrate` with the E2E database URL, then exe
 
 ## Verification
 
-`npm run test:e2e` → 8 passed (2 setup + 6 workflow) on a freshly recreated Django/PostgreSQL database. The wrapper also reproduced a clean first-run setup after the E2E database had been dropped.
+`npm run test:e2e` → 9 passed (2 setup + 6 workflow) on a freshly recreated Django/PostgreSQL database. The wrapper also reproduced a clean first-run setup after the E2E database had been dropped.
 
 ## Unresolved issues
 

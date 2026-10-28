@@ -115,27 +115,31 @@ make test-e2e      # ports 8000 and 5173 must be free
 - Each run generates random admin/distributor passwords in the gitignored `apps/web/e2e/.state/` directory. No credentials or real data are committed.
 - Covered flow: session-cookie restore and role guard; photo/geolocation submission; private evidence rendering; admin approval posting the ledger movement; distributor view of the approved record; offline draft staying `QUEUED` and syncing only after connectivity returns; and a 360 px mobile-viewport overflow check.
 
-## Verification (run through 2026-10-25)
+## Verification (run through 2026-10-28)
 
 | Command | Result |
 |---|---|
-| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **67 passed** |
+| `make test-api` (sets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`) | **98 passed** |
 | `make lint-api` (ruff 0.17.1) | **All checks passed** |
-| `make typecheck-api` (mypy 2.4.0 + django-stubs 5.2.9) | **No issues in 50 source files** |
+| `make typecheck-api` (mypy 2.4.0 + django-stubs 5.2.9) | **No issues in 51 source files** |
 | `python manage.py makemigrations --check --dry-run` | **No changes detected** |
 | `npx tsc -b --noEmit` (web) | **passed** |
 | `npm test` (Vitest 4.1.12) | **39 passed** across 7 files |
 | `npm run lint` (ESLint 9 + typescript-eslint + react-hooks) | **0 errors, 0 warnings** |
-| `npm run build` | **passed** — `dist` app JS 518.10 kB (`gzip 155.60 kB`), CSS 104.49 kB; MapLibre chunk 1,094.99 kB (`gzip 298.42 kB`); Vite warns about large chunks |
+| `npm run build` | **passed** — app JS 520.54 kB (`gzip 156.21 kB`), CSS 104.49 kB (`gzip 16.95 kB`); MapLibre chunk 1,094.99 kB (`gzip 298.42 kB`); Vite warns about large chunks |
 | `npm audit --audit-level=high` | **0 vulnerabilities** |
 | `make test-e2e` (Playwright 1.64.1, Chromium, real Django + PostgreSQL) | **9 passed** (2 setup + 7 workflow) |
 | `gunicorn --check-config config.wsgi:application` | **passed** |
 | `python manage.py check` | **No issues identified** |
+| `python manage.py check --deploy` | **6 expected local-configuration warnings** — HSTS, SSL redirect, development secret, secure session/CSRF cookies and DEBUG are environment/ingress-owned. Production startup fails fast for the secret, secure cookies, DEBUG, unsafe CORS and non-S3 storage; HSTS and SSL redirect must still be set/verified at deployment. The prior missing-frame-middleware warning is fixed. |
+| `make check` | **passed** locally (all API/web lint, type, migration, test and production-build gates) |
+| CI workflow (`.github/workflows/ci.yml`) | **present and YAML-validated locally** — backend, frontend, Playwright E2E and dependency review jobs; not yet executed on GitHub because changes are uncommitted |
 | Native local smoke (Django `runserver` + Vite) | **passed** — `/health/live`, `/health/ready`, login page and session bootstrap reachable on `localhost:8000` / `localhost:5173` |
 | 360 px screenshot audit (current screens) | **scrollWidth 360; heading clear of the top bar; no horizontal overflow, unexpected console errors or 5xx responses** |
-| Local Django-schema backup/restore drill (synthetic E2E DB) | **passed** — 83,441-byte dump; both corn migrations restored; users 2/2, campaigns 1/1, sites 1/1, assignments 1/1, records 2/2, evidence 2/2, movements 3/3, audit 23/23, accounts 3/3; 0 missing evidence objects |
+| Local Django-schema backup/restore drill (synthetic E2E DB) | **passed** — 85,778-byte dump; migrations `0001`–`0004` restored; users 2/2, campaigns 1/1, sites 1/1, assignments 1/1, records 2/2, evidence 2/2, movements 3/3, audit 24/24, accounts 3/3; append-only trigger present; 0 missing evidence objects |
+| Simulated S3-compatible evidence drill (external audit probe) | **passed** — presigned PUT, CORS preflight, SSE header, completion, attachment, same-size and oversized tamper rejection against a local S3 emulator; real provider/CORS verification remains operator-owned |
 
-Environment note: this workstation auto-loads ROS pytest plugins into any pytest invocation, which is why `make test-api` disables plugin autoload. The test suite uses Django's test client against a temporary PostgreSQL database and is synchronous.
+Environment note: this workstation auto-loads ROS pytest plugins into any pytest invocation, which is why `make test-api` disables plugin autoload. The test suite uses Django's test client against a temporary PostgreSQL database and is synchronous. Docker/Podman/nginx runtime validation is unavailable here; container/nginx files are statically checked only.
 
 ### Map/location update (verified 2026-10-25)
 
@@ -157,7 +161,7 @@ Environment note: this workstation auto-loads ROS pytest plugins into any pytest
 | Saved-fix reload/submit | **passed** — a captured fix survived a remount, the form stopped showing a false “Location not captured” warning, and the submission payload kept the coordinates. |
 | Admin location display | **passed** — review labels a fix **Captured** or **Missing** without a location warning; only non-location evidence-integrity flags are shown. |
 | Large phone-style upload | **passed** — authenticated 7.0 MB JPEG upload returned `204` after raising the raw-body ceiling; test intent/object cleaned up. |
-| Backend tests | **66 passed**; `make test-api`. |
+| Backend tests | **98 passed**; `make test-api`. |
 
 ### Phone / HTTPS development
 
@@ -171,13 +175,13 @@ For a short-lived development demo, an HTTPS tunnel (for example Cloudflare Quic
 
 Sites are now configured inside a campaign. The admin sidebar no longer has a **Sites** item; `/sites` redirects to `/campaigns`. The campaign create form accepts optional site names (one per line), and selecting a campaign opens a site panel for adding more names and setting or editing an optional latitude/longitude later. A generated `site_code` is used when none is supplied. A name-only site remains assignable; submissions still capture GPS when available, but location quality and distance/geofence never block or warn. The delivery map plots the record's captured fix and does not need site coordinates; evidence review simply omits the site reference marker. Existing submissions are never recalculated when coordinates are added later.
 
-`python manage.py migrate` applied `corn.0003_campaign_sites_optional_location` to the development database. Existing sites were backfilled from their earliest assignment campaign; no coordinates were invented. API tests cover campaign-site creation, generated codes, duplicate names, optional/cleared locations, cross-campaign assignment rejection, campaign-scoped analytics/map filtering and geo evaluation without site coordinates. Web tests cover campaign-dialog site creation, adding a name-only site from the selected campaign, and adding a location later. `make test-api` → 66 passed, `make lint-api` → clean, `make typecheck-api` → clean, `npm run typecheck`/`npm run lint` → clean, `npm test` → 37 passed across 6 files, `npm run build` → passed, and `make test-e2e` → 8 passed.
+`python manage.py migrate` applied `corn.0003_campaign_sites_optional_location` to the development database. Existing sites were backfilled from their earliest assignment campaign; no coordinates were invented. API tests cover campaign-site creation, generated codes, duplicate names, optional/cleared locations, cross-campaign assignment rejection, campaign-scoped analytics/map filtering and geo evaluation without site coordinates. Web tests cover campaign-dialog site creation, adding a name-only site from the selected campaign, and adding a location later. Superseded verification at that update: `make test-api` → 66 passed, `npm test` → 37 passed across 6 files, `make test-e2e` → 8 passed. Current counts are in the verification table above.
 
 ### Delivery-only map update (verified 2026-10-25)
 
 The admin map now plots **only distributor-recorded delivery locations**. `GET /analytics/map-deliveries` returns one point per delivery with a captured fix and status `SUBMITTED` or `APPROVED`; rejected/cancelled claims are excluded. The page no longer plots site reference coordinates, sites without deliveries or an admin “My location” marker. Its synchronized list shows site, distributor, status, quantity and submitted time; selecting an entry opens captured coordinates/accuracy, OpenStreetMap/Google Maps links and the evidence-review workspace. The retained approved 1 kg Kolhapur record therefore appears even though its site is name-only.
 
-Verification: `make test-api` → **67 passed**; `make test-web` → **39 passed across 7 files**; `make lint-api` / `make typecheck-api` / `make migrate-check` clean; `npm run typecheck` / `npm run lint` / `npm run build` clean; `make test-e2e` → **9 passed** (2 setup + 7 workflow). New tests cover delivery-only filtering, status/bbox/authorization, rejected-claim exclusion, the approved-record point, delivery list/map labels, drawer links, the empty state and a real-browser assertion that the approved E2E delivery appears as a delivery point with no site list. A headless Chromium smoke against the running dev stack rendered the current two approved Kolhapur delivery points as two list entries and two map pins, opened the drawer with coordinates/map/evidence links, showed no “Sites in scope” section, and logged no console errors or non-tile request failures. There is no committed test for the WebGL/tile-fallback rendering path.
+Verification: `make test-api` → **98 passed**; `make test-web` → **39 passed across 7 files**; `make lint-api` / `make typecheck-api` / `make migrate-check` clean; `npm run typecheck` / `npm run lint` / `npm run build` clean; `make test-e2e` → **9 passed** (2 setup + 7 workflow). New tests cover delivery-only filtering, status/bbox/authorization, rejected-claim exclusion, the approved-record point, delivery list/map labels, drawer links, the empty state and a real-browser assertion that the approved E2E delivery appears as a delivery point with no site list. A headless Chromium smoke against the running dev stack rendered the current two approved Kolhapur delivery points as two list entries and two map pins, opened the drawer with coordinates/map/evidence links, showed no “Sites in scope” section, and logged no console errors or non-tile request failures. There is no committed test for the WebGL/tile-fallback rendering path.
 
 ### Manual smoke checklist
 
@@ -190,6 +194,11 @@ Verification: `make test-api` → **67 passed**; `make test-web` → **39 passed
 7. Open **Settings**, set a bag conversion, save, reload, then disable it and confirm the regression to kg/null.
 
 ## Configuration notes
+
+For the managed Railway backend plus Vercel frontend path, see
+[`docs/ops/RAILWAY_VERCEL_DEPLOYMENT.md`](docs/ops/RAILWAY_VERCEL_DEPLOYMENT.md).
+The frontend build intentionally fails on Vercel while
+`apps/web/vercel.json` still contains the Railway placeholder origin.
 
 - Only `VITE_*` values are shipped to the browser. Never put secrets behind that prefix.
 - `VITE_API_BASE_URL` defaults to `/api/v1` (same-origin, works with the Vite proxy and a reverse proxy). For a cross-origin SPA, set it at build time and configure `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` and cookie settings.
@@ -214,14 +223,18 @@ Verification: `make test-api` → **67 passed**; `make test-web` → **39 passed
 - **Admin list filters are limited.** Campaigns expose a status filter; evidence and audit expose the filters shown on each screen. Sites are managed inside the selected campaign and have no separate search page. Several tables load a bounded first page (25 or 100 rows) and sort client-side rather than exposing pagination controls.
 - **Analytics filters are campaign + UTC date range.** Status/distributor/site filters and URL-persisted filter state are not implemented.
 - **GPS/EXIF are advisory.** Coordinates, accuracy, timestamps and optional distance are recorded; location quality is not a warning or gate. Duplicate hash, capture-time drift and unexpected file type are the only evidence-integrity flags. Sophisticated spoofing is not detectable by this design.
-- **Offline photos** live in IndexedDB and survive reloads in real browsers. In environments without IndexedDB (some test shells), the store falls back to memory — drafts persist in `localStorage`, but attached blobs do not survive a reload.
+- **Offline drafts are plaintext local browser data.** Local drafts persist in `localStorage` and attached blobs in IndexedDB; the UI no longer claims encryption at rest. After a successful sync, submitted draft metadata is scrubbed and local photos are deleted; stale local drafts are pruned after 24 hours. In environments without IndexedDB (some test shells), the store falls back to memory and attached blobs do not survive a reload.
 - **BAG conversions** require an admin-configured `kg_per_bag`; the API rejects bag quantities otherwise.
 - **No MFA yet.** Admin MFA should be required/assessed before broad production rollout; the current build is password + session based.
 - **No malware scanner.** Evidence uploads are size/type restricted, decoded, content-sniffed and hashed; integrate a scanning hook before accepting untrusted public uploads at scale.
-- **No metrics/APM/alerting integration is bundled.** Structured request logs, request IDs and liveness/readiness checks are implemented, but production dashboards/alerts must be wired by the operator. Rate limits are process-local.
+- **No metrics/APM/alerting integration is bundled.** Structured request logs, request IDs and liveness/readiness checks are implemented, but production dashboards/alerts must be wired by the operator.
+- **Rate limits are process-local.** The in-memory bucket table is bounded, but multiple Gunicorn workers or replicas each enforce their own counters; use a shared Redis/cache limiter before horizontal scale-out.
 - **No automatic evidence-retention job.** Configure bucket lifecycle/retention and database backup retention operationally; see [`docs/ops/BACKUP_RESTORE.md`](docs/ops/BACKUP_RESTORE.md). The local restore drill does not replace a production-provider drill.
+- **Real S3/provider CORS is unverified.** The direct-upload path, SSE header, CORS preflight, completion, same-size replacement and oversized replacement pass against a local S3-compatible emulator, and the CORS requirements are documented; verify them against the chosen bucket before launch.
+- **Pre-upgrade idempotency keys fail closed.** Migration `0004` scopes legacy keys but existing rows have no request fingerprint, so a retry using one returns `409` rather than risking an unrelated replay. Re-key clients/offline drafts during the upgrade window.
 - **Single organization** by design; multi-tenancy would require explicit row-level isolation and tests.
-- **Browser E2E is local-only**: it needs a PostgreSQL role allowed to create/drop the isolated E2E database plus Playwright Chromium; no CI pipeline is shipped. The E2E flow covers the critical submission/review/offline path and one 360 px viewport test. A separate screenshot audit covered every current screen at 360 px, but neither replaces real-device or assistive-technology testing.
+- **Browser E2E** needs a PostgreSQL role allowed to create/drop the isolated E2E database plus Playwright Chromium. It is wired into the CI workflow and passes locally; the workflow has not run on GitHub yet because these changes are uncommitted. The flow covers the critical submission/review/offline path and one 360 px viewport test. A separate screenshot audit covered every current screen at 360 px, but neither replaces real-device or assistive-technology testing.
+- **Container/nginx runtime verification is unavailable** in this workspace. Compose, nginx, Dockerfile and Gunicorn configuration were statically validated; build and run them in staging.
 - **One JS chunk exceeds Vite's 500 kB warning threshold**; code-splitting the map/route bundle is a reasonable next optimization.
 
 ## Documentation index

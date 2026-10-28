@@ -10,7 +10,7 @@ Delivery submission, approval/rejection/cancellation and idempotent record trans
 
 ## Verification
 
-Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (9 passed).
 
 ## Unresolved issues
 
@@ -18,4 +18,10 @@ None known. Native PostgreSQL + Django + Vite workflow verified.
 
 ## Location policy update (2026-10-25)
 
-`approve_delivery` no longer treats any location flag as critical and never adds `LOCATION_EXCEPTION`. A delivery is approvable from any recorded place. Override reasons are required only for `CAPTURE_TIME_MISMATCH`, `DUPLICATE_IMAGE_HASH`, `UNEXPECTED_FILE_TYPE` or an exceeded assignment target. The approval still locks rows, uses the idempotency key and posts exactly one stock movement in a transaction. Verification: `make test-api` → 66 passed, including location-independent approval and retained evidence-integrity tests.
+`approve_delivery` no longer treats any location flag as critical and never adds `LOCATION_EXCEPTION`. A delivery is approvable from any recorded place. Override reasons are required only for `CAPTURE_TIME_MISMATCH`, `DUPLICATE_IMAGE_HASH`, `UNEXPECTED_FILE_TYPE` or an exceeded assignment target. The approval still locks rows, uses the idempotency key and posts exactly one stock movement in a transaction. Verification: `make test-api` → 98 passed, including location-independent approval and retained evidence-integrity tests.
+
+## 2026-10-26 audit remediation
+
+Submission/approval idempotency is payload-bound and scoped; approval locks the assignment and excludes the current reservation from availability; target overruns require a reason; reversals transition records to `REVERSED`; legacy fingerprint-less keys fail closed; internal notes remain hidden.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

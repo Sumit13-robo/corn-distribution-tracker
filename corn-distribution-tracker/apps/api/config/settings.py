@@ -65,6 +65,19 @@ ALLOWED_HOSTS = env_list(
 )
 if APP_ENV == "production" and "*" in ALLOWED_HOSTS:
     raise ImproperlyConfigured("ALLOWED_HOSTS must not contain '*' in production.")
+# Railway injects these hostnames. Adding them avoids a deploy-time mismatch
+# while still requiring an explicit allowlist on every other platform.
+railway_hosts: tuple[str, ...] = (
+    env("RAILWAY_PUBLIC_DOMAIN"),
+    env("RAILWAY_PRIVATE_DOMAIN"),
+)
+if any(railway_hosts):
+    railway_hosts += ("healthcheck.railway.app",)
+for railway_host in railway_hosts:
+    if railway_host:
+        railway_host = railway_host.removeprefix("https://").removeprefix("http://").rstrip("/")
+    if railway_host and railway_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(railway_host)
 
 API_V1_PREFIX = env("API_V1_PREFIX", "/api/v1")
 APP_NAME = env("APP_NAME", "Corn Distribution Tracker")
@@ -107,6 +120,7 @@ MIDDLEWARE = [
     "corn.middleware.RequestContextMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "corn.middleware.OriginCheckMiddleware",
@@ -169,6 +183,15 @@ CORS_ALLOW_HEADERS = [
 ]
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
+# A single deployment origin keeps CORS, CSRF and cookie settings in sync. The
+# Vercel rewrite proxies /api to Railway, so the browser stays same-origin.
+FRONTEND_ORIGIN = env("FRONTEND_ORIGIN").rstrip("/")
+if FRONTEND_ORIGIN:
+    if FRONTEND_ORIGIN not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(FRONTEND_ORIGIN)
+    if FRONTEND_ORIGIN not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(FRONTEND_ORIGIN)
+
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
@@ -177,6 +200,10 @@ X_FRAME_OPTIONS = "DENY"
 # clients can spoof the forwarding header directly.
 if env_bool("TRUST_X_FORWARDED_PROTO", False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Only trust X-Forwarded-For when the app is behind a proxy that overwrites the
+# header. Enabling this while the app is directly reachable lets clients spoof
+# their source IP and bypass per-IP rate limits.
+TRUST_X_FORWARDED_FOR = env_bool("TRUST_X_FORWARDED_FOR", False)
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
 SECURE_HSTS_SECONDS = env_int("SECURE_HSTS_SECONDS", 0)
 if SECURE_HSTS_SECONDS:
@@ -201,14 +228,24 @@ REST_FRAMEWORK = {
 # Evidence storage
 # ---------------------------------------------------------------------------
 STORAGE_MODE = env("STORAGE_MODE", "local").lower()
-STORAGE_ENDPOINT_URL = env("STORAGE_ENDPOINT_URL")
-STORAGE_REGION = env("STORAGE_REGION")
-STORAGE_BUCKET = env("STORAGE_BUCKET")
-STORAGE_ACCESS_KEY_ID = env("STORAGE_ACCESS_KEY_ID")
-STORAGE_SECRET_ACCESS_KEY = env("STORAGE_SECRET_ACCESS_KEY")
+# Railway Buckets auto-inject BUCKET/ENDPOINT/REGION/ACCESS_KEY_ID/
+# SECRET_ACCESS_KEY. Prefer explicit STORAGE_* names, then fall back to those
+# provider names so the bucket can be connected without duplicating secrets.
+STORAGE_ENDPOINT_URL = env("STORAGE_ENDPOINT_URL") or env("ENDPOINT")
+STORAGE_REGION = env("STORAGE_REGION") or env("REGION")
+STORAGE_BUCKET = env("STORAGE_BUCKET") or env("BUCKET")
+STORAGE_ACCESS_KEY_ID = env("STORAGE_ACCESS_KEY_ID") or env("ACCESS_KEY_ID")
+STORAGE_SECRET_ACCESS_KEY = env("STORAGE_SECRET_ACCESS_KEY") or env("SECRET_ACCESS_KEY")
+# "auto" keeps boto3's default; set "virtual" for Railway Buckets and
+# "path" for providers that require path-style URLs.
+STORAGE_ADDRESSING_STYLE = env("STORAGE_ADDRESSING_STYLE", "auto").lower()
 STORAGE_SIGNED_URL_TTL_SECONDS = env_int("STORAGE_SIGNED_URL_TTL_SECONDS", 120)
+STORAGE_SERVER_SIDE_ENCRYPTION = env("STORAGE_SERVER_SIDE_ENCRYPTION", "AES256")
+STORAGE_KMS_KEY_ID = env("STORAGE_KMS_KEY_ID")
 LOCAL_STORAGE_DIR = env("LOCAL_STORAGE_DIR", "./storage-data")
 MAX_EVIDENCE_UPLOAD_BYTES = env_int("MAX_EVIDENCE_UPLOAD_BYTES", 10 * 1024 * 1024)
+MAX_EVIDENCE_PIXELS = env_int("MAX_EVIDENCE_PIXELS", 40_000_000)
+EVIDENCE_UPLOAD_TTL_SECONDS = env_int("EVIDENCE_UPLOAD_TTL_SECONDS", 900)
 # Django's request.body guard defaults to 2.5 MiB, which is smaller than the
 # evidence cap and made ordinary phone photos fail with a 500 before the
 # service could validate or store them. Keep the raw-body ceiling just above
@@ -262,6 +299,11 @@ def validate_security() -> None:
         problems.append("SECRET_KEY must contain at least 32 characters.")
     if APP_ENV in {"production", "staging"} and DEBUG:
         problems.append("DEBUG must be false outside development and tests.")
+    if FRONTEND_ORIGIN and not FRONTEND_ORIGIN.startswith("https://") and APP_ENV in {
+        "production",
+        "staging",
+    }:
+        problems.append("FRONTEND_ORIGIN must use https:// outside development.")
     if APP_ENV == "production":
         if not SESSION_COOKIE_SECURE or not CSRF_COOKIE_SECURE:
             problems.append("COOKIE_SECURE=true is required in production.")
@@ -277,6 +319,12 @@ def validate_security() -> None:
             problems.append("Storage credentials are required when STORAGE_MODE=s3.")
     if SESSION_COOKIE_SAMESITE == "None" and not SESSION_COOKIE_SECURE:
         problems.append("SameSite=None requires Secure cookies.")
+    if EVIDENCE_UPLOAD_TTL_SECONDS <= 0:
+        problems.append("EVIDENCE_UPLOAD_TTL_SECONDS must be positive.")
+    if MAX_EVIDENCE_PIXELS <= 0:
+        problems.append("MAX_EVIDENCE_PIXELS must be positive.")
+    if STORAGE_ADDRESSING_STYLE not in {"auto", "path", "virtual"}:
+        problems.append("STORAGE_ADDRESSING_STYLE must be auto, path or virtual.")
     if problems:
         raise ImproperlyConfigured(
             f"Insecure configuration for APP_ENV={APP_ENV}: " + "; ".join(problems)

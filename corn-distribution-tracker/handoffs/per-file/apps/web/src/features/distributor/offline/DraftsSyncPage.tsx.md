@@ -10,8 +10,14 @@ Shows online/offline state, photo counts, draft states and failed-sync messages;
 
 ## Verification
 
-Covered by web unit tests, the Playwright offline-draft workflow (8 passed), and the 360 px screenshot audit.
+Covered by web unit tests, the Playwright offline-draft workflow (9 passed), and the 360 px screenshot audit.
 
 ## Unresolved issues
 
 None known. Photos fall back to memory when IndexedDB is unavailable.
+
+## 2026-10-26 audit remediation
+
+After sync, submitted draft metadata is scrubbed and local photos deleted; stale local drafts are pruned after 24 hours.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

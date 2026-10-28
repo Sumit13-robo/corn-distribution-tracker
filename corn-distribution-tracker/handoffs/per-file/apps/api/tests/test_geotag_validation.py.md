@@ -17,7 +17,7 @@ Covers direct `evaluate_geo` and submission/review behavior:
 
 ## Verification
 
-`make test-api` → 66 passed; `make lint-api` clean; `make typecheck-api` clean in 50 source files; migration check no changes. `make test-e2e` → 8 passed.
+`make test-api` → 98 passed; `make lint-api` clean; `make typecheck-api` clean in 51 source files; migration check no changes. `make test-e2e` → 9 passed.
 
 ## Unresolved issues
 

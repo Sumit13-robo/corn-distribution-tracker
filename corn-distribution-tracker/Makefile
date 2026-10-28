@@ -5,7 +5,7 @@ PIP ?= .venv/bin/pip
 ARGS ?=
 
 .PHONY: help venv api-install web-install e2e-install migrate migrate-check create-admin test-api test-web \
-        test-e2e lint-api lint-web typecheck-api typecheck-web build-web run-api run-web health
+        test-e2e lint-api lint-web typecheck-api typecheck-web build-web run-api run-web health check
 
 help:
 	@grep -E '^[a-zA-Z_-]+:' Makefile | sort
@@ -66,4 +66,8 @@ health:
 	curl -fsS http://127.0.0.1:8000/health/live
 	@echo
 	curl -fsS http://127.0.0.1:8000/health/ready
+
+# Local counterpart of .github/workflows/ci.yml.
+check: lint-api lint-web typecheck-api typecheck-web migrate-check test-api test-web build-web
+
 	@echo

@@ -32,6 +32,12 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Camera/file inputs with type/10 MB validation, IndexedDB-backed attach/remove, object-URL previews (revoked correctly) and an offline notice.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 39 passed (7 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
+
+## 2026-10-26 audit remediation
+
+Removed the false encrypted-at-rest claim for locally queued photos; copy now states local drafts are plaintext browser data.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

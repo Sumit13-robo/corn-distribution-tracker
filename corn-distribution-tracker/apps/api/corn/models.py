@@ -222,6 +222,7 @@ class DistributionRecord(TimeStamped):
     quantity_kg = models.DecimalField(max_digits=14, decimal_places=3)
     status = models.CharField(max_length=20, choices=RecordStatus.choices, default=RecordStatus.SUBMITTED)
     idempotency_key = models.CharField(max_length=64)
+    idempotency_fingerprint = models.CharField(max_length=64, default="", blank=True)
     client_created_at = models.DateTimeField(null=True, blank=True)
     submitted_at = models.DateTimeField(default=timezone.now)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -233,6 +234,15 @@ class DistributionRecord(TimeStamped):
         related_name="reviewed_distribution_records",
     )
     review_reason = models.CharField(max_length=2000, null=True, blank=True)
+    reversed_at = models.DateTimeField(null=True, blank=True)
+    reversed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reversed_distribution_records",
+    )
+    reversal_reason = models.CharField(max_length=2000, null=True, blank=True)
     stock_movement = models.OneToOneField(
         "StockMovement",
         null=True,
@@ -396,7 +406,9 @@ class StockMovement(models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
     )
-    idempotency_key = models.CharField(max_length=128, unique=True, null=True, blank=True)
+    idempotency_scope = models.CharField(max_length=64, default="", blank=True)
+    idempotency_key = models.CharField(max_length=128, null=True, blank=True)
+    idempotency_fingerprint = models.CharField(max_length=64, default="", blank=True)
     occurred_at = models.DateTimeField(null=True, blank=True)
     posted_at = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(
@@ -449,6 +461,11 @@ class StockMovement(models.Model):
                 fields=["distribution_reference"],
                 condition=Q(distribution_reference__isnull=False),
                 name="uq_movement_delivery_reference",
+            ),
+            models.UniqueConstraint(
+                fields=["idempotency_scope", "idempotency_key"],
+                condition=Q(idempotency_key__isnull=False),
+                name="uq_movement_idempotency_scope",
             ),
         ]
         indexes = [

@@ -32,10 +32,10 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Accessible role-based navigation with active states and a mobile toggle.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 39 passed (7 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
 
 ## Campaign-site update (2026-10-25)
 
-Removed the admin **Sites** navigation item; sites are managed inside **Campaigns**. Distributor navigation is unchanged. Verification: `npm run typecheck`, `npm run lint`, `npm test` (37 passed) and `npm run build`.
+Removed the admin **Sites** navigation item; sites are managed inside **Campaigns**. Distributor navigation is unchanged. Verification: `npm run typecheck`, `npm run lint`, `npm test` (39 passed) and `npm run build`.

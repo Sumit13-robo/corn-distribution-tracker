@@ -31,7 +31,22 @@ from .helpers import (
 
 def _delivery_key(request) -> str:
     raw = request.headers.get("Idempotency-Key", "").strip()
-    return (raw or f"delivery:{uuid.uuid4()}")[:64]
+    if len(raw) > 64:
+        raise AppError(
+            "Idempotency-Key must be 64 characters or fewer.",
+            details=[{"field": "Idempotency-Key"}],
+        )
+    return raw or f"delivery:{uuid.uuid4()}"
+
+
+def _approval_key(request) -> str | None:
+    raw = request.headers.get("Idempotency-Key", "").strip()
+    if len(raw) > 128:
+        raise AppError(
+            "Idempotency-Key must be 128 characters or fewer.",
+            details=[{"field": "Idempotency-Key"}],
+        )
+    return raw or None
 
 
 def _submit_delivery(request):
@@ -102,7 +117,7 @@ def approve_delivery(request, record_id: uuid.UUID):
             record_id=record_id,
             exception_reason=data.get("exception_reason"),
             review_note=data.get("review_note"),
-            idempotency_key=request.headers.get("Idempotency-Key") or None,
+            idempotency_key=_approval_key(request),
             ctx=response_ctx(request),
         )
     return json_response(detail_record(record))

@@ -10,7 +10,7 @@ Covers session bootstrap, unsafe requests carrying `X-CSRFToken`, no bearer/refr
 
 ## Verification
 
-`npm test -- --run` → 23 passed across 3 files.
+`npm test -- --run` → 39 passed across 3 files.
 
 ## Unresolved issues
 

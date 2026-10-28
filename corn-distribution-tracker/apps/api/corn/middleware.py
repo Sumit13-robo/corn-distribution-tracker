@@ -71,6 +71,17 @@ class OriginCheckMiddleware:
             origin = request.headers.get("origin")
             if origin:
                 origin = origin.rstrip("/")
+            else:
+                # Some older clients omit Origin but still send Referer. Check
+                # its origin when present; requests with neither header still
+                # pass through Django's CSRF/session protection.
+                referer = request.headers.get("referer")
+                if referer:
+                    from urllib.parse import urlsplit
+
+                    parsed = urlsplit(referer)
+                    origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+            if origin:
                 request_origin = f"{request.scheme}://{request.get_host()}".rstrip("/")
                 if origin not in self.allowed and origin != request_origin:
                     return JsonResponse(
@@ -93,7 +104,12 @@ class SecurityHeadersMiddleware:
         response.setdefault("X-Content-Type-Options", "nosniff")
         response.setdefault("Referrer-Policy", "same-origin")
         response.setdefault("X-Frame-Options", "DENY")
-        response.setdefault("Permissions-Policy", "geolocation=(self), camera=(self)")
+        response.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        response.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+        response.setdefault(
+            "Permissions-Policy",
+            "geolocation=(self), camera=(self), microphone=(), payment=(), usb=()",
+        )
         if request.path.startswith(settings.API_V1_PREFIX):
             response.setdefault("Cache-Control", "no-store")
         return response

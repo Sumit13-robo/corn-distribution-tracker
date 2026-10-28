@@ -25,8 +25,13 @@ def _list_campaigns(request):
             CampaignStatus(status)
         except ValueError:
             raise AppError("Unknown campaign status.", details=[{"field": "status"}]) from None
-    rows, total = campaign_service.list_campaigns(status=status, limit=limit, offset=offset)
-    return Response(page([campaign_out(row) for row in rows], total, limit, offset))
+    rows, total = campaign_service.list_campaigns(
+        viewer=request.user, status=status, limit=limit, offset=offset
+    )
+    include_notes = request.user.role == "ADMIN"
+    return Response(
+        page([campaign_out(row, include_notes=include_notes) for row in rows], total, limit, offset)
+    )
 
 
 def _create_campaign(request):
@@ -40,7 +45,9 @@ def _create_campaign(request):
 
 
 def _get_campaign(request, campaign_id: uuid.UUID):
-    return Response(campaign_out(campaign_service.get_campaign(campaign_id)))
+    campaign = campaign_service.get_campaign(viewer=request.user, campaign_id=campaign_id)
+    include_notes = request.user.role == "ADMIN"
+    return Response(campaign_out(campaign, include_notes=include_notes))
 
 
 def _update_campaign(request, campaign_id: uuid.UUID):

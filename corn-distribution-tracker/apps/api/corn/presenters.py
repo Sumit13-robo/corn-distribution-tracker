@@ -82,7 +82,7 @@ def distributor_out(user: User) -> dict[str, Any]:
     }
 
 
-def campaign_out(campaign: Campaign) -> dict[str, Any]:
+def campaign_out(campaign: Campaign, *, include_notes: bool = True) -> dict[str, Any]:
     return {
         "id": str(campaign.id),
         "name": campaign.name,
@@ -91,7 +91,7 @@ def campaign_out(campaign: Campaign) -> dict[str, Any]:
         "ends_at": iso(campaign.ends_at),
         "status": campaign.status,
         "timezone": campaign.timezone,
-        "notes": campaign.notes,
+        "notes": campaign.notes if include_notes else None,
         "created_at": iso(campaign.created_at),
     }
 
@@ -115,7 +115,7 @@ def site_out(site: DistributionSite, *, include_notes: bool = True) -> dict[str,
     }
 
 
-def assignment_out(assignment: DistributorAssignment) -> dict[str, Any]:
+def assignment_out(assignment: DistributorAssignment, *, include_notes: bool = True) -> dict[str, Any]:
     return {
         "id": str(assignment.id),
         "campaign_id": str(assignment.campaign_id) if assignment.campaign_id else None,
@@ -124,12 +124,13 @@ def assignment_out(assignment: DistributorAssignment) -> dict[str, Any]:
         "target_quantity_kg": dec(assignment.target_quantity_kg),
         "due_at": iso(assignment.due_at),
         "status": assignment.status,
-        "notes": assignment.notes,
+        "notes": assignment.notes if include_notes else None,
         "created_at": iso(assignment.created_at),
     }
 
 
 def movement_out(movement: StockMovement) -> dict[str, Any]:
+    reversal = getattr(movement, "reversal", None)
     return {
         "id": str(movement.id),
         "movement_type": movement.movement_type,
@@ -140,12 +141,14 @@ def movement_out(movement: StockMovement) -> dict[str, Any]:
         "quantity_kg": dec(movement.quantity_kg),
         "reference_type": movement.reference_type,
         "reference_id": str(movement.reference_id) if movement.reference_id else None,
+        "idempotency_scope": movement.idempotency_scope or None,
         "idempotency_key": movement.idempotency_key,
         "occurred_at": iso(movement.occurred_at),
         "posted_at": iso(movement.posted_at),
         "created_by": str(movement.created_by_id) if movement.created_by_id else None,
         "reason": movement.reason,
         "reversal_of_id": str(movement.reversal_of_id) if movement.reversal_of_id else None,
+        "reversed_by_id": str(reversal.id) if reversal is not None else None,
         "movement_metadata": movement.movement_metadata or {},
     }
 
@@ -188,6 +191,9 @@ def distribution_out(
         "reviewed_by": str(record.reviewed_by_id) if record.reviewed_by_id else None,
         "review_reason": record.review_reason,
         "review_exception_reason": record.review_exception_reason,
+        "reversed_at": iso(record.reversed_at),
+        "reversed_by": str(record.reversed_by_id) if record.reversed_by_id else None,
+        "reversal_reason": record.reversal_reason,
         "stock_movement_id": str(record.stock_movement_id) if record.stock_movement_id else None,
         "notes": record.notes,
         "location_latitude": dec(record.location_latitude),

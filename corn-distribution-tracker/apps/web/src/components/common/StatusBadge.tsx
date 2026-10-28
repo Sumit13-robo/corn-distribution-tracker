@@ -19,6 +19,7 @@ const TONE_BY_STATUS: Record<string, Tone> = {
   REJECTED: "danger",
   LOSS: "danger",
   CANCELLED: "neutral",
+  REVERSED: "warning",
   CLOSED: "neutral",
   EMPTY: "neutral",
   REVERSAL: "info",

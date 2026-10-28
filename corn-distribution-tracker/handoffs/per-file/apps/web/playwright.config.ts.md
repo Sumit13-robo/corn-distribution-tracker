@@ -10,7 +10,7 @@ Two `webServer` entries start Django (`runserver`, test settings, E2E database, 
 
 ## Verification
 
-`npm run test:e2e` → **8 passed** (2 setup + 6 workflow) against PostgreSQL 17, Django/DRF and the real SPA. No browser mocks.
+`npm run test:e2e` → **9 passed** (2 setup + 6 workflow) against PostgreSQL 17, Django/DRF and the real SPA. No browser mocks.
 
 ## Unresolved issues
 

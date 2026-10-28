@@ -10,7 +10,7 @@ Runs after Playwright starts its web servers and before the `setup` project. Gen
 
 ## Verification
 
-`npm run test:e2e` → 8 passed from a clean E2E database. Credentials are synthetic and are not committed.
+`npm run test:e2e` → 9 passed from a clean E2E database. Credentials are synthetic and are not committed.
 
 ## Unresolved issues
 

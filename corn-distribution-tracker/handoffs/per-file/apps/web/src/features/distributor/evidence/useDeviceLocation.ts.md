@@ -38,4 +38,4 @@ Geolocation request capturing coordinates, accuracy and fix timestamp with expli
 
 ## Location policy update (2026-10-25)
 
-The hook still returns accuracy/timestamp and distinguishes denial, timeout, insecure origin and unsupported states, but no caller treats those states as approval blockers or location warnings. Capture remains optional. Verification: `npm test` → 37 passed; typecheck/lint/build pass.
+The hook still returns accuracy/timestamp and distinguishes denial, timeout, insecure origin and unsupported states, but no caller treats those states as approval blockers or location warnings. Capture remains optional. Verification: `npm test` → 39 passed; typecheck/lint/build pass.

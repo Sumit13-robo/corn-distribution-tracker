@@ -1,8 +1,8 @@
 # File Handoff: `apps/web/Dockerfile`
 
-**Status:** DEFERRED
+**Status:** IMPLEMENTED
 **Primary owner:** DevOps / Lead Integrator
-**File purpose:** Optional web container (not part of the supported native workflow).
+**File purpose:** Multi-stage web container with nginx runtime configuration and healthcheck.
 
 ## Responsibility
 Build production assets with a multi-stage image and serve them using a minimal static server; set correct fallback routing/security headers via deployment config.
@@ -32,6 +32,12 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Multi-stage Node 22 build → nginx runtime, retained as optional packaging. VITE_* values are build args (public only); nginx serves the SPA and proxies `/api/` to the API. Healthcheck uses exec-form wget. The documented local workflow builds and serves the SPA with Vite instead.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-26):** `cd apps/web && npm test` → 39 passed (7 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded. Static multi-stage Dockerfile checks pass. The container now copies `nginx.docker.conf`, whose upstream is `api:8000` and whose static root is `/usr/share/nginx/html`; the native `nginx.conf` keeps `127.0.0.1:8000`.
 
-**Unresolved issues:** Container build/runtime is deferred and outside the supported native workflow. The committed `nginx.conf` now targets a native same-host Django upstream (`127.0.0.1:8000`); if container packaging is revived, adjust its root/upstream for the container network.
+**Unresolved issues:** Container build/runtime is deferred; no Docker/Podman/Buildah or nginx binary is available in this workspace.
+
+## 2026-10-26 audit remediation
+
+The runtime image now copies `nginx.docker.conf`, so the container proxy targets `api:8000` instead of loopback. Static checks pass; no container runtime is available.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

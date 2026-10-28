@@ -11,7 +11,7 @@ import { FormField } from "../../../components/common/FormField";
 import { formatDateTime, formatKg, humanizeStatus } from "../../../lib/format";
 import type { DistributionOut } from "../../../types/domain";
 
-const STATUS_OPTIONS = ["SUBMITTED", "APPROVED", "REJECTED", "CANCELLED"] as const;
+const STATUS_OPTIONS = ["SUBMITTED", "APPROVED", "REJECTED", "CANCELLED", "REVERSED"] as const;
 
 /**
  * My submissions (SCREEN_SPECS): only the signed-in distributor's records with
@@ -118,7 +118,11 @@ export function MySubmissionsPage() {
               {
                 key: "review_reason",
                 header: "Review reason",
-                render: (row) => row.review_reason ?? (row.review_exception_reason ? `exception: ${row.review_exception_reason}` : "—"),
+                render: (row) =>
+                  row.status === "REVERSED"
+                    ? `reversed: ${row.reversal_reason ?? "—"}`
+                    : (row.review_reason ??
+                      (row.review_exception_reason ? `exception: ${row.review_exception_reason}` : "—")),
               },
             ]}
           />

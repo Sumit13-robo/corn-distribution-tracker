@@ -13,7 +13,7 @@
 
 ## Verification
 
-`make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. `test_geotag_validation` covers missing, stale, inaccurate and far-away fixes, including direct `evaluate_geo` and submission-level approval without a location exception.
+`make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. `test_geotag_validation` covers missing, stale, inaccurate and far-away fixes, including direct `evaluate_geo` and submission-level approval without a location exception.
 
 ## Unresolved issues
 

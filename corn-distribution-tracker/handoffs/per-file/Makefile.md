@@ -32,6 +32,12 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Developer targets for venv/install/migrations/admin bootstrap/tests/lint/typecheck/build/run, plus `e2e-install` (Chromium), `test-e2e` (real API + disposable PostgreSQL) and `health` (live/readiness probes). `test-api` disables third-party pytest autoload (ROS plugins on this workstation). Container-only `db-up`/`dev-up` targets were removed.
 
-**Verification (2026-10-23):** Backend 60 tests passed (Ruff/mypy clean); web 23 tests passed (lint/build clean); `make test-e2e` 8 passed; native `make health` returned both probes; `npm audit` 0 vulnerabilities.
+**Verification (2026-10-26):** Backend 98 tests passed (Ruff/mypy clean); web 39 tests passed (lint/build clean); `make test-e2e` 9 passed; native `make health` returned both probes; `npm audit` 0 vulnerabilities.
 
 **Unresolved issues:** None known.
+
+## 2026-10-26 audit remediation
+
+Added the aggregate `make check` target (API/web lint, type checks, migration drift, API/web tests and production web build) as the local counterpart of CI.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

@@ -10,7 +10,7 @@ Canonical JSON response shaping, including site/distributor display fields. It p
 
 ## Verification
 
-Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (9 passed).
 
 ## Unresolved issues
 
@@ -18,4 +18,10 @@ None known. Native PostgreSQL + Django + Vite workflow verified.
 
 ## Campaign-site update (2026-10-25)
 
-`site_out` includes `campaign_id` and serializes nullable latitude/longitude as `null`. `distribution_out` already serializes nullable `distance_to_site_m`. Verification: `make test-api` → 66 passed; Ruff/mypy clean.
+`site_out` includes `campaign_id` and serializes nullable latitude/longitude as `null`. `distribution_out` already serializes nullable `distance_to_site_m`. Verification: `make test-api` → 98 passed; Ruff/mypy clean.
+
+## 2026-10-26 audit remediation
+
+Distributor responses hide admin campaign/assignment/site notes. Movement responses expose `reversed_by_id`/reversal context; delivery responses expose the reversal reason without leaking internal notes.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

@@ -379,7 +379,12 @@ export function EvidenceReviewPage() {
             </div>
           )}
 
-          {record.review_reason || record.review_exception_reason ? (
+          {record.status === "REVERSED" ? (
+            <div className="notice warning" style={{ marginTop: "var(--space-3)" }} data-testid="reversal-detail">
+              Reversed {record.reversed_at ? formatDateTime(record.reversed_at) : ""} · reason:{" "}
+              {record.reversal_reason ?? "—"}. The original ledger movement and evidence remain visible.
+            </div>
+          ) : record.review_reason || record.review_exception_reason ? (
             <div className="notice" style={{ marginTop: "var(--space-3)" }}>
               Previous review: {humanizeStatus(record.status)}
               {record.review_reason ? ` · reason: ${record.review_reason}` : ""}

@@ -38,7 +38,7 @@ Shared QueryClient defaults (no retry on 4xx, bounded transient retry) and the c
 
 ## Campaign-site update (2026-10-25)
 
-`queryKeys.sites` includes `campaign_id` so switching the selected campaign does not reuse another campaign's site list. Verification: `npm run typecheck`, `npm test` (37 passed) and `npm run build`.
+`queryKeys.sites` includes `campaign_id` so switching the selected campaign does not reuse another campaign's site list. Verification: `npm run typecheck`, `npm test` (39 passed) and `npm run build`.
 
 ## Delivery-map update (2026-10-25)
 

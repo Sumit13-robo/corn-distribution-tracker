@@ -10,7 +10,7 @@ Analytics scope, denominators and export authorization tests. It participates in
 
 ## Verification
 
-Backend: `make test-api` → 66 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 50 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (8 passed).
+Backend: `make test-api` → 98 passed; `make lint-api` → all checks passed; `make typecheck-api` → no issues in 51 source files; migration check → no changes. Wire-level behavior is covered by the Playwright E2E suite (9 passed).
 
 ## Unresolved issues
 
@@ -18,4 +18,4 @@ None known. Native PostgreSQL + Django + Vite workflow verified.
 
 ## Delivery-map coverage (2026-10-25)
 
-Added a test proving `/analytics/map-deliveries` returns only delivery records with a captured fix (a no-location submission is excluded), exposes the expected site/distributor/quantity/coordinate fields, rejects distributor access, honors bbox filtering/invalid-bbox validation, retains the point with status `APPROVED` after review, and excludes a rejected claim. Verification: `make test-api` → 67 passed.
+Added a test proving `/analytics/map-deliveries` returns only delivery records with a captured fix (a no-location submission is excluded), exposes the expected site/distributor/quantity/coordinate fields, rejects distributor access, honors bbox filtering/invalid-bbox validation, retains the point with status `APPROVED` after review, and excludes a rejected claim. Verification: `make test-api` → 98 passed.

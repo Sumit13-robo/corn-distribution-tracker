@@ -16,7 +16,7 @@ Provide one place to render evidence-integrity flag labels/tones, filter legacy 
 
 ## Verification
 
-`npm test` → 37 passed across 6 files; `npm run typecheck` and `npm run lint` pass; `npm run build` passes. Component/API tests and manual review cover captured/missing and integrity-only warning behavior.
+`npm test` → 39 passed across 7 files; `npm run typecheck` and `npm run lint` pass; `npm run build` passes. Component/API tests and manual review cover captured/missing and integrity-only warning behavior.
 
 ## Unresolved issues
 

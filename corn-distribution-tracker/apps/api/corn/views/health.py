@@ -37,8 +37,9 @@ def ready(request):
         checks["database"] = "unavailable"
         healthy = False
     storage = storage_health_probe()
-    checks["storage"] = "ok" if storage.get("writable", storage.get("configured", False)) else "unavailable"
-    if checks["storage"] == "unavailable":
+    storage_ok = storage.get("writable") is True or storage.get("reachable") is True
+    checks["storage"] = "ok" if storage_ok else "unavailable"
+    if not storage_ok:
         healthy = False
     return Response(
         {"status": "ok" if healthy else "degraded", "checks": checks},

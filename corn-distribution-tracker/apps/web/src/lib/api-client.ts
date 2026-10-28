@@ -43,6 +43,7 @@ import type {
   SitePerfOut,
   SiteProgressOut,
   StockMovementOut,
+  UploadCompletionOut,
   UploadIntentOut,
   UserOut,
   ViewURLOut,
@@ -388,6 +389,8 @@ export const api = {
       content_type: contentType,
       purpose: purpose ?? "DISTRIBUTION_EVIDENCE",
     }),
+  completeUploadIntent: (intentId: string) =>
+    post<UploadCompletionOut>(`/evidence/upload-intents/${intentId}/complete`),
   evidenceViewUrl: (evidenceId: string) => get<ViewURLOut>(`/evidence/${evidenceId}/view-url`),
 
   /* deliveries */

@@ -89,6 +89,10 @@ urlpatterns = [
     path(f"{API}/deliveries/<uuid:record_id>/cancel", delivery_views.cancel_delivery),
     # Evidence
     path(f"{API}/evidence/upload-intents", evidence_views.create_upload_intent),
+    path(
+        f"{API}/evidence/upload-intents/<uuid:intent_id>/complete",
+        evidence_views.complete_upload_intent,
+    ),
     path(f"{API}/evidence/objects/<uuid:intent_id>", evidence_views.put_object),
     path(f"{API}/evidence/<uuid:evidence_id>/view-url", evidence_views.view_url),
     path(f"{API}/evidence/blob/<uuid:evidence_id>", evidence_views.blob),

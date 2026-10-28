@@ -80,9 +80,9 @@ There is no `POST /admin/distributors`; new distributors are created through an 
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| GET | `/campaigns` | Session | Filters: `status`, `limit`, `offset`. |
+| GET | `/campaigns` | Session | Filters: `status`, `limit`, `offset`. Distributors only see campaigns they are assigned to; admin-only `notes` are returned as `null` to distributors. |
 | POST | `/campaigns` | Admin | `name`, `reference_code`, optional dates/timezone/notes/status, and optional `sites` (list of place names). Campaign + sites are created in one transaction; duplicate names within the request are ignored case-insensitively. |
-| GET | `/campaigns/{id}` | Session | Campaign detail. |
+| GET | `/campaigns/{id}` | Session | Campaign detail. Distributors receive `404` for unassigned campaigns and never receive internal notes. |
 | PATCH | `/campaigns/{id}` | Admin | Allowlisted fields; closed campaigns cannot be reopened. Sites are not edited through this route. |
 | GET | `/sites` | Session | Admin: all sites; distributor: assigned sites only. `search`, `limit`, `offset` apply to both; `active_only` and `campaign_id` are admin-only. Coordinates may be `null`. |
 | POST | `/sites` | Admin | `name` required; optional `campaign_id`, `site_code`, coordinates, address/region, and legacy geofence/accuracy fields. A missing `site_code` is generated from the name. Name-only sites omit both coordinates. |
@@ -90,9 +90,9 @@ There is no `POST /admin/distributors`; new distributors are created through an 
 | PATCH | `/sites/{id}` | Admin | Allowlisted fields including optional location. Latitude/longitude must be supplied together or both set to `null`; location changes are audited. Legacy geofence/accuracy fields are accepted for schema compatibility but no longer gate review. |
 | GET | `/sites/{id}/progress` | Session | Optional `campaign_id`; scoped to the distributor's own records. |
 | POST | `/sites/{id}/deactivate` | Admin | Deactivates a site. |
-| GET | `/assignments` | Session | Optional `campaign_id`; distributors see their own assignments. |
+| GET | `/assignments` | Session | Optional `campaign_id`; distributors see their own assignments and never internal assignment notes. |
 | POST | `/assignments` | Admin | Links a site, distributor and optional campaign with a target in kg. A campaign-scoped site cannot be assigned to a different campaign. |
-| GET | `/assignments/{id}` | Session | Scoped detail. |
+| GET | `/assignments/{id}` | Session | Scoped detail; distributor responses hide internal notes. |
 | PATCH | `/assignments/{id}` | Admin | Allowlisted assignment fields. |
 
 Sites are configured inside a campaign in the current UI (`/campaigns`); `/sites` remains the API resource and `/sites` in the SPA redirects to `/campaigns`. A site has at most one campaign (`campaign_id`, nullable only for legacy/global records). New sites should be created with `campaign_id`. A name alone is enough: coordinates may be added later through `PATCH /sites/{id}`.
@@ -103,15 +103,17 @@ A site location is optional context. When a site has no latitude/longitude, subm
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| GET | `/inventory/summary` | Session | Central/distributor/site balances; distributors see their own holdings. |
+| GET | `/inventory/summary` | Session | Admin sees central/distributor/site balances and reconciliation fields; distributors see only their own distributor account. Assigned-site stock is exposed separately as a scoped aggregate in `/analytics/overview`. |
 | GET | `/inventory/accounts/{id}/ledger` | Session | Scoped movement history; admin or account owner. |
 | POST | `/inventory/receipts` | Admin | Receives stock into an account. Supports `Idempotency-Key`. |
 | POST | `/inventory/allocations` | Admin | Allocates central stock to a distributor. Supports `Idempotency-Key`. |
 | POST | `/inventory/adjustments` | Admin | Loss/return/correction with required reason. Supports `Idempotency-Key`. |
-| POST | `/inventory/movements/{id}/reversal` | Admin | Compensating reversal with required reason. |
+| POST | `/inventory/movements/{id}/reversal` | Admin | Compensating reversal with required reason and `Idempotency-Key`. Reversal of a delivery marks the record `REVERSED`; reversal is refused if it would overdraw the receiving account. Reversals cannot themselves be reversed. |
 | GET | `/inventory/display-unit` | Session | Requires `quantity_kg`; optional `unit` overrides the configured display unit. Returns the converted display value and factor label. |
 
 Quantities are decimal strings in kg in responses. Write endpoints accept a `unit` of `KG`, `QUINTAL`, `TONNE` or `BAG`; `BAG` requires an organization `kg_per_bag` factor. Ledger and audit rows are append-only at the database level.
+
+Idempotency keys are scoped to the operation that created them. An identical retry replays the original movement; the same key with a different payload in the same scope returns `409 IDEMPOTENCY_CONFLICT`; the same key in a different operation scope is a separate, valid operation. Keys that predate migration `0004` have no stored request fingerprint and fail closed with `409` rather than risk returning an unrelated movement; use a new key for a post-upgrade retry. Delivery approval locks the assignment row before projecting the target, so concurrent approvals cannot both consume the same remaining target.
 
 ### Deliveries and evidence
 
@@ -123,12 +125,13 @@ Quantities are decimal strings in kg in responses. Write endpoints accept a `uni
 | POST | `/deliveries/{id}/approve` | Admin | Optional `review_note`; `exception_reason` is required only for non-location evidence-integrity flags or an exceeded assignment target. Posts exactly one stock movement. Supports `Idempotency-Key`. |
 | POST | `/deliveries/{id}/reject` | Admin | Required `reason`; releases the reservation. |
 | POST | `/deliveries/{id}/cancel` | Owner or admin | Only `DRAFT`/`SUBMITTED`; posted corrections use a reversal. |
-| POST | `/evidence/upload-intents` | Session | Creates a private upload intent; rate limited per user. Used by the distributor flow. |
-| PUT | `/evidence/objects/{intent_id}` | Session (owner) | Raw image body with intent headers; JPEG/PNG/WebP, size cap. |
+| POST | `/evidence/upload-intents` | Session | Creates a private upload intent; rate limited per user. Used by the distributor flow. S3-compatible production returns a short-lived presigned PUT URL plus the exact headers to send, including SSE/KMS headers when configured. |
+| PUT | `/evidence/objects/{intent_id}` | Session (owner) | Local development upload endpoint: raw image body with intent headers; JPEG/PNG/WebP, size and pixel caps. |
+| POST | `/evidence/upload-intents/{intent_id}/complete` | Session (owner) | Verifies an object uploaded directly to S3/MinIO (size, content type, decode, SHA-256), records the digest and returns `newly_verified`. Delivery submission also performs this verification lazily if a client omits the call. |
 | GET | `/evidence/{id}/view-url` | Session | Authorized short-lived view URL; admin or the uploader. |
 | GET | `/evidence/blob/{id}` | Signed URL | Serves the private object only with a valid signature/expiry. |
 
-Evidence uploads are decoded, content-sniffed, SHA-256 hashed and stored privately. The API records EXIF/GPS and non-location evidence-integrity flags as advisory indicators; location is supporting metadata and never a review gate. It does not claim spoofing-proof capture.
+Evidence uploads are content-sniffed, fully decoded (bounded pixel count), SHA-256 hashed and stored privately. A completed intent is re-hashed at attachment time, and private evidence reads verify stored size and SHA-256, so a replaced object is rejected with `EVIDENCE_INTEGRITY_FAILURE`. Bounded object reads prevent an oversized replacement from being loaded into memory. The API records EXIF/GPS and non-location evidence-integrity flags as advisory indicators; location is supporting metadata and never a review gate. It does not claim spoofing-proof capture.
 
 ### Analytics, export, settings and audit
 
@@ -150,17 +153,17 @@ Evidence uploads are decoded, content-sniffed, SHA-256 hashed and stored private
 - `campaign`: `id`, `name`, `reference_code`, `starts_at`, `ends_at`, `status`, `timezone`, `notes`, timestamps.
 - `site`: `id`, `site_code`, `name`, `campaign_id`, `address_text`, `region`, nullable `latitude`/`longitude`, legacy `geofence_radius_m`/`max_acceptable_accuracy_m` (not used for review), `is_active`, notes for admins.
 - `assignment`: `id`, `site_id`, `distributor_user_id`, `campaign_id`, `target_quantity_kg`, `status`, timestamps.
-- `delivery`: record id, assignment/site/campaign/distributor references, `quantity_kg`, `status`, `geo_status` (`PASS`/`UNAVAILABLE` for new records), non-location evidence `geo_flags`, informational distance/accuracy/time metadata, evidence list, review fields, stock movement id when approved. Legacy location flags may remain on historical rows but are not displayed as warnings.
-- `movement`: id, account, movement type, signed/quantity fields, reference, actor, reversal link, timestamps.
+- `delivery`: record id, assignment/site/campaign/distributor references, `quantity_kg`, `status` (`SUBMITTED`/`APPROVED`/`REJECTED`/`CANCELLED`/`REVERSED`), `geo_status` (`PASS`/`UNAVAILABLE` for new records), non-location evidence `geo_flags`, informational distance/accuracy/time metadata, evidence list, review fields, `reversed_at`/`reversed_by`/`reversal_reason`, and stock movement id when approved. Legacy location flags may remain on historical rows but are not displayed as warnings.
+- `movement`: id, account, movement type, quantity, `idempotency_scope`, reference, actor, `reversal_of_id` (the original this row reverses), `reversed_by_id` (the compensating row, if any), reason, metadata and timestamps.
 - `overview`: stock balances, submitted/approved/rejected kg, open review count, target/remaining/over-target kg, evidence completeness and non-location evidence-integrity flagged count.
 - `map delivery`: delivery record id, site id/code/name, campaign id, distributor id/name, quantity kg, status (`SUBMITTED`/`APPROVED`), submitted timestamp and captured `location_latitude`/`location_longitude`/accuracy/time. No evidence URLs.
 - `map site` (legacy): id, site code/name, coordinates, target/approved/pending/remaining kg, submission count, status, last visit, flag indicator.
 
 ## Idempotency and concurrency
 
-- `POST /deliveries`, inventory postings and delivery approval honor an `Idempotency-Key` header. Reusing a key returns the existing result instead of creating a second record or movement.
-- Ledger transitions use row locks and unique idempotency scopes; approval posts at most one stock movement.
-- Stock movements and audit events are append-only. Corrections use compensating movements/reversals; approved records are not destructively edited.
+- `POST /deliveries`, inventory postings, delivery approval and reversals honor an `Idempotency-Key` header. Reusing a key with the same payload returns the existing result; reusing it with a different payload/operation returns `409 IDEMPOTENCY_CONFLICT`. Keys are namespaced by operation, so the same client key can be used for a receipt and an allocation without colliding.
+- Ledger transitions use row locks and unique `(scope, key)` constraints; assignment rows are locked while approvals check targets, so concurrent approvals cannot overshoot a target. Approval posts at most one stock movement.
+- Stock movements and audit events are append-only. Corrections use compensating movements/reversals; approved records are not destructively edited. A delivery reversal retains the original movement and records `REVERSED` on the delivery.
 
 ## Out of scope for this build
 

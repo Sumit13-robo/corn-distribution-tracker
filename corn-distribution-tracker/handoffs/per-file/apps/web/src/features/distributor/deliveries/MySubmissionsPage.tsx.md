@@ -32,10 +32,16 @@ When done, report: exported interfaces/endpoints; other files changed; test comm
 
 Submission history with a status filter, expandable review details and per-evidence viewing via short-lived URLs. There is no date filter or pagination control.
 
-**Verification (2026-10-23):** `cd apps/web && npm test` → 23 passed (4 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
+**Verification (2026-10-23):** `cd apps/web && npm test` → 39 passed (7 files); `npm run lint` → 0 errors/0 warnings; `npm run build` → tsc + Vite production build succeeded.
 
 **Unresolved issues:** None known.
 
 ## Location-warning removal (2026-10-25)
 
-History shows location as captured/missing without distance, geofence or GPS-quality warnings; legacy location flags are filtered. Status/review reason/evidence behavior is unchanged. Verification: `npm test` → 37 passed; typecheck/lint/build pass.
+History shows location as captured/missing without distance, geofence or GPS-quality warnings; legacy location flags are filtered. Status/review reason/evidence behavior is unchanged. Verification: `npm test` → 39 passed; typecheck/lint/build pass.
+
+## 2026-10-26 audit remediation
+
+Distributor submissions show reversal state and the operator-recorded reversal reason.
+
+Verification for the current tree: 98 API tests, 39 web tests, 9 Playwright E2E tests, Ruff/mypy/migration/build gates clean. External provider/container/proxy evidence remains operator-owned.

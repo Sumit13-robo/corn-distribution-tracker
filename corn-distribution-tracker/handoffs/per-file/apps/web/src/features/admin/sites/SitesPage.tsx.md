@@ -17,7 +17,7 @@ The API resources `GET/POST /sites`, `PATCH /sites/{id}` and `POST /sites/{id}/d
 
 ## Verification
 
-`cd apps/web && npm run typecheck`, `npm run lint`, `npm test` (37 passed across 6 files) and `npm run build` pass. `make test-e2e` → 8 passed. `rg` confirms no remaining SPA links to `/sites` except the redirect itself.
+`cd apps/web && npm run typecheck`, `npm run lint`, `npm test` (39 passed across 7 files) and `npm run build` pass. `make test-e2e` → 9 passed. `rg` confirms no remaining SPA links to `/sites` except the redirect itself.
 
 ## Unresolved issues
 
